@@ -12,6 +12,24 @@ export const STAFF_ROLES: AppRole[] = [
   "content_manager",
 ];
 
+export const ROLE_LABELS: Record<AppRole, string> = {
+  super_admin: "Super Admin",
+  admin: "Admin",
+  support_agent: "Super Agent (Customer Support)",
+  content_manager: "Content Manager",
+  customer: "Customer",
+};
+
+export function hasAdminPortalAccess(roles: readonly string[]): boolean {
+  return roles.some(
+    (role) => role !== "customer" && STAFF_ROLES.includes(role as AppRole)
+  );
+}
+
+export function formatRoleLabel(role: string): string {
+  return (ROLE_LABELS as Record<string, string>)[role] || role.replace(/_/g, " ");
+}
+
 export type ResumeSectionKey =
   | "summary"
   | "careerObjective"

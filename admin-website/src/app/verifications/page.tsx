@@ -1,16 +1,37 @@
 import React from "react";
 import { redirect } from "next/navigation";
 import { stampSvgToDataUrl } from "@francis/shared";
-import { getAdminContext } from "@/lib/admin-auth";
+import { getAdminContext, getSignedInSessionInfo } from "@/lib/admin-auth";
 import { createServiceSupabase } from "@/lib/supabase/server";
 import { AdminShell } from "@/components/AdminShell";
 import { VerificationsClient } from "@/components/VerificationsClient";
+import { RestrictedAccessPanel } from "@/components/RestrictedAccessPanel";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminVerificationsPage() {
-  const admin = await getAdminContext(["super_admin", "admin", "content_manager"]);
-  if (!admin) redirect("/login");
+  const session = await getSignedInSessionInfo();
+  if (!session) redirect("/login");
+
+  const admin = await getAdminContext([
+    "super_admin",
+    "admin",
+    "content_manager",
+    "support_agent",
+  ]);
+  if (!admin) {
+    if (session.hasStaffAccess) {
+      return (
+        <AdminShell adminName={session.fullName} adminEmail={session.email} roles={session.roles}>
+          <RestrictedAccessPanel
+            sectionTitle="Verifications & Issuers"
+            allowedHint="Super Admin, Admin, Content Manager, and Support Agent roles"
+          />
+        </AdminShell>
+      );
+    }
+    redirect("/login");
+  }
 
   const service = createServiceSupabase();
   const [{ data: issuers }, { data: certs }, { data: rawStamps }] = await Promise.all([

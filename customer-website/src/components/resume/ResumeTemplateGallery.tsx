@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
-import Link from "next/link";
+import { SafeNavLink } from "@/components/ui/SafeNavLink";
 import { Search, Sparkles } from "lucide-react";
 import { getResumeTemplateLayout } from "@francis/shared";
 
@@ -232,12 +232,12 @@ export function ResumeTemplateGallery({
                   </p>
                 </div>
 
-                <Link
+                <SafeNavLink
                   href={`/resume-builder/new?template=${tpl.slug}`}
                   className="mt-4 inline-flex items-center justify-center rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] py-2 text-xs font-semibold transition hover:border-teal-600/50 hover:text-teal-700 dark:hover:text-teal-300"
                 >
                   Use Template →
-                </Link>
+                </SafeNavLink>
               </div>
             );
           })}

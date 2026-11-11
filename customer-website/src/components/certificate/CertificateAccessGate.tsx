@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import Link from "next/link";
+import { SafeNavLink } from "@/components/ui/SafeNavLink";
 import { Award, Clock, Lock, ShieldAlert, ShieldCheck, Stamp } from "lucide-react";
 import { SlideReveal } from "@/components/motion/SlideReveal";
 
@@ -99,22 +99,22 @@ export function CertificateAccessGate({
           <div className="mt-6 flex flex-wrap gap-3">
             {!isAuthenticated ? (
               <>
-                <Link
+                <SafeNavLink
                   href="/auth/login?next=/certificate-builder/new"
                   className="inline-flex items-center gap-2 rounded-xl bg-teal-700 px-5 py-2.5 text-sm font-semibold text-white hover:bg-teal-800"
                 >
                   <ShieldCheck className="h-4 w-4" /> Sign In with Authorized Account
-                </Link>
-                <Link
+                </SafeNavLink>
+                <SafeNavLink
                   href="/verify"
                   className="inline-flex items-center gap-2 rounded-xl border border-[var(--fcs-border)] px-5 py-2.5 text-sm font-semibold hover:bg-[var(--fcs-surface-muted)]"
                 >
                   Apply as Authorized Organization
-                </Link>
+                </SafeNavLink>
               </>
             ) : (
               <>
-                <Link
+                <SafeNavLink
                   href="/verify"
                   className="inline-flex items-center gap-2 rounded-xl bg-teal-700 px-5 py-2.5 text-sm font-semibold text-white hover:bg-teal-800"
                 >
@@ -122,13 +122,13 @@ export function CertificateAccessGate({
                   {pendingApps.length > 0
                     ? "Check Approval Status"
                     : "Apply for Authorized Organization Access"}
-                </Link>
-                <Link
+                </SafeNavLink>
+                <SafeNavLink
                   href="/dashboard"
                   className="inline-flex items-center gap-2 rounded-xl border border-[var(--fcs-border)] px-5 py-2.5 text-sm font-semibold hover:bg-[var(--fcs-surface-muted)]"
                 >
                   Back to Dashboard
-                </Link>
+                </SafeNavLink>
               </>
             )}
           </div>
@@ -140,9 +140,9 @@ export function CertificateAccessGate({
                 <p className="font-bold text-[var(--fcs-ink)]">Resume Studio Remains Open</p>
                 <p className="mt-0.5">
                   Anyone can create, analyze, and export ATS resumes for free.{" "}
-                  <Link href="/resume-builder" className="font-semibold text-teal-700 underline">
+                  <SafeNavLink href="/resume-builder" className="font-semibold text-teal-700 underline">
                     Open Resume Studio →
-                  </Link>
+                  </SafeNavLink>
                 </p>
               </div>
             </div>
@@ -153,9 +153,9 @@ export function CertificateAccessGate({
                 <p className="mt-0.5">
                   Recipients and employers can verify any certificate ID or QR code without signing
                   in at{" "}
-                  <Link href="/verify" className="font-semibold text-teal-700 underline">
+                  <SafeNavLink href="/verify" className="font-semibold text-teal-700 underline">
                     /verify
-                  </Link>
+                  </SafeNavLink>
                   .
                 </p>
               </div>

@@ -2,22 +2,30 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-import { AlertCircle, KeyRound, Lock } from "lucide-react";
+import { AlertCircle, CheckCircle2, KeyRound, Lock, Mail, Sparkles } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { CreatorStudioLogo } from "@/components/brand/CreatorStudioLogo";
 
 export default function AdminLoginPage() {
   const router = useRouter();
+  const [authTab, setAuthTab] = useState<"email_only" | "password">("password");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [otpCode, setOtpCode] = useState("");
+  const [otpSent, setOtpSent] = useState(false);
   const [mfaCode, setMfaCode] = useState("");
   const [factorId, setFactorId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
+  const [notice, setNotice] = useState<string | null>(null);
   const [googleEnabled, setGoogleEnabled] = useState(false);
 
   React.useEffect(() => {
+    if (typeof window !== "undefined") {
+      const qErr = new URLSearchParams(window.location.search).get("error");
+      if (qErr) setError(qErr);
+    }
+
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
     if (!url || !key) return;
@@ -29,9 +37,23 @@ export default function AdminLoginPage() {
       .catch(() => {});
   }, []);
 
+  const verifyAdminRoleAccess = async (): Promise<boolean> => {
+    const res = await fetch("/api/admin/auth/verify-access", { cache: "no-store" });
+    if (res.ok) return true;
+    const json = (await res.json().catch(() => ({}))) as { error?: string };
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    setError(
+      json.error ||
+        "Access denied: Customer accounts cannot log into the Admin Portal. Only Super Admin, Admin, Support Agent (Customer Support), and Content Manager roles are allowed."
+    );
+    return false;
+  };
+
   const handlePasswordLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setNotice(null);
     setLoading(true);
     try {
       const supabase = createClient();
@@ -43,6 +65,79 @@ export default function AdminLoginPage() {
         setError(signErr.message);
         return;
       }
+
+      const allowed = await verifyAdminRoleAccess();
+      if (!allowed) return;
+
+      const { data: factors } = await supabase.auth.mfa.listFactors();
+      const verifiedTotp = factors?.totp?.find((f) => f.status === "verified");
+      if (verifiedTotp) {
+        setFactorId(verifiedTotp.id);
+        return;
+      }
+
+      router.push("/");
+      router.refresh();
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSendEmailSignIn = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setNotice(null);
+    const trimmedEmail = email.trim().toLowerCase();
+    if (!trimmedEmail) {
+      setError("Enter your staff email address.");
+      return;
+    }
+    setLoading(true);
+    try {
+      const supabase = createClient();
+      const { error: otpErr } = await supabase.auth.signInWithOtp({
+        email: trimmedEmail,
+        options: {
+          shouldCreateUser: false,
+          emailRedirectTo: `${window.location.origin}/auth/callback?next=/`,
+        },
+      });
+      if (otpErr) {
+        setError(otpErr.message);
+        return;
+      }
+      setOtpSent(true);
+      setNotice(
+        `Check ${trimmedEmail}: click the sign-in link in your inbox or enter the 8-digit code below.`
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerifyEmailCode = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    const code = otpCode.trim();
+    if (code.length < 6) {
+      setError("Enter the verification code sent to your email.");
+      return;
+    }
+    setLoading(true);
+    try {
+      const supabase = createClient();
+      const { error: verErr } = await supabase.auth.verifyOtp({
+        email: email.trim().toLowerCase(),
+        token: code,
+        type: "email",
+      });
+      if (verErr) {
+        setError(verErr.message);
+        return;
+      }
+
+      const allowed = await verifyAdminRoleAccess();
+      if (!allowed) return;
 
       const { data: factors } = await supabase.auth.mfa.listFactors();
       const verifiedTotp = factors?.totp?.find((f) => f.status === "verified");
@@ -81,6 +176,10 @@ export default function AdminLoginPage() {
         setError(verErr.message);
         return;
       }
+
+      const allowed = await verifyAdminRoleAccess();
+      if (!allowed) return;
+
       router.push("/");
       router.refresh();
     } finally {
@@ -93,22 +192,6 @@ export default function AdminLoginPage() {
     setLoading(true);
     try {
       const supabase = createClient();
-      const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-      const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-      if (url && key) {
-        const res = await fetch(`${url}/auth/v1/settings`, {
-          headers: { apikey: key },
-        }).catch(() => null);
-        if (res?.ok) {
-          const settings = (await res.json()) as { external?: { google?: boolean } };
-          if (!settings.external?.google) {
-            setError(
-              `Google OAuth needs to be enabled in Supabase Dashboard → Authentication → Providers → Google (Callback URI: ${url}/auth/v1/callback).`
-            );
-            return;
-          }
-        }
-      }
       const { error: oauthErr } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
@@ -130,13 +213,16 @@ export default function AdminLoginPage() {
             <p className="text-xs font-bold tracking-wider uppercase text-teal-700 dark:text-teal-400">
               CREATOR STUDIO
             </p>
-            <h1 className="text-xl font-bold tracking-tight">Admin Console Login</h1>
+            <h1 className="text-xl font-bold tracking-tight">Admin Portal Login</h1>
           </div>
         </div>
 
         <p className="mt-3 text-xs leading-relaxed text-[var(--adm-ink-muted)]">
-          Restricted to authorized Super Admins, Administrators, Support Agents, and Content
-          Managers. Every action is logged.
+          Restricted exclusively to non-customer staff roles:{" "}
+          <strong className="text-[var(--adm-ink)]">
+            Super Admin, Admin, Super Agent (Customer Support), and Content Manager
+          </strong>
+          . Customer-only accounts cannot access this portal.
         </p>
 
         {error && (
@@ -146,41 +232,145 @@ export default function AdminLoginPage() {
           </div>
         )}
 
+        {notice && (
+          <div className="mt-4 flex items-start gap-2 rounded-xl border border-emerald-500/30 bg-emerald-50 p-3 text-xs text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200">
+            <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
+            <span>{notice}</span>
+          </div>
+        )}
+
         {!factorId ? (
-          <div className="mt-6 space-y-4">
-            <form onSubmit={handlePasswordLogin} className="space-y-4">
-              <div>
-                <label className="mb-1 block text-xs font-semibold">Administrator Email</label>
-                <input
-                  type="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="yadlapallif@gmail.com"
-                  className="w-full rounded-xl border border-[var(--adm-border)] bg-[var(--adm-surface-muted)] px-3.5 py-2.5 text-sm"
-                />
-              </div>
-              <div>
-                <label className="mb-1 block text-xs font-semibold">Password</label>
-                <div className="relative">
-                  <Lock className="pointer-events-none absolute top-3 left-3 h-4 w-4 text-[var(--adm-ink-muted)]" />
+          <div className="mt-5 space-y-4">
+            <div className="grid grid-cols-2 gap-1.5 rounded-xl border border-[var(--adm-border)] bg-[var(--adm-surface-muted)] p-1 text-xs font-semibold">
+              <button
+                type="button"
+                onClick={() => {
+                  setAuthTab("password");
+                  setError(null);
+                  setNotice(null);
+                }}
+                className={`flex items-center justify-center gap-1.5 rounded-lg py-2 transition ${
+                  authTab === "password"
+                    ? "bg-[var(--adm-surface)] text-[var(--adm-ink)] shadow-xs"
+                    : "text-[var(--adm-ink-muted)]"
+                }`}
+              >
+                <Lock className="h-3.5 w-3.5" /> Email &amp; Password
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setAuthTab("email_only");
+                  setError(null);
+                  setNotice(null);
+                }}
+                className={`flex items-center justify-center gap-1.5 rounded-lg py-2 transition ${
+                  authTab === "email_only"
+                    ? "bg-[var(--adm-surface)] text-[var(--adm-ink)] shadow-xs"
+                    : "text-[var(--adm-ink-muted)]"
+                }`}
+              >
+                <Sparkles className="h-3.5 w-3.5" /> Just Email
+              </button>
+            </div>
+
+            {authTab === "password" ? (
+              <form onSubmit={handlePasswordLogin} className="space-y-4">
+                <div>
+                  <label className="mb-1 block text-xs font-semibold">Staff Email</label>
+                  <div className="relative">
+                    <Mail className="pointer-events-none absolute top-3 left-3 h-4 w-4 text-[var(--adm-ink-muted)]" />
+                    <input
+                      type="email"
+                      required
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="staff@organization.com"
+                      className="w-full rounded-xl border border-[var(--adm-border)] bg-[var(--adm-surface-muted)] py-2.5 pr-3.5 pl-9 text-sm"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-semibold">Password</label>
+                  <div className="relative">
+                    <Lock className="pointer-events-none absolute top-3 left-3 h-4 w-4 text-[var(--adm-ink-muted)]" />
+                    <input
+                      type="password"
+                      required
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="w-full rounded-xl border border-[var(--adm-border)] bg-[var(--adm-surface-muted)] py-2.5 pr-3.5 pl-9 text-sm"
+                    />
+                  </div>
+                </div>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full cursor-pointer rounded-xl bg-teal-700 py-2.5 text-sm font-semibold text-white hover:bg-teal-800 disabled:opacity-60"
+                >
+                  {loading ? "Authenticating..." : "Sign In to Admin Portal"}
+                </button>
+              </form>
+            ) : !otpSent ? (
+              <form onSubmit={handleSendEmailSignIn} className="space-y-4">
+                <div>
+                  <label className="mb-1 block text-xs font-semibold">Staff Email</label>
+                  <div className="relative">
+                    <Mail className="pointer-events-none absolute top-3 left-3 h-4 w-4 text-[var(--adm-ink-muted)]" />
+                    <input
+                      type="email"
+                      required
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="staff@organization.com"
+                      className="w-full rounded-xl border border-[var(--adm-border)] bg-[var(--adm-surface-muted)] py-2.5 pr-3.5 pl-9 text-sm"
+                    />
+                  </div>
+                </div>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full cursor-pointer rounded-xl bg-teal-700 py-2.5 text-sm font-semibold text-white hover:bg-teal-800 disabled:opacity-60"
+                >
+                  {loading ? "Sending Sign-In Link..." : "Send Staff Sign-In Code"}
+                </button>
+              </form>
+            ) : (
+              <form onSubmit={handleVerifyEmailCode} className="space-y-4">
+                <div>
+                  <label className="mb-1 block text-xs font-semibold">
+                    8-Digit Verification Code
+                  </label>
                   <input
-                    type="password"
+                    type="text"
                     required
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="w-full rounded-xl border border-[var(--adm-border)] bg-[var(--adm-surface-muted)] py-2.5 pr-3.5 pl-9 text-sm"
+                    value={otpCode}
+                    onChange={(e) => setOtpCode(e.target.value)}
+                    placeholder="12345678"
+                    maxLength={10}
+                    className="w-full rounded-xl border border-[var(--adm-border)] bg-[var(--adm-surface-muted)] px-3.5 py-2.5 text-center font-mono text-lg tracking-widest"
                   />
                 </div>
-              </div>
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full rounded-xl bg-teal-700 py-2.5 text-sm font-semibold text-white hover:bg-teal-800 disabled:opacity-60"
-              >
-                {loading ? "Authenticating..." : "Sign In to Console"}
-              </button>
-            </form>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full cursor-pointer rounded-xl bg-teal-700 py-2.5 text-sm font-semibold text-white hover:bg-teal-800 disabled:opacity-60"
+                >
+                  {loading ? "Verifying..." : "Verify & Open Admin Portal"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setOtpSent(false);
+                    setOtpCode("");
+                    setNotice(null);
+                  }}
+                  className="w-full cursor-pointer text-xs font-semibold text-[var(--adm-ink-muted)] hover:underline"
+                >
+                  Use another email
+                </button>
+              </form>
+            )}
 
             {googleEnabled && (
               <>
@@ -194,7 +384,7 @@ export default function AdminLoginPage() {
                   type="button"
                   disabled={loading}
                   onClick={handleGoogleAdminLogin}
-                  className="flex w-full items-center justify-center gap-2 rounded-xl border border-[var(--adm-border)] bg-[var(--adm-surface-muted)] py-2.5 text-xs font-semibold hover:border-teal-600/50"
+                  className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-[var(--adm-border)] bg-[var(--adm-surface-muted)] py-2.5 text-xs font-semibold hover:border-teal-600/50"
                 >
                   <span>Continue with Google Admin Account</span>
                 </button>
@@ -219,7 +409,7 @@ export default function AdminLoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full rounded-xl bg-teal-700 py-2.5 text-sm font-semibold text-white"
+              className="w-full cursor-pointer rounded-xl bg-teal-700 py-2.5 text-sm font-semibold text-white"
             >
               {loading ? "Verifying MFA..." : "Verify Code"}
             </button>

@@ -19,11 +19,11 @@ export function IntroSplash() {
 
     const slideTimer = window.setTimeout(() => {
       setSlidingOut(true);
-    }, 1750);
+    }, 1850);
 
     const doneTimer = window.setTimeout(() => {
       setVisible(false);
-    }, 2400);
+    }, 2500);
 
     return () => {
       window.clearTimeout(slideTimer);
@@ -38,27 +38,32 @@ export function IntroSplash() {
       role="dialog"
       aria-label="CREATOR STUDIO Welcome Intro"
       style={{
-        transition: "transform 650ms cubic-bezier(0.76, 0, 0.24, 1), opacity 550ms ease",
+        background:
+          "linear-gradient(155deg, #04060e 0%, #0b1024 48%, #07131c 100%)",
+        transition:
+          "transform 680ms cubic-bezier(0.76, 0, 0.24, 1), opacity 550ms ease",
       }}
-      className={`no-print fixed inset-0 z-[100] flex flex-col items-center justify-center overflow-hidden bg-[#060A0F] text-white ${
-        slidingOut ? "pointer-events-none -translate-y-full opacity-95" : "translate-y-0 opacity-100"
+      className={`no-print fixed inset-0 z-[100] flex flex-col items-center justify-center overflow-hidden text-white ${
+        slidingOut
+          ? "pointer-events-none -translate-y-full opacity-95"
+          : "translate-y-0 opacity-100"
       }`}
     >
-      {/* Bottom Slide Curtain Edge Accent */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-x-0 bottom-0 h-1 bg-gradient-to-r from-teal-500 via-amber-400 to-teal-500 opacity-85"
-      />
-
-      {/* Ambient Radial Studio Glow & Precision Grid */}
+      {/* Aurora Ambient Halos & Blueprint Dot Matrix */}
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-0"
         style={{
           backgroundImage:
-            "radial-gradient(circle at 50% 42%, rgba(20, 184, 166, 0.22), rgba(6, 10, 15, 0) 58%), radial-gradient(circle at 60% 34%, rgba(245, 158, 11, 0.12), transparent 42%), linear-gradient(to right, rgba(148, 163, 184, 0.045) 1px, transparent 1px), linear-gradient(to bottom, rgba(148, 163, 184, 0.045) 1px, transparent 1px)",
-          backgroundSize: "100% 100%, 100% 100%, 44px 44px, 44px 44px",
+            "radial-gradient(ellipse 64% 48% at 28% 28%, rgba(99, 102, 241, 0.28), transparent 62%), radial-gradient(ellipse 56% 44% at 74% 68%, rgba(6, 182, 212, 0.24), transparent 60%), radial-gradient(circle at 50% 50%, rgba(245, 158, 11, 0.08), transparent 46%), radial-gradient(rgba(148, 163, 184, 0.14) 1px, transparent 1px)",
+          backgroundSize: "100% 100%, 100% 100%, 100% 100%, 26px 26px",
         }}
+      />
+
+      {/* Luminous Bottom Curtain Rim */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-x-0 bottom-0 h-1 bg-gradient-to-r from-indigo-500 via-cyan-400 to-amber-400 opacity-90"
       />
 
       {/* Skip Trigger */}
@@ -68,40 +73,71 @@ export function IntroSplash() {
           setSlidingOut(true);
           window.setTimeout(() => setVisible(false), 520);
         }}
-        className="absolute top-5 right-5 z-10 rounded-full border border-white/15 bg-white/5 px-3 py-1 text-[11px] font-medium text-slate-300 transition hover:border-teal-400/50 hover:text-white"
+        className="absolute top-5 right-5 z-20 cursor-pointer rounded-full border border-white/15 bg-white/10 px-3.5 py-1.5 text-[11px] font-semibold tracking-wide text-slate-200 backdrop-blur-md transition hover:border-cyan-400/60 hover:bg-white/15 hover:text-white"
       >
         Skip →
       </button>
 
-      {/* Center Logo Slide Reveal Stage */}
-      <div className="relative z-10 flex flex-col items-center px-6 text-center">
-        <div className="fcs-intro-emblem relative flex items-center justify-center">
-          <div
+      {/* Center Aurora Glass Studio Card */}
+      <div className="relative z-10 mx-4 w-full max-w-md px-2 text-center">
+        <div className="relative overflow-hidden rounded-[28px] border border-white/15 bg-white/[0.045] px-7 py-9 shadow-[0_28px_90px_rgba(79,70,229,0.28)] backdrop-blur-xl sm:px-10 sm:py-11">
+          {/* Precision Architectural Corner Brackets */}
+          <span
             aria-hidden="true"
-            className="fcs-intro-ring absolute -inset-4 rounded-3xl border border-teal-400/25"
+            className="pointer-events-none absolute top-4 left-4 h-3.5 w-3.5 border-t-2 border-l-2 border-cyan-400/70"
           />
-          <CreatorStudioLogo
-            size={102}
-            animated={true}
-            className="drop-shadow-[0_14px_40px_rgba(20,184,166,0.35)]"
+          <span
+            aria-hidden="true"
+            className="pointer-events-none absolute top-4 right-4 h-3.5 w-3.5 border-t-2 border-r-2 border-indigo-400/70"
           />
+          <span
+            aria-hidden="true"
+            className="pointer-events-none absolute bottom-4 left-4 h-3.5 w-3.5 border-b-2 border-l-2 border-indigo-400/70"
+          />
+          <span
+            aria-hidden="true"
+            className="pointer-events-none absolute right-4 bottom-4 h-3.5 w-3.5 border-r-2 border-b-2 border-cyan-400/70"
+          />
+
+          {/* Top Micro Label */}
+          <div className="fcs-intro-subtitle mb-5 inline-flex items-center gap-2 rounded-full border border-cyan-400/30 bg-cyan-500/10 px-3 py-1 text-[10px] font-bold tracking-[0.22em] text-cyan-200 uppercase">
+            <span className="h-1.5 w-1.5 rounded-full bg-cyan-400" />
+            <span>Open Studio • 2026</span>
+          </div>
+
+          <div className="fcs-intro-emblem relative mx-auto flex w-fit items-center justify-center">
+            <div
+              aria-hidden="true"
+              className="fcs-intro-ring absolute -inset-4 rounded-3xl border border-indigo-400/35 bg-gradient-to-br from-indigo-500/15 to-cyan-500/15 blur-[1px]"
+            />
+            <CreatorStudioLogo
+              size={88}
+              animated={true}
+              className="relative drop-shadow-[0_14px_38px_rgba(56,189,248,0.38)]"
+            />
+          </div>
+
+          <h1 className="fcs-intro-title mt-7 bg-gradient-to-r from-white via-cyan-100 to-indigo-200 bg-clip-text text-2xl font-extrabold tracking-[0.24em] text-transparent uppercase sm:text-[28px]">
+            CREATOR STUDIO
+          </h1>
+
+          <div className="fcs-intro-rule mx-auto mt-3.5 h-0.5 w-32 rounded-full bg-gradient-to-r from-indigo-400 via-cyan-400 to-amber-300" />
+
+          <p className="fcs-intro-subtitle mt-3.5 text-xs font-medium tracking-[0.14em] text-slate-200/85 uppercase sm:text-[13px]">
+            Create Your Future. Design Your Identity.
+          </p>
+
+          {/* Animated Progress Ribbon */}
+          <div className="mx-auto mt-6 h-1 w-40 overflow-hidden rounded-full bg-white/10">
+            <div className="fcs-intro-progress h-full rounded-full bg-gradient-to-r from-indigo-400 via-cyan-300 to-amber-300" />
+          </div>
         </div>
-
-        <h1 className="fcs-intro-title mt-7 text-xl font-bold tracking-[0.26em] text-white uppercase sm:text-2xl">
-          CREATOR STUDIO
-        </h1>
-
-        <div className="fcs-intro-rule mt-3 h-px w-28 bg-gradient-to-r from-transparent via-teal-400 to-transparent" />
-
-        <p className="fcs-intro-subtitle mt-3 text-xs font-medium tracking-[0.14em] text-teal-200/80 uppercase sm:text-[13px]">
-          Create Your Future. Design Your Identity.
-        </p>
       </div>
 
       {/* Bottom Signature */}
-      <div className="fcs-intro-bottom absolute inset-x-0 bottom-8 z-10 flex flex-col items-center gap-2 sm:bottom-11">
-        <div className="h-px w-16 bg-gradient-to-r from-transparent via-amber-400/80 to-transparent" />
-        <p className="text-xs font-semibold tracking-[0.44em] text-amber-300/95 uppercase sm:text-sm">
+      <div className="fcs-intro-bottom absolute inset-x-0 bottom-7 z-10 flex flex-col items-center gap-2 sm:bottom-10">
+        <div className="h-px w-20 bg-gradient-to-r from-transparent via-cyan-300/80 to-transparent" />
+        <p className="text-xs font-semibold tracking-[0.44em] text-amber-200 uppercase sm:text-sm">
           BUILT BY FRANCIS
         </p>
       </div>

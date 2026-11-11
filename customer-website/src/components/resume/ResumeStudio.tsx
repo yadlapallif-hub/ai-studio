@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useMemo, useRef, useState } from "react";
-import Link from "next/link";
+import { SafeNavLink } from "@/components/ui/SafeNavLink";
 import { useRouter } from "next/navigation";
 import {
   analyzeResumeQuality,
@@ -443,12 +443,12 @@ export function ResumeStudio(props: ResumeStudioProps) {
       <div className="no-print border-b border-[var(--fcs-border)] bg-[var(--fcs-surface)] px-4 py-3 sm:px-6">
         <div className="mx-auto flex max-w-[1500px] flex-wrap items-center justify-between gap-3">
           <div className="flex flex-wrap items-center gap-3">
-            <Link
+            <SafeNavLink
               href="/resume-builder"
               className="rounded-lg border border-[var(--fcs-border)] px-2.5 py-1.5 text-xs font-medium hover:bg-[var(--fcs-surface-muted)]"
             >
               ← Gallery
-            </Link>
+            </SafeNavLink>
             <input
               type="text"
               value={title}
@@ -548,9 +548,9 @@ export function ResumeStudio(props: ResumeStudioProps) {
       {!props.isAuthenticated && (
         <div className="no-print border-b border-amber-500/20 bg-amber-50/90 px-4 py-2 text-center text-xs text-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
           Visitor Preview Mode: All editing & exports work for free.{" "}
-          <Link href="/auth/login?next=/resume-builder" className="font-semibold underline">
+          <SafeNavLink href="/auth/login?next=/resume-builder" className="font-semibold underline">
             Sign in or create a free account
-          </Link>{" "}
+          </SafeNavLink>{" "}
           to save multiple resumes & photos to your cloud Document Vault.
         </div>
       )}

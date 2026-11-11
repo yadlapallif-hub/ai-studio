@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, useCallback } from "react";
-import Link from "next/link";
+import { SafeNavLink } from "@/components/ui/SafeNavLink";
 import { usePathname, useRouter } from "next/navigation";
 import {
   Bell,
@@ -237,12 +237,12 @@ export function Navbar({
               </span>
               <span className="text-teal-100/90">{activeAnnouncement.message}</span>
               {activeAnnouncement.link_url && (
-                <Link
+                <SafeNavLink
                   href={activeAnnouncement.link_url}
                   className="font-semibold text-teal-300 underline underline-offset-2 hover:text-white"
                 >
                   {activeAnnouncement.link_label || "Explore"}
-                </Link>
+                </SafeNavLink>
               )}
             </div>
             <button
@@ -259,7 +259,7 @@ export function Navbar({
 
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-3 px-4 sm:px-6">
         <div className="flex items-center gap-6">
-          <Link
+          <SafeNavLink
             href="/"
             className="flex items-center gap-2.5 text-sm font-bold tracking-tight text-[var(--fcs-ink)]"
           >
@@ -272,14 +272,14 @@ export function Navbar({
                 Create Your Future. Design Your Identity.
               </span>
             </div>
-          </Link>
+          </SafeNavLink>
 
           <nav aria-label="Main navigation" className="hidden items-center gap-1 lg:flex">
             {navLinks.map((item) => {
               const active =
                 item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
               return (
-                <Link
+                <SafeNavLink
                   key={item.href}
                   href={item.href}
                   className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
@@ -289,11 +289,11 @@ export function Navbar({
                   }`}
                 >
                   {item.label}
-                </Link>
+                </SafeNavLink>
               );
             })}
             {user && (
-              <Link
+              <SafeNavLink
                 href="/vault"
                 className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
                   pathname.startsWith("/vault")
@@ -302,7 +302,7 @@ export function Navbar({
                 }`}
               >
                 Vault
-              </Link>
+              </SafeNavLink>
             )}
           </nav>
         </div>
@@ -428,38 +428,38 @@ export function Navbar({
                       {user.email || user.phone || "Signed-in Creator"}
                     </p>
                   </div>
-                  <Link
+                  <SafeNavLink
                     href="/dashboard"
                     onClick={() => setProfileMenuOpen(false)}
                     className="mt-1 flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium hover:bg-[var(--fcs-surface-muted)]"
                   >
                     <LayoutDashboard className="h-3.5 w-3.5" />
                     Dashboard
-                  </Link>
-                  <Link
+                  </SafeNavLink>
+                  <SafeNavLink
                     href="/stamps"
                     onClick={() => setProfileMenuOpen(false)}
                     className="flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium hover:bg-[var(--fcs-surface-muted)]"
                   >
                     <Stamp className="h-3.5 w-3.5" />
                     Stamp Studio
-                  </Link>
-                  <Link
+                  </SafeNavLink>
+                  <SafeNavLink
                     href="/vault"
                     onClick={() => setProfileMenuOpen(false)}
                     className="flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium hover:bg-[var(--fcs-surface-muted)]"
                   >
                     <FolderLock className="h-3.5 w-3.5" />
                     Document Vault
-                  </Link>
-                  <Link
+                  </SafeNavLink>
+                  <SafeNavLink
                     href="/settings"
                     onClick={() => setProfileMenuOpen(false)}
                     className="flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium hover:bg-[var(--fcs-surface-muted)]"
                   >
                     <Settings className="h-3.5 w-3.5" />
                     Account Settings
-                  </Link>
+                  </SafeNavLink>
                   <button
                     type="button"
                     onClick={handleLogout}
@@ -473,18 +473,18 @@ export function Navbar({
             </div>
           ) : (
             <div className="hidden items-center gap-2 sm:flex">
-              <Link
+              <SafeNavLink
                 href="/auth/login"
                 className="rounded-lg px-3 py-1.5 text-sm font-medium text-[var(--fcs-ink)] hover:bg-[var(--fcs-surface-muted)]"
               >
                 Sign In
-              </Link>
-              <Link
+              </SafeNavLink>
+              <SafeNavLink
                 href="/auth/signup"
                 className="rounded-lg bg-teal-700 px-3.5 py-1.5 text-sm font-semibold text-white transition hover:bg-teal-800 dark:bg-teal-600 dark:hover:bg-teal-500"
               >
                 Free Account
-              </Link>
+              </SafeNavLink>
             </div>
           )}
 
@@ -503,48 +503,48 @@ export function Navbar({
         <div className="border-t border-[var(--fcs-border)] bg-[var(--fcs-surface)] px-4 py-3 lg:hidden">
           <div className="flex flex-col gap-1">
             {navLinks.map((item) => (
-              <Link
+              <SafeNavLink
                 key={item.href}
                 href={item.href}
                 onClick={() => setMobileOpen(false)}
                 className="rounded-lg px-3 py-2 text-sm font-medium hover:bg-[var(--fcs-surface-muted)]"
               >
                 {item.label}
-              </Link>
+              </SafeNavLink>
             ))}
             {user ? (
               <>
-                <Link
+                <SafeNavLink
                   href="/dashboard"
                   onClick={() => setMobileOpen(false)}
                   className="rounded-lg px-3 py-2 text-sm font-medium hover:bg-[var(--fcs-surface-muted)]"
                 >
                   Dashboard
-                </Link>
-                <Link
+                </SafeNavLink>
+                <SafeNavLink
                   href="/vault"
                   onClick={() => setMobileOpen(false)}
                   className="rounded-lg px-3 py-2 text-sm font-medium hover:bg-[var(--fcs-surface-muted)]"
                 >
                   Document Vault
-                </Link>
+                </SafeNavLink>
               </>
             ) : (
               <div className="mt-2 flex gap-2">
-                <Link
+                <SafeNavLink
                   href="/auth/login"
                   onClick={() => setMobileOpen(false)}
                   className="flex-1 rounded-lg border border-[var(--fcs-border)] px-3 py-2 text-center text-sm font-medium"
                 >
                   Sign In
-                </Link>
-                <Link
+                </SafeNavLink>
+                <SafeNavLink
                   href="/auth/signup"
                   onClick={() => setMobileOpen(false)}
                   className="flex-1 rounded-lg bg-teal-700 px-3 py-2 text-center text-sm font-semibold text-white"
                 >
                   Free Account
-                </Link>
+                </SafeNavLink>
               </div>
             )}
           </div>
@@ -589,41 +589,41 @@ export function Navbar({
                       Quick Launch Studios
                     </p>
                     <div className="grid grid-cols-2 gap-1.5">
-                      <Link
+                      <SafeNavLink
                         href="/resume-builder/new"
                         onClick={() => setSearchOpen(false)}
                         className="flex items-center gap-2 rounded-lg px-2.5 py-2 text-xs font-medium hover:bg-[var(--fcs-surface-muted)]"
                       >
                         <FileText className="h-3.5 w-3.5 text-teal-600" /> New Resume
-                      </Link>
-                      <Link
+                      </SafeNavLink>
+                      <SafeNavLink
                         href="/certificate-builder"
                         onClick={() => setSearchOpen(false)}
                         className="flex items-center gap-2 rounded-lg px-2.5 py-2 text-xs font-medium hover:bg-[var(--fcs-surface-muted)]"
                       >
                         <Award className="h-3.5 w-3.5 text-amber-600" /> Certificate Studio (Auth Only)
-                      </Link>
-                      <Link
+                      </SafeNavLink>
+                      <SafeNavLink
                         href="/verify"
                         onClick={() => setSearchOpen(false)}
                         className="flex items-center gap-2 rounded-lg px-2.5 py-2 text-xs font-medium hover:bg-[var(--fcs-surface-muted)]"
                       >
                         <ShieldCheck className="h-3.5 w-3.5 text-teal-600" /> Verify Certificate ID
-                      </Link>
-                      <Link
+                      </SafeNavLink>
+                      <SafeNavLink
                         href="/stamps"
                         onClick={() => setSearchOpen(false)}
                         className="flex items-center gap-2 rounded-lg px-2.5 py-2 text-xs font-medium hover:bg-[var(--fcs-surface-muted)]"
                       >
                         <Stamp className="h-3.5 w-3.5 text-teal-600" /> Organization Stamp Studio
-                      </Link>
-                      <Link
+                      </SafeNavLink>
+                      <SafeNavLink
                         href="/support"
                         onClick={() => setSearchOpen(false)}
                         className="flex items-center gap-2 rounded-lg px-2.5 py-2 text-xs font-medium hover:bg-[var(--fcs-surface-muted)]"
                       >
                         <LifeBuoy className="h-3.5 w-3.5 text-teal-600" /> Live Support & Tickets
-                      </Link>
+                      </SafeNavLink>
                     </div>
                   </div>
 
@@ -633,7 +633,7 @@ export function Navbar({
                         Your Resumes
                       </p>
                       {searchResults.resumes.map((r) => (
-                        <Link
+                        <SafeNavLink
                           key={r.id}
                           href={`/resume-builder/${r.id}`}
                           onClick={() => setSearchOpen(false)}
@@ -643,7 +643,7 @@ export function Navbar({
                           <span className="text-[11px] text-[var(--fcs-ink-muted)]">
                             {r.template_slug}
                           </span>
-                        </Link>
+                        </SafeNavLink>
                       ))}
                     </div>
                   )}
@@ -654,7 +654,7 @@ export function Navbar({
                         Your Certificates
                       </p>
                       {searchResults.certificates.map((c) => (
-                        <Link
+                        <SafeNavLink
                           key={c.id}
                           href={`/certificate-builder/${c.id}`}
                           onClick={() => setSearchOpen(false)}
@@ -666,7 +666,7 @@ export function Navbar({
                           <span className="font-mono text-[11px] text-[var(--fcs-ink-muted)]">
                             {c.certificate_code}
                           </span>
-                        </Link>
+                        </SafeNavLink>
                       ))}
                     </div>
                   )}
@@ -677,7 +677,7 @@ export function Navbar({
                         Resume Templates
                       </p>
                       {searchResults.resumeTemplates.map((t) => (
-                        <Link
+                        <SafeNavLink
                           key={t.id}
                           href={`/resume-builder/new?template=${t.slug}`}
                           onClick={() => setSearchOpen(false)}
@@ -687,7 +687,7 @@ export function Navbar({
                           <span className="text-[11px] uppercase text-[var(--fcs-ink-muted)]">
                             {t.category}
                           </span>
-                        </Link>
+                        </SafeNavLink>
                       ))}
                     </div>
                   )}
@@ -698,14 +698,14 @@ export function Navbar({
                         Help & FAQ
                       </p>
                       {searchResults.faqs.map((f) => (
-                        <Link
+                        <SafeNavLink
                           key={f.id}
                           href="/#faq"
                           onClick={() => setSearchOpen(false)}
                           className="block rounded-lg px-2.5 py-2 text-xs hover:bg-[var(--fcs-surface-muted)]"
                         >
                           {f.question}
-                        </Link>
+                        </SafeNavLink>
                       ))}
                     </div>
                   )}

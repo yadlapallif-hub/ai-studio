@@ -1,5 +1,5 @@
 import React from "react";
-import Link from "next/link";
+import { SafeNavLink } from "@/components/ui/SafeNavLink";
 import { RESUME_TEMPLATE_CATALOG } from "@francis/shared";
 import { FileText, Plus } from "lucide-react";
 import { getAuthenticatedContext } from "@/lib/supabase/server";
@@ -56,12 +56,12 @@ export default async function ResumeBuilderGalleryPage() {
             and print-ready A4 PDF & PNG export.
           </p>
         </div>
-        <Link
+        <SafeNavLink
           href="/resume-builder/new"
           className="inline-flex items-center gap-2 rounded-xl bg-teal-700 px-5 py-2.5 text-sm font-semibold text-white hover:bg-teal-800"
         >
           <Plus className="h-4 w-4" /> Create New Resume
-        </Link>
+        </SafeNavLink>
       </div>
 
       {user && resumes && resumes.length > 0 && (
@@ -69,7 +69,7 @@ export default async function ResumeBuilderGalleryPage() {
           <h2 className="text-base font-bold">Your Saved Resumes</h2>
           <div className="mt-3 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {resumes.map((r) => (
-              <Link
+              <SafeNavLink
                 key={r.id}
                 href={`/resume-builder/${r.id}`}
                 className="rounded-2xl border border-[var(--fcs-border)] bg-[var(--fcs-surface)] p-5 transition hover:border-teal-600/50"
@@ -86,7 +86,7 @@ export default async function ResumeBuilderGalleryPage() {
                 <p className="mt-1 text-xs text-[var(--fcs-ink-muted)]">
                   Template: {r.template_slug}
                 </p>
-              </Link>
+              </SafeNavLink>
             ))}
           </div>
         </section>

@@ -153,3 +153,16 @@ test("buildOfficialStampSvg generates valid non-sample SVG stamps for all preset
   assert.ok(customOut.svgMarkup.includes("#6D28D9"));
 });
 
+test("hasAdminPortalAccess admits every non-customer staff role including support super agents", () => {
+  assert.equal(shared.hasAdminPortalAccess(["customer"]), false);
+  assert.equal(shared.hasAdminPortalAccess([]), false);
+  assert.equal(shared.hasAdminPortalAccess(["super_admin"]), true);
+  assert.equal(shared.hasAdminPortalAccess(["admin"]), true);
+  assert.equal(shared.hasAdminPortalAccess(["support_agent"]), true);
+  assert.equal(shared.hasAdminPortalAccess(["content_manager"]), true);
+  assert.equal(shared.hasAdminPortalAccess(["customer", "support_agent"]), true);
+  assert.equal(shared.hasAdminPortalAccess(["customer", "content_manager"]), true);
+  assert.equal(shared.formatRoleLabel("support_agent"), "Super Agent (Customer Support)");
+});
+
+

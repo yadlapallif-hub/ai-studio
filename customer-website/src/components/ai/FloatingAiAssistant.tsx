@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import Link from "next/link";
+import { SafeNavLink } from "@/components/ui/SafeNavLink";
 import { usePathname } from "next/navigation";
 import {
   AlertCircle,
@@ -125,13 +125,13 @@ export function FloatingAiAssistant() {
               </div>
             </div>
             <div className="flex items-center gap-1">
-              <Link
+              <SafeNavLink
                 href="/assistant"
                 title="Open full AI workspace"
                 className="rounded p-1 text-[var(--fcs-ink-muted)] hover:bg-[var(--fcs-surface)] hover:text-[var(--fcs-ink)]"
               >
                 <ArrowUpRight className="h-4 w-4" />
-              </Link>
+              </SafeNavLink>
               <button
                 type="button"
                 onClick={() => setOpen(false)}
@@ -175,18 +175,18 @@ export function FloatingAiAssistant() {
                   <div className="space-y-1.5">
                     <p>{errorHint}</p>
                     <div className="flex flex-wrap gap-2">
-                      <Link
+                      <SafeNavLink
                         href="/auth/login"
                         className="font-semibold underline underline-offset-2"
                       >
                         Sign in
-                      </Link>
-                      <Link
+                      </SafeNavLink>
+                      <SafeNavLink
                         href="/support"
                         className="inline-flex items-center gap-1 font-semibold underline underline-offset-2"
                       >
                         <LifeBuoy className="h-3 w-3" /> Escalate to Human Support
-                      </Link>
+                      </SafeNavLink>
                     </div>
                   </div>
                 </div>
@@ -238,12 +238,12 @@ export function FloatingAiAssistant() {
 
           <div className="flex items-center justify-between border-t border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] px-3 py-1.5 text-[10px] text-[var(--fcs-ink-muted)]">
             <span>Need human help?</span>
-            <Link
+            <SafeNavLink
               href="/support"
               className="inline-flex items-center gap-1 font-semibold text-teal-700 hover:underline dark:text-teal-400"
             >
               <LifeBuoy className="h-3 w-3" /> Open Support
-            </Link>
+            </SafeNavLink>
           </div>
         </div>
       ) : (

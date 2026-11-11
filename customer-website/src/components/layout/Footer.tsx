@@ -1,5 +1,5 @@
 import React from "react";
-import Link from "next/link";
+import { SafeNavLink } from "@/components/ui/SafeNavLink";
 import { CreatorStudioLogo } from "../brand/CreatorStudioLogo";
 
 export function Footer({
@@ -42,32 +42,32 @@ export function Footer({
             </p>
             <ul className="mt-3 space-y-2 text-xs">
               <li>
-                <Link href="/resume-builder" className="hover:text-teal-700 dark:hover:text-teal-400">
+                <SafeNavLink href="/resume-builder" className="hover:text-teal-700 dark:hover:text-teal-400">
                   AI Resume Studio
-                </Link>
+                </SafeNavLink>
               </li>
               <li>
-                <Link
+                <SafeNavLink
                   href="/certificate-builder"
                   className="hover:text-teal-700 dark:hover:text-teal-400"
                 >
                   Certificate Design Studio
-                </Link>
+                </SafeNavLink>
               </li>
               <li>
-                <Link href="/verify" className="hover:text-teal-700 dark:hover:text-teal-400">
+                <SafeNavLink href="/verify" className="hover:text-teal-700 dark:hover:text-teal-400">
                   Public Certificate Verification
-                </Link>
+                </SafeNavLink>
               </li>
               <li>
-                <Link href="/assistant" className="hover:text-teal-700 dark:hover:text-teal-400">
+                <SafeNavLink href="/assistant" className="hover:text-teal-700 dark:hover:text-teal-400">
                   Creator AI &amp; Intelligence
-                </Link>
+                </SafeNavLink>
               </li>
               <li>
-                <Link href="/support" className="hover:text-teal-700 dark:hover:text-teal-400">
+                <SafeNavLink href="/support" className="hover:text-teal-700 dark:hover:text-teal-400">
                   Live Support & Tickets
-                </Link>
+                </SafeNavLink>
               </li>
             </ul>
           </div>
@@ -78,22 +78,22 @@ export function Footer({
             </p>
             <ul className="mt-3 space-y-2 text-xs">
               <li>
-                <a
+                <SafeNavLink
                   href={footerContent.githubUrl || githubUrl}
                   target="_blank"
                   rel="noreferrer"
                   className="hover:text-teal-700 dark:hover:text-teal-400"
                 >
                   GitHub Repository
-                </a>
+                </SafeNavLink>
               </li>
               <li>
-                <a
+                <SafeNavLink
                   href={`mailto:${footerContent.contactEmail}`}
                   className="hover:text-teal-700 dark:hover:text-teal-400"
                 >
                   {footerContent.contactEmail}
-                </a>
+                </SafeNavLink>
               </li>
               <li className="text-[var(--fcs-ink-muted)]">{footerContent.license}</li>
               <li className="pt-2 font-semibold text-[var(--fcs-ink)]">

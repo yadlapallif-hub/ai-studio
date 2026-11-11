@@ -1,17 +1,67 @@
 import React from "react";
 import { redirect } from "next/navigation";
-import { getAdminContext } from "@/lib/admin-auth";
+import { getAdminContext, getSignedInSessionInfo } from "@/lib/admin-auth";
 import { createServiceSupabase } from "@/lib/supabase/server";
 import { AdminShell } from "@/components/AdminShell";
 import { UsersClient } from "@/components/UsersClient";
+import { RestrictedAccessPanel } from "@/components/RestrictedAccessPanel";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminUsersPage() {
-  const admin = await getAdminContext(["super_admin", "admin"]);
-  if (!admin) redirect("/login");
+  const session = await getSignedInSessionInfo();
+  if (!session) redirect("/login");
+
+  const admin = await getAdminContext(["super_admin", "admin", "support_agent"]);
+  if (!admin) {
+    if (session.hasStaffAccess) {
+      return (
+        <AdminShell adminName={session.fullName} adminEmail={session.email} roles={session.roles}>
+          <RestrictedAccessPanel
+            sectionTitle="Users & Role Management"
+            allowedHint="Super Admin, Admin, and Support Agent roles"
+          />
+        </AdminShell>
+      );
+    }
+    redirect("/login");
+  }
 
   const service = createServiceSupabase();
+
+  // Ensure all Supabase Auth users appear in fcs_profiles & fcs_user_roles
+  try {
+    const { data: authList } = await service.auth.admin.listUsers({ page: 1, perPage: 200 });
+    if (authList?.users?.length) {
+      const { data: existingProfiles } = await service.from("fcs_profiles").select("id");
+      const existingIds = new Set((existingProfiles ?? []).map((p) => p.id));
+      const missingUsers = authList.users.filter((u) => !existingIds.has(u.id));
+      if (missingUsers.length > 0) {
+        await service.from("fcs_profiles").upsert(
+          missingUsers.map((u) => ({
+            id: u.id,
+            email: u.email ? u.email.toLowerCase() : null,
+            phone: u.phone || null,
+            full_name:
+              (u.user_metadata?.full_name as string | undefined) ||
+              (u.user_metadata?.name as string | undefined) ||
+              u.email?.split("@")[0] ||
+              u.phone ||
+              "Creator",
+            auth_provider: (u.app_metadata?.provider as string | undefined) || "email",
+          })),
+          { onConflict: "id" }
+        );
+        await service.from("fcs_user_roles").upsert(
+          missingUsers.map((u) => ({ user_id: u.id, role: "customer" })),
+          { onConflict: "user_id,role" }
+        );
+      }
+    }
+  } catch {
+    // non-fatal if listUsers limit hit
+  }
+
   const [{ data: profiles }, { data: roles }, { data: resumes }, { data: certs }, { data: tickets }] =
     await Promise.all([
       service.from("fcs_profiles").select("*").order("created_at", { ascending: false }).limit(200),
@@ -39,15 +89,17 @@ export default async function AdminUsersPage() {
     <AdminShell adminName={admin.fullName} adminEmail={admin.email} roles={admin.roles}>
       <div className="mx-auto max-w-7xl space-y-5">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Users & Role Management</h1>
+          <h1 className="text-2xl font-bold tracking-tight">Users &amp; Role Management</h1>
           <p className="mt-1 text-xs text-[var(--adm-ink-muted)]">
-            Search users, suspend or reactivate accounts, and manage RBAC roles (Super Admin
-            only).
+            Search users, inspect customer documents &amp; support history, suspend/reactivate
+            accounts, and manage staff roles (Super Admin only). All roles except Customer-only
+            accounts can sign into this Admin Portal.
           </p>
         </div>
         <UsersClient
           initialUsers={rows}
           isSuperAdmin={admin.isSuperAdmin}
+          isAdmin={admin.isAdmin}
           currentAdminId={admin.userId}
         />
       </div>

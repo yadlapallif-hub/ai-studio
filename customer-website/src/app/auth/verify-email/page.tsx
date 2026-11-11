@@ -1,7 +1,7 @@
 "use client";
 
 import React, { Suspense, useState } from "react";
-import Link from "next/link";
+import { SafeNavLink } from "@/components/ui/SafeNavLink";
 import { useSearchParams } from "next/navigation";
 import { CheckCircle2, MailCheck, RefreshCw } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
@@ -79,12 +79,12 @@ function VerifyEmailContent() {
         </form>
 
         <div className="mt-5">
-          <Link
+          <SafeNavLink
             href="/auth/login"
             className="text-xs font-semibold text-teal-700 hover:underline dark:text-teal-400"
           >
             Return to Sign In →
-          </Link>
+          </SafeNavLink>
         </div>
       </div>
     </div>

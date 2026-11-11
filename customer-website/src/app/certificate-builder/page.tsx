@@ -1,5 +1,5 @@
 import React from "react";
-import Link from "next/link";
+import { SafeNavLink } from "@/components/ui/SafeNavLink";
 import { CERTIFICATE_TEMPLATE_CATALOG } from "@francis/shared";
 import { Award, Clock, Lock, Plus, ShieldCheck, Stamp } from "lucide-react";
 import { getAccessibleIssuersForUser } from "@/lib/issuers";
@@ -70,28 +70,28 @@ export default async function CertificateBuilderGalleryPage() {
           <div className="flex flex-wrap gap-2.5">
             {canCreateCertificates ? (
               <>
-                <Link
+                <SafeNavLink
                   href="/stamps"
                   className="inline-flex items-center gap-2 rounded-xl border border-[var(--fcs-border)] px-4 py-2.5 text-sm font-semibold hover:bg-[var(--fcs-surface-muted)]"
                 >
                   <Stamp className="h-4 w-4 text-teal-600" /> Stamp Studio
-                </Link>
-                <Link
+                </SafeNavLink>
+                <SafeNavLink
                   href="/verify"
                   className="inline-flex items-center gap-2 rounded-xl border border-[var(--fcs-border)] px-4 py-2.5 text-sm font-semibold hover:bg-[var(--fcs-surface-muted)]"
                 >
                   <ShieldCheck className="h-4 w-4 text-teal-600" /> Verify ID
-                </Link>
-                <Link
+                </SafeNavLink>
+                <SafeNavLink
                   href="/certificate-builder/new"
                   className="inline-flex items-center gap-2 rounded-xl bg-teal-700 px-5 py-2.5 text-sm font-semibold text-white hover:bg-teal-800"
                 >
                   <Plus className="h-4 w-4" /> New Certificate
-                </Link>
+                </SafeNavLink>
               </>
             ) : (
               <>
-                <Link
+                <SafeNavLink
                   href="/verify"
                   className="inline-flex items-center gap-2 rounded-xl bg-teal-700 px-5 py-2.5 text-sm font-semibold text-white hover:bg-teal-800"
                 >
@@ -99,14 +99,14 @@ export default async function CertificateBuilderGalleryPage() {
                   {pendingApplications.length > 0
                     ? "Check Approval Status"
                     : "Apply for Authorized Access"}
-                </Link>
+                </SafeNavLink>
                 {!user && (
-                  <Link
+                  <SafeNavLink
                     href="/auth/login?next=/certificate-builder"
                     className="inline-flex items-center gap-2 rounded-xl border border-[var(--fcs-border)] px-4 py-2.5 text-sm font-semibold hover:bg-[var(--fcs-surface-muted)]"
                   >
                     Sign In
-                  </Link>
+                  </SafeNavLink>
                 )}
               </>
             )}
@@ -142,7 +142,7 @@ export default async function CertificateBuilderGalleryPage() {
                 </p>
               </div>
             </div>
-            <Link
+            <SafeNavLink
               href={user ? "/verify" : "/auth/login?next=/certificate-builder"}
               className="shrink-0 rounded-xl bg-amber-800 px-4 py-2 font-semibold text-white hover:bg-amber-900"
             >
@@ -151,7 +151,7 @@ export default async function CertificateBuilderGalleryPage() {
                 : pendingApplications.length > 0
                   ? "View Status →"
                   : "Apply Now →"}
-            </Link>
+            </SafeNavLink>
           </div>
         </SlideReveal>
       )}
@@ -162,7 +162,7 @@ export default async function CertificateBuilderGalleryPage() {
             <h2 className="text-base font-bold">Your Saved Certificates</h2>
             <div className="mt-3 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {certs.map((c) => (
-                <Link
+                <SafeNavLink
                   key={c.id}
                   href={`/certificate-builder/${c.id}`}
                   className="rounded-2xl border border-[var(--fcs-border)] bg-[var(--fcs-surface)] p-5 transition hover:border-teal-600/50"
@@ -177,7 +177,7 @@ export default async function CertificateBuilderGalleryPage() {
                   <p className="mt-1 text-xs text-[var(--fcs-ink-muted)]">
                     {c.recipient_name} • {c.orientation}
                   </p>
-                </Link>
+                </SafeNavLink>
               ))}
             </div>
           </section>

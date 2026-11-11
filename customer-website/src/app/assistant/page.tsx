@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import Link from "next/link";
+import { SafeNavLink } from "@/components/ui/SafeNavLink";
 import {
   AlertTriangle,
   Bot,
@@ -244,12 +244,12 @@ export default function AssistantAndIntelligencePage() {
               Personalization: {aiOptIn ? "Enabled" : "Disabled"}
             </button>
           )}
-          <Link
+          <SafeNavLink
             href="/support"
             className="rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface)] px-3.5 py-2 text-xs font-semibold hover:bg-[var(--fcs-surface-muted)]"
           >
             Escalate to Human Support →
-          </Link>
+          </SafeNavLink>
         </div>
       </div>
 

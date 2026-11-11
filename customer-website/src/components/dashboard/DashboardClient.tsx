@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import Link from "next/link";
+import { SafeNavLink } from "@/components/ui/SafeNavLink";
 import { useRouter } from "next/navigation";
 import {
   Award,
@@ -234,47 +234,47 @@ export function DashboardClient(props: Props) {
           </p>
         </div>
         <div className="flex flex-wrap gap-2.5">
-          <Link
+          <SafeNavLink
             href="/resume-builder/new"
             className="inline-flex items-center gap-1.5 rounded-xl bg-teal-700 px-4 py-2 text-xs font-semibold text-white hover:bg-teal-800"
           >
             <Plus className="h-3.5 w-3.5" /> New Resume
-          </Link>
+          </SafeNavLink>
           {hasApprovedOrg ? (
             <>
-              <Link
+              <SafeNavLink
                 href="/certificate-builder/new"
                 className="inline-flex items-center gap-1.5 rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] px-4 py-2 text-xs font-semibold hover:border-teal-600/40"
               >
                 <Plus className="h-3.5 w-3.5" /> New Certificate
-              </Link>
-              <Link
+              </SafeNavLink>
+              <SafeNavLink
                 href="/stamps"
                 className="inline-flex items-center gap-1.5 rounded-xl border border-[var(--fcs-border)] px-3.5 py-2 text-xs font-semibold hover:bg-[var(--fcs-surface-muted)]"
               >
                 <Stamp className="h-3.5 w-3.5 text-teal-600" /> Stamps
-              </Link>
+              </SafeNavLink>
             </>
           ) : (
-            <Link
+            <SafeNavLink
               href="/verify"
               className="inline-flex items-center gap-1.5 rounded-xl border border-amber-500/40 bg-amber-50 px-4 py-2 text-xs font-semibold text-amber-900 hover:bg-amber-100 dark:bg-amber-950/40 dark:text-amber-200"
             >
               <ShieldCheck className="h-3.5 w-3.5" /> Request Certificate Access
-            </Link>
+            </SafeNavLink>
           )}
-          <Link
+          <SafeNavLink
             href="/vault"
             className="inline-flex items-center gap-1.5 rounded-xl border border-[var(--fcs-border)] px-3.5 py-2 text-xs font-semibold hover:bg-[var(--fcs-surface-muted)]"
           >
             <FolderLock className="h-3.5 w-3.5" /> Vault
-          </Link>
-          <Link
+          </SafeNavLink>
+          <SafeNavLink
             href="/settings"
             className="inline-flex items-center gap-1.5 rounded-xl border border-[var(--fcs-border)] px-3.5 py-2 text-xs font-semibold hover:bg-[var(--fcs-surface-muted)]"
           >
             <Settings className="h-3.5 w-3.5" /> Settings
-          </Link>
+          </SafeNavLink>
         </div>
       </div>
       </SlideReveal>
@@ -312,12 +312,12 @@ export function DashboardClient(props: Props) {
               </p>
             </div>
           </div>
-          <Link
+          <SafeNavLink
             href="/verify"
             className="rounded-lg border border-[var(--fcs-border)] px-3 py-1.5 text-xs font-semibold hover:bg-[var(--fcs-surface-muted)]"
           >
             {(props.orgApplications ?? []).length > 0 ? "Manage / Apply →" : "Apply as Organization →"}
-          </Link>
+          </SafeNavLink>
         </div>
 
         {(props.orgApplications ?? []).length > 0 && (
@@ -336,18 +336,18 @@ export function DashboardClient(props: Props) {
                 </div>
                 {org.verification_status === "approved" ? (
                   <div className="flex flex-wrap items-center gap-1.5">
-                    <Link
+                    <SafeNavLink
                       href="/stamps"
                       className="inline-flex items-center gap-1 rounded-full bg-teal-700 px-2.5 py-1 text-[10px] font-bold text-white hover:bg-teal-800"
                     >
                       <Stamp className="h-3 w-3" /> Open Stamp Studio
-                    </Link>
-                    <Link
+                    </SafeNavLink>
+                    <SafeNavLink
                       href="/certificate-builder/new?tab=stamps"
                       className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-1 text-[10px] font-bold text-emerald-800 hover:bg-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300"
                     >
                       <CheckCircle2 className="h-3 w-3" /> Certificate Studio
-                    </Link>
+                    </SafeNavLink>
                   </div>
                 ) : org.verification_status === "pending" ? (
                   <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-1 text-[10px] font-bold text-amber-800 dark:bg-amber-950/60 dark:text-amber-300">
@@ -512,12 +512,12 @@ export function DashboardClient(props: Props) {
             <h2 className="flex items-center gap-2 text-base font-bold">
               <FileText className="h-4 w-4 text-teal-600" /> Recent Resumes
             </h2>
-            <Link
+            <SafeNavLink
               href="/resume-builder/new"
               className="text-xs font-semibold text-teal-700 hover:underline dark:text-teal-400"
             >
               + Create Resume
-            </Link>
+            </SafeNavLink>
           </div>
           {resumes.length === 0 ? (
             <p className="py-8 text-center text-xs text-[var(--fcs-ink-muted)]">
@@ -531,12 +531,12 @@ export function DashboardClient(props: Props) {
                   className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] p-3.5"
                 >
                   <div className="min-w-0">
-                    <Link
+                    <SafeNavLink
                       href={`/resume-builder/${r.id}`}
                       className="block truncate text-sm font-semibold hover:text-teal-700 dark:hover:text-teal-300"
                     >
                       {r.title}
-                    </Link>
+                    </SafeNavLink>
                     <p className="text-[11px] text-[var(--fcs-ink-muted)]">
                       Template: {r.template_slug}
                       {r.ats_score !== null ? ` • Quality/ATS: ${r.ats_score}%` : ""} • Downloads:{" "}
@@ -544,12 +544,12 @@ export function DashboardClient(props: Props) {
                     </p>
                   </div>
                   <div className="flex items-center gap-1.5">
-                    <Link
+                    <SafeNavLink
                       href={`/resume-builder/${r.id}`}
                       className="rounded-lg border border-[var(--fcs-border)] bg-[var(--fcs-surface)] px-2.5 py-1 text-xs font-medium hover:border-teal-600/40"
                     >
                       Edit
-                    </Link>
+                    </SafeNavLink>
                     <button
                       type="button"
                       disabled={busyId === r.id}
@@ -581,19 +581,19 @@ export function DashboardClient(props: Props) {
               <Award className="h-4 w-4 text-amber-600" /> Recent Certificates
             </h2>
             {hasApprovedOrg ? (
-              <Link
+              <SafeNavLink
                 href="/certificate-builder/new"
                 className="text-xs font-semibold text-teal-700 hover:underline dark:text-teal-400"
               >
                 + Create Certificate
-              </Link>
+              </SafeNavLink>
             ) : (
-              <Link
+              <SafeNavLink
                 href="/verify"
                 className="text-xs font-semibold text-amber-700 hover:underline dark:text-amber-400"
               >
                 Authorized Access Required →
-              </Link>
+              </SafeNavLink>
             )}
           </div>
           {certificates.length === 0 ? (
@@ -616,12 +616,12 @@ export function DashboardClient(props: Props) {
                 >
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
-                      <Link
+                      <SafeNavLink
                         href={`/certificate-builder/${c.id}`}
                         className="block truncate text-sm font-semibold hover:text-teal-700 dark:hover:text-teal-300"
                       >
                         {c.title}
-                      </Link>
+                      </SafeNavLink>
                       {isVerified ? (
                         <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">
                           <CheckCircle2 className="h-2.5 w-2.5" /> Verified
@@ -638,19 +638,19 @@ export function DashboardClient(props: Props) {
                     </p>
                   </div>
                   <div className="flex items-center gap-1.5">
-                    <Link
+                    <SafeNavLink
                       href={`/certificate-builder/${c.id}`}
                       className="rounded-lg border border-[var(--fcs-border)] bg-[var(--fcs-surface)] px-2.5 py-1 text-xs font-medium hover:border-teal-600/40"
                     >
                       Edit
-                    </Link>
-                    <Link
+                    </SafeNavLink>
+                    <SafeNavLink
                       href={`/verify/${c.certificate_code}`}
                       title="View Verification Status"
                       className="rounded-lg border border-[var(--fcs-border)] bg-[var(--fcs-surface)] p-1.5 text-teal-600"
                     >
                       <ShieldCheck className="h-3.5 w-3.5" />
-                    </Link>
+                    </SafeNavLink>
                     <button
                       type="button"
                       disabled={busyId === c.id}
@@ -678,17 +678,17 @@ export function DashboardClient(props: Props) {
           </p>
           <div className="mt-3 space-y-1.5">
             {props.resumeTemplates.slice(0, 4).map((t) => (
-              <Link
+              <SafeNavLink
                 key={t.id}
                 href={`/resume-builder/new?template=${t.slug}`}
                 className="flex items-center justify-between rounded-lg border border-[var(--fcs-border)] px-3 py-2 text-xs hover:border-teal-600/40"
               >
                 <span className="font-medium">{t.name}</span>
                 <span className="text-[10px] uppercase text-[var(--fcs-ink-muted)]">Resume</span>
-              </Link>
+              </SafeNavLink>
             ))}
             {props.certTemplates.slice(0, 3).map((t) => (
-              <Link
+              <SafeNavLink
                 key={t.id}
                 href={hasApprovedOrg ? `/certificate-builder/new?template=${t.slug}` : "/certificate-builder"}
                 className="flex items-center justify-between rounded-lg border border-[var(--fcs-border)] px-3 py-2 text-xs hover:border-amber-600/40"
@@ -697,7 +697,7 @@ export function DashboardClient(props: Props) {
                 <span className="text-[10px] uppercase text-[var(--fcs-ink-muted)]">
                   {hasApprovedOrg ? "Cert" : "Auth Only"}
                 </span>
-              </Link>
+              </SafeNavLink>
             ))}
           </div>
         </section>
@@ -707,9 +707,9 @@ export function DashboardClient(props: Props) {
             <h2 className="flex items-center gap-1.5 text-sm font-bold">
               <Bot className="h-4 w-4 text-teal-600" /> Recent AI Conversations
             </h2>
-            <Link href="/assistant" className="text-xs font-semibold text-teal-700 hover:underline">
+            <SafeNavLink href="/assistant" className="text-xs font-semibold text-teal-700 hover:underline">
               Open
-            </Link>
+            </SafeNavLink>
           </div>
           {props.aiConversations.length === 0 ? (
             <p className="py-8 text-center text-xs text-[var(--fcs-ink-muted)]">
@@ -737,9 +737,9 @@ export function DashboardClient(props: Props) {
             <h2 className="flex items-center gap-1.5 text-sm font-bold">
               <LifeBuoy className="h-4 w-4 text-teal-600" /> Support Tickets
             </h2>
-            <Link href="/support" className="text-xs font-semibold text-teal-700 hover:underline">
+            <SafeNavLink href="/support" className="text-xs font-semibold text-teal-700 hover:underline">
               Support Center
-            </Link>
+            </SafeNavLink>
           </div>
           {props.tickets.length === 0 ? (
             <p className="py-8 text-center text-xs text-[var(--fcs-ink-muted)]">

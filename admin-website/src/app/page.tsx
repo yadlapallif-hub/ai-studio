@@ -1,5 +1,4 @@
 import React from "react";
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import {
   Activity,
@@ -11,29 +10,32 @@ import {
   ShieldCheck,
   Users,
 } from "lucide-react";
-import { getAdminContext } from "@/lib/admin-auth";
+import { formatRoleLabel, type AppRole } from "@francis/shared";
+import { canAccessAdminRoute, getAdminContext, getSignedInSessionInfo } from "@/lib/admin-auth";
 import { createServiceSupabase } from "@/lib/supabase/server";
 import { AdminShell } from "@/components/AdminShell";
+import { SafeNavLink } from "@/components/ui/SafeNavLink";
+import { SignOutAndSwitchButton } from "@/components/SignOutAndSwitchButton";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminOverviewPage() {
+  const session = await getSignedInSessionInfo();
+  if (!session) {
+    redirect("/login");
+  }
+
   const admin = await getAdminContext();
   if (!admin) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-[var(--adm-bg)] px-4 text-center">
         <ShieldAlert className="h-10 w-10 text-red-600" />
-        <h1 className="mt-4 text-2xl font-bold">Access Denied — Admin Role Required</h1>
+        <h1 className="mt-4 text-2xl font-bold">Access Denied — Customer Accounts Restricted</h1>
         <p className="mt-2 max-w-md text-sm text-[var(--adm-ink-muted)]">
-          Your signed-in account does not hold an active Administrator, Support Agent, Content
-          Manager, or Super Admin role.
+          Customer-only accounts cannot access the CREATOR STUDIO Admin Portal. Only Super Admin,
+          Admin, Super Agent (Customer Support), and Content Manager roles are permitted.
         </p>
-        <Link
-          href="/login"
-          className="mt-6 rounded-xl bg-teal-700 px-5 py-2.5 text-sm font-semibold text-white"
-        >
-          Sign In with Admin Account
-        </Link>
+        <SignOutAndSwitchButton />
       </div>
     );
   }
@@ -82,9 +84,6 @@ export default async function AdminOverviewPage() {
     service.from("fcs_certificates").select("created_at").limit(200),
   ]);
 
-  if (!admin.userId) redirect("/login");
-
-  // Compute last 7 days real activity bars
   const days = Array.from({ length: 7 }, (_, i) => {
     const d = new Date();
     d.setDate(d.getDate() - (6 - i));
@@ -95,73 +94,124 @@ export default async function AdminOverviewPage() {
   });
   const maxBar = Math.max(1, ...days.map((d) => d.resumes + d.certs));
 
+  const staffBadges = admin.roles
+    .filter((r) => r !== "customer")
+    .map((r) => formatRoleLabel(r))
+    .join(" • ");
+
+  const kpis: Array<{
+    label: string;
+    value: number;
+    icon: typeof Users;
+    href: string;
+    routeKey: string;
+  }> = [
+    { label: "Registered Users", value: userCount ?? 0, icon: Users, href: "/users", routeKey: "users" },
+    { label: "Saved Resumes", value: resumeCount ?? 0, icon: FileText, href: "/analytics", routeKey: "analytics" },
+    {
+      label: "Saved Certificates",
+      value: certCount ?? 0,
+      icon: Award,
+      href: "/verifications",
+      routeKey: "verifications",
+    },
+    {
+      label: "Active Support Tickets",
+      value: openTicketCount ?? 0,
+      icon: LifeBuoy,
+      href: "/messages",
+      routeKey: "messages",
+    },
+    {
+      label: "Pending Cert Verifications",
+      value: pendingVerifyCount ?? 0,
+      icon: ShieldCheck,
+      href: "/verifications",
+      routeKey: "verifications",
+    },
+    {
+      label: "Pending Issuer Apps",
+      value: pendingIssuerCount ?? 0,
+      icon: ShieldAlert,
+      href: "/verifications",
+      routeKey: "verifications",
+    },
+    { label: "AI API Requests", value: aiCallsCount ?? 0, icon: Bot, href: "/ai", routeKey: "ai" },
+    {
+      label: "Recent Audit Events",
+      value: (recentLogs ?? []).length,
+      icon: Activity,
+      href: "/audit",
+      routeKey: "audit",
+    },
+  ];
+
+  const resolveSafeHref = (href: string, routeKey: string) =>
+    canAccessAdminRoute(admin.roles as AppRole[], routeKey) ? href : "/";
+
   return (
     <AdminShell adminName={admin.fullName} adminEmail={admin.email} roles={admin.roles}>
       <div className="mx-auto max-w-7xl space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Platform Operations Overview</h1>
-          <p className="mt-1 text-xs text-[var(--adm-ink-muted)]">
-            Real-time database statistics across users, documents, verifications, support, and AI
-            usage.
-          </p>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p className="text-[11px] font-bold tracking-wider uppercase text-teal-700 dark:text-teal-400">
+              {staffBadges}
+            </p>
+            <h1 className="mt-0.5 text-2xl font-bold tracking-tight">
+              Platform Operations Overview
+            </h1>
+            <p className="mt-1 text-xs text-[var(--adm-ink-muted)]">
+              Real-time database statistics across users, documents, verifications, customer
+              support, and AI usage.
+            </p>
+          </div>
+          {canAccessAdminRoute(admin.roles as AppRole[], "messages") && (
+            <SafeNavLink
+              href="/messages"
+              className="inline-flex items-center gap-2 rounded-xl bg-teal-700 px-4 py-2 text-xs font-semibold text-white hover:bg-teal-800"
+            >
+              <LifeBuoy className="h-4 w-4" />
+              Open Customer Support Desk ({openTicketCount ?? 0} Active)
+            </SafeNavLink>
+          )}
         </div>
 
-        {(pendingIssuerCount ?? 0) > 0 && (
-          <Link
-            href="/verifications"
-            className="flex items-center justify-between gap-3 rounded-2xl border border-amber-500/40 bg-amber-50 px-5 py-3.5 text-xs text-amber-900 transition hover:bg-amber-100 dark:bg-amber-950/40 dark:text-amber-200"
-          >
-            <div className="flex items-center gap-2 font-semibold">
-              <ShieldAlert className="h-4 w-4 shrink-0" />
-              <span>
-                {pendingIssuerCount} Authorized Organization{" "}
-                {pendingIssuerCount === 1 ? "application awaits" : "applications await"} your
-                approval before they can access Verified issuance.
-              </span>
-            </div>
-            <span className="shrink-0 font-bold underline">Review Now →</span>
-          </Link>
-        )}
+        {(pendingIssuerCount ?? 0) > 0 &&
+          canAccessAdminRoute(admin.roles as AppRole[], "verifications") && (
+            <SafeNavLink
+              href="/verifications"
+              className="flex w-full items-center justify-between gap-3 rounded-2xl border border-amber-500/40 bg-amber-50 px-5 py-3.5 text-xs text-amber-900 transition hover:bg-amber-100 dark:bg-amber-950/40 dark:text-amber-200"
+            >
+              <div className="flex items-center gap-2 font-semibold">
+                <ShieldAlert className="h-4 w-4 shrink-0" />
+                <span>
+                  {pendingIssuerCount} Authorized Organization{" "}
+                  {pendingIssuerCount === 1 ? "application awaits" : "applications await"} review
+                  before accessing Verified issuance.
+                </span>
+              </div>
+              <span className="shrink-0 font-bold underline">Review Now →</span>
+            </SafeNavLink>
+          )}
 
         {/* KPI Grid */}
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {[
-            { label: "Registered Users", value: userCount ?? 0, icon: Users, href: "/users" },
-            { label: "Saved Resumes", value: resumeCount ?? 0, icon: FileText, href: "/analytics" },
-            { label: "Saved Certificates", value: certCount ?? 0, icon: Award, href: "/verifications" },
-            {
-              label: "Active Support Tickets",
-              value: openTicketCount ?? 0,
-              icon: LifeBuoy,
-              href: "/messages",
-            },
-            {
-              label: "Pending Cert Verifications",
-              value: pendingVerifyCount ?? 0,
-              icon: ShieldCheck,
-              href: "/verifications",
-            },
-            {
-              label: "Pending Issuer Apps",
-              value: pendingIssuerCount ?? 0,
-              icon: ShieldAlert,
-              href: "/verifications",
-            },
-            { label: "AI API Requests", value: aiCallsCount ?? 0, icon: Bot, href: "/ai" },
-            { label: "Recent Audit Events", value: (recentLogs ?? []).length, icon: Activity, href: "/audit" },
-          ].map((kpi) => (
-            <Link
-              key={kpi.label}
-              href={kpi.href}
-              className="rounded-2xl border border-[var(--adm-border)] bg-[var(--adm-surface)] p-4 transition hover:border-teal-600/50"
-            >
-              <div className="flex items-center justify-between text-xs text-[var(--adm-ink-muted)]">
-                <span>{kpi.label}</span>
-                <kpi.icon className="h-4 w-4 text-teal-600" />
-              </div>
-              <p className="mt-2 text-2xl font-bold">{kpi.value}</p>
-            </Link>
-          ))}
+          {kpis.map((kpi) => {
+            const target = resolveSafeHref(kpi.href, kpi.routeKey);
+            return (
+              <SafeNavLink
+                key={kpi.label}
+                href={target}
+                className="block rounded-2xl border border-[var(--adm-border)] bg-[var(--adm-surface)] p-4 transition hover:border-teal-600/50"
+              >
+                <div className="flex items-center justify-between text-xs text-[var(--adm-ink-muted)]">
+                  <span>{kpi.label}</span>
+                  <kpi.icon className="h-4 w-4 text-teal-600" />
+                </div>
+                <p className="mt-2 text-2xl font-bold">{kpi.value}</p>
+              </SafeNavLink>
+            );
+          })}
         </div>
 
         {/* Interactive Real 7-Day SVG Bar Chart + Open Queue */}
@@ -214,9 +264,14 @@ export default async function AdminOverviewPage() {
           <div className="rounded-2xl border border-[var(--adm-border)] bg-[var(--adm-surface)] p-5 lg:col-span-5">
             <div className="flex items-center justify-between">
               <h2 className="text-sm font-bold">Recent Support Queue</h2>
-              <Link href="/messages" className="text-xs font-semibold text-teal-700 dark:text-teal-400">
-                Open Inbox →
-              </Link>
+              {canAccessAdminRoute(admin.roles as AppRole[], "messages") && (
+                <SafeNavLink
+                  href="/messages"
+                  className="text-xs font-semibold text-teal-700 dark:text-teal-400"
+                >
+                  Open Inbox →
+                </SafeNavLink>
+              )}
             </div>
             {(recentTickets ?? []).length === 0 ? (
               <p className="mt-4 text-xs text-[var(--adm-ink-muted)]">
@@ -249,35 +304,28 @@ export default async function AdminOverviewPage() {
         <div className="rounded-2xl border border-[var(--adm-border)] bg-[var(--adm-surface)] p-5">
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-bold">Recent Audit Events</h2>
-            <Link href="/audit" className="text-xs font-semibold text-teal-700 dark:text-teal-400">
-              Full Audit Log →
-            </Link>
+            {canAccessAdminRoute(admin.roles as AppRole[], "audit") && (
+              <SafeNavLink
+                href="/audit"
+                className="text-xs font-semibold text-teal-700 dark:text-teal-400"
+              >
+                Full Audit Log →
+              </SafeNavLink>
+            )}
           </div>
           {(recentLogs ?? []).length === 0 ? (
-            <p className="mt-3 text-xs text-[var(--adm-ink-muted)]">No audit events recorded yet.</p>
+            <p className="mt-3 text-xs text-[var(--adm-ink-muted)]">No activity logged yet.</p>
           ) : (
-            <div className="mt-3 overflow-x-auto">
-              <table className="w-full text-left text-xs">
-                <thead>
-                  <tr className="border-b border-[var(--adm-border)] text-[var(--adm-ink-muted)]">
-                    <th className="py-2 pr-4">Action</th>
-                    <th className="py-2 pr-4">Target</th>
-                    <th className="py-2">Timestamp</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {(recentLogs ?? []).map((log) => (
-                    <tr key={log.id} className="border-b border-[var(--adm-border)]/50">
-                      <td className="py-2 pr-4 font-mono font-semibold">{log.action}</td>
-                      <td className="py-2 pr-4">{log.entity_type}</td>
-                      <td className="py-2 text-[var(--adm-ink-muted)]">
-                        {new Date(log.created_at).toLocaleString()}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <ul className="mt-3 divide-y divide-[var(--adm-border)] text-xs">
+              {(recentLogs ?? []).map((log) => (
+                <li key={log.id} className="flex items-center justify-between py-2">
+                  <span className="font-mono font-medium">{log.action}</span>
+                  <span className="text-[var(--adm-ink-muted)]">
+                    {log.entity_type} • {new Date(log.created_at).toLocaleString()}
+                  </span>
+                </li>
+              ))}
+            </ul>
           )}
         </div>
       </div>

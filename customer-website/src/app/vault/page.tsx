@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
-import Link from "next/link";
+import { SafeNavLink } from "@/components/ui/SafeNavLink";
 import {
   Download,
   Edit3,
@@ -186,12 +186,12 @@ export default function VaultPage() {
           Sign in to securely store and access your uploaded photos, seals, logos, and exported PDF
           or PNG credentials with private signed URLs.
         </p>
-        <Link
+        <SafeNavLink
           href="/auth/login?redirect=/vault"
           className="mt-6 inline-block rounded-xl bg-teal-700 px-6 py-2.5 text-sm font-semibold text-white"
         >
           Sign In to Vault
-        </Link>
+        </SafeNavLink>
       </div>
     );
   }

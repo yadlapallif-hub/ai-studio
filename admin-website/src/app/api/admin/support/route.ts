@@ -10,6 +10,7 @@ const TicketActionSchema = z.object({
     .optional(),
   priority: z.enum(["low", "medium", "high", "urgent"]).optional(),
   assignToMe: z.boolean().optional(),
+  assignedTo: z.string().uuid().nullable().optional(),
   replyBody: z.string().max(8000).optional(),
   isInternalNote: z.boolean().optional(),
 });
@@ -25,7 +26,8 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: "Invalid request" }, { status: 400 });
   }
 
-  const { ticketId, status, priority, assignToMe, replyBody, isInternalNote } = parsed.data;
+  const { ticketId, status, priority, assignToMe, assignedTo, replyBody, isInternalNote } =
+    parsed.data;
   const service = createServiceSupabase();
 
   const { data: ticket } = await service
@@ -44,7 +46,11 @@ export async function PATCH(request: Request) {
     if (status === "resolved") updatePatch.resolved_at = new Date().toISOString();
   }
   if (priority) updatePatch.priority = priority;
-  if (assignToMe) updatePatch.assigned_to = admin.userId;
+  if (assignToMe) {
+    updatePatch.assigned_to = admin.userId;
+  } else if (assignedTo !== undefined) {
+    updatePatch.assigned_to = assignedTo;
+  }
 
   if (Object.keys(updatePatch).length > 0) {
     await service.from("fcs_support_tickets").update(updatePatch).eq("id", ticketId);
@@ -62,10 +68,17 @@ export async function PATCH(request: Request) {
 
   await recordAdminAudit({
     actorId: admin.userId,
+    actorRole: admin.roles.find((r) => r !== "customer") || "support_agent",
     action: "admin.support.updated",
     targetType: "support_ticket",
     targetId: ticketId,
-    metadata: { status, priority, hasReply: Boolean(replyBody), isInternalNote: Boolean(isInternalNote) },
+    metadata: {
+      status,
+      priority,
+      assignedTo: assignToMe ? admin.userId : assignedTo,
+      hasReply: Boolean(replyBody),
+      isInternalNote: Boolean(isInternalNote),
+    },
   });
 
   return NextResponse.json({ ok: true });

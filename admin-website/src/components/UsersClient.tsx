@@ -2,6 +2,7 @@
 
 import React, { useMemo, useState } from "react";
 import { Ban, CheckCircle2, Search, Shield, Trash2 } from "lucide-react";
+import { STAFF_ROLES, formatRoleLabel, type AppRole } from "@francis/shared";
 
 interface UserRow {
   id: string;
@@ -20,10 +21,12 @@ interface UserRow {
 export function UsersClient({
   initialUsers,
   isSuperAdmin,
+  isAdmin,
   currentAdminId,
 }: {
   initialUsers: UserRow[];
   isSuperAdmin: boolean;
+  isAdmin: boolean;
   currentAdminId: string;
 }) {
   const [users, setUsers] = useState(initialUsers);
@@ -130,122 +133,137 @@ export function UsersClient({
           <thead>
             <tr className="border-b border-[var(--adm-border)] bg-[var(--adm-surface-muted)] text-[var(--adm-ink-muted)]">
               <th className="p-3">User</th>
-              <th className="p-3">Roles</th>
+              <th className="p-3">Roles &amp; Admin Access</th>
               <th className="p-3">Docs / Tickets</th>
               <th className="p-3">Status</th>
               <th className="p-3 text-right">Actions</th>
             </tr>
           </thead>
           <tbody>
-            {filtered.map((u) => (
-              <tr key={u.id} className="border-b border-[var(--adm-border)]/60">
-                <td className="p-3">
-                  <p className="font-bold">{u.full_name || "Unnamed User"}</p>
-                  <p className="text-[11px] text-[var(--adm-ink-muted)]">
-                    {u.email || u.phone || "No email/phone"}
-                  </p>
-                </td>
-                <td className="p-3">
-                  {editingRolesFor === u.id ? (
-                    <div className="space-y-2">
-                      <div className="flex flex-wrap gap-2">
-                        {["super_admin", "admin", "support_agent", "content_manager", "customer"].map(
-                          (role) => (
-                            <label key={role} className="inline-flex items-center gap-1">
-                              <input
-                                type="checkbox"
-                                checked={roleDraft.includes(role)}
-                                onChange={(e) =>
-                                  setRoleDraft((prev) =>
-                                    e.target.checked
-                                      ? [...prev, role]
-                                      : prev.filter((r) => r !== role)
-                                  )
-                                }
-                              />
-                              <span>{role}</span>
-                            </label>
-                          )
-                        )}
+            {filtered.map((u) => {
+              const targetIsStaff = u.roles.some((r) =>
+                STAFF_ROLES.includes(r as AppRole)
+              );
+              const canToggleStatus =
+                u.id !== currentAdminId &&
+                (isSuperAdmin ||
+                  (isAdmin && !u.roles.includes("super_admin")) ||
+                  !targetIsStaff);
+
+              return (
+                <tr key={u.id} className="border-b border-[var(--adm-border)]/60">
+                  <td className="p-3">
+                    <p className="font-bold">{u.full_name || "Unnamed User"}</p>
+                    <p className="text-[11px] text-[var(--adm-ink-muted)]">
+                      {u.email || u.phone || "No email/phone"}
+                    </p>
+                  </td>
+                  <td className="p-3">
+                    {editingRolesFor === u.id ? (
+                      <div className="space-y-2">
+                        <div className="flex flex-wrap gap-2">
+                          {["super_admin", "admin", "support_agent", "content_manager", "customer"].map(
+                            (role) => (
+                              <label key={role} className="inline-flex items-center gap-1">
+                                <input
+                                  type="checkbox"
+                                  checked={roleDraft.includes(role)}
+                                  onChange={(e) =>
+                                    setRoleDraft((prev) =>
+                                      e.target.checked
+                                        ? [...prev, role]
+                                        : prev.filter((r) => r !== role)
+                                    )
+                                  }
+                                />
+                                <span>{formatRoleLabel(role)}</span>
+                              </label>
+                            )
+                          )}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => void saveRoles(u.id)}
+                          className="cursor-pointer rounded bg-teal-700 px-2.5 py-1 text-[11px] font-semibold text-white"
+                        >
+                          Save Roles
+                        </button>
                       </div>
+                    ) : (
+                      <div className="flex flex-wrap gap-1">
+                        {u.roles.map((r) => (
+                          <span
+                            key={r}
+                            className={`rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase ${
+                              r === "customer"
+                                ? "bg-[var(--adm-surface-muted)] text-[var(--adm-ink-muted)]"
+                                : "bg-teal-700/15 text-teal-700 dark:text-teal-300"
+                            }`}
+                          >
+                            {formatRoleLabel(r)}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </td>
+                  <td className="p-3 text-[var(--adm-ink-muted)]">
+                    {u.resumeCount}R • {u.certCount}C • {u.ticketCount}T
+                  </td>
+                  <td className="p-3">
+                    <span
+                      className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${
+                        u.status === "suspended"
+                          ? "bg-red-100 text-red-700"
+                          : "bg-emerald-100 text-emerald-700"
+                      }`}
+                    >
+                      {u.status}
+                    </span>
+                  </td>
+                  <td className="p-3 text-right space-x-1.5 whitespace-nowrap">
+                    {isSuperAdmin && (
                       <button
                         type="button"
-                        onClick={() => void saveRoles(u.id)}
-                        className="rounded bg-teal-700 px-2.5 py-1 text-[11px] font-semibold text-white"
+                        onClick={() => {
+                          setEditingRolesFor(editingRolesFor === u.id ? null : u.id);
+                          setRoleDraft(u.roles);
+                        }}
+                        title="Manage Roles"
+                        className="inline-flex cursor-pointer items-center gap-1 rounded-lg border border-[var(--adm-border)] px-2 py-1 font-medium"
                       >
-                        Save Roles
+                        <Shield className="h-3 w-3" /> Roles
                       </button>
-                    </div>
-                  ) : (
-                    <div className="flex flex-wrap gap-1">
-                      {u.roles.map((r) => (
-                        <span
-                          key={r}
-                          className="rounded bg-[var(--adm-surface-muted)] px-1.5 py-0.5 text-[10px] font-semibold uppercase"
-                        >
-                          {r.replace(/_/g, " ")}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                </td>
-                <td className="p-3 text-[var(--adm-ink-muted)]">
-                  {u.resumeCount}R • {u.certCount}C • {u.ticketCount}T
-                </td>
-                <td className="p-3">
-                  <span
-                    className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${
-                      u.status === "suspended"
-                        ? "bg-red-100 text-red-700"
-                        : "bg-emerald-100 text-emerald-700"
-                    }`}
-                  >
-                    {u.status}
-                  </span>
-                </td>
-                <td className="p-3 text-right space-x-1.5 whitespace-nowrap">
-                  {isSuperAdmin && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setEditingRolesFor(editingRolesFor === u.id ? null : u.id);
-                        setRoleDraft(u.roles);
-                      }}
-                      title="Manage Roles"
-                      className="inline-flex items-center gap-1 rounded-lg border border-[var(--adm-border)] px-2 py-1 font-medium"
-                    >
-                      <Shield className="h-3 w-3" /> Roles
-                    </button>
-                  )}
-                  {u.id !== currentAdminId && (
-                    <button
-                      type="button"
-                      onClick={() => void toggleStatus(u)}
-                      className="inline-flex items-center gap-1 rounded-lg border border-[var(--adm-border)] px-2 py-1 font-medium"
-                    >
-                      {u.status === "suspended" ? (
-                        <>
-                          <CheckCircle2 className="h-3 w-3 text-emerald-600" /> Reactivate
-                        </>
-                      ) : (
-                        <>
-                          <Ban className="h-3 w-3 text-amber-600" /> Suspend
-                        </>
-                      )}
-                    </button>
-                  )}
-                  {isSuperAdmin && u.id !== currentAdminId && (
-                    <button
-                      type="button"
-                      onClick={() => void deleteUser(u)}
-                      className="inline-flex items-center gap-1 rounded-lg border border-[var(--adm-border)] px-2 py-1 text-red-600"
-                    >
-                      <Trash2 className="h-3 w-3" />
-                    </button>
-                  )}
-                </td>
-              </tr>
-            ))}
+                    )}
+                    {canToggleStatus && (
+                      <button
+                        type="button"
+                        onClick={() => void toggleStatus(u)}
+                        className="inline-flex cursor-pointer items-center gap-1 rounded-lg border border-[var(--adm-border)] px-2 py-1 font-medium"
+                      >
+                        {u.status === "suspended" ? (
+                          <>
+                            <CheckCircle2 className="h-3 w-3 text-emerald-600" /> Reactivate
+                          </>
+                        ) : (
+                          <>
+                            <Ban className="h-3 w-3 text-amber-600" /> Suspend
+                          </>
+                        )}
+                      </button>
+                    )}
+                    {isSuperAdmin && u.id !== currentAdminId && (
+                      <button
+                        type="button"
+                        onClick={() => void deleteUser(u)}
+                        className="inline-flex cursor-pointer items-center gap-1 rounded-lg border border-[var(--adm-border)] px-2 py-1 text-red-600"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>

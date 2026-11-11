@@ -1,14 +1,35 @@
 import React from "react";
 import { redirect } from "next/navigation";
-import { getAdminContext } from "@/lib/admin-auth";
+import { getAdminContext, getSignedInSessionInfo } from "@/lib/admin-auth";
 import { createServiceSupabase } from "@/lib/supabase/server";
 import { AdminShell } from "@/components/AdminShell";
+import { RestrictedAccessPanel } from "@/components/RestrictedAccessPanel";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminAnalyticsPage() {
-  const admin = await getAdminContext(["super_admin", "admin"]);
-  if (!admin) redirect("/login");
+  const session = await getSignedInSessionInfo();
+  if (!session) redirect("/login");
+
+  const admin = await getAdminContext([
+    "super_admin",
+    "admin",
+    "support_agent",
+    "content_manager",
+  ]);
+  if (!admin) {
+    if (session.hasStaffAccess) {
+      return (
+        <AdminShell adminName={session.fullName} adminEmail={session.email} roles={session.roles}>
+          <RestrictedAccessPanel
+            sectionTitle="Platform Analytics"
+            allowedHint="Staff roles"
+          />
+        </AdminShell>
+      );
+    }
+    redirect("/login");
+  }
 
   const service = createServiceSupabase();
   const [{ data: profiles }, { data: resumes }, { data: certs }, { data: exports }, { data: tickets }, { data: aiLogs }] =

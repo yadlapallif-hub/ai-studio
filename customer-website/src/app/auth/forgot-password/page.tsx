@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import Link from "next/link";
+import { SafeNavLink } from "@/components/ui/SafeNavLink";
 import { AlertCircle, CheckCircle2, Loader2, Mail } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
@@ -74,9 +74,9 @@ export default function ForgotPasswordPage() {
         </form>
 
         <div className="mt-5 text-center text-xs">
-          <Link href="/auth/login" className="font-semibold text-teal-700 hover:underline">
+          <SafeNavLink href="/auth/login" className="font-semibold text-teal-700 hover:underline">
             Back to Sign In
-          </Link>
+          </SafeNavLink>
         </div>
       </div>
     </div>

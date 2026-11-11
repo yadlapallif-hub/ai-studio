@@ -1,7 +1,7 @@
 "use client";
 
 import React, { Suspense, useEffect, useState } from "react";
-import Link from "next/link";
+import { SafeNavLink } from "@/components/ui/SafeNavLink";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   AlertCircle,
@@ -369,12 +369,12 @@ function SignupForm() {
 
         <div className="mt-5 border-t border-[var(--fcs-border)] pt-4 text-center text-xs text-[var(--fcs-ink-muted)]">
           Already have an account?{" "}
-          <Link
+          <SafeNavLink
             href={`/auth/login${safeNext !== "/dashboard" ? `?next=${encodeURIComponent(safeNext)}` : ""}`}
             className="font-semibold text-teal-700 hover:underline dark:text-teal-400"
           >
             Sign in
-          </Link>
+          </SafeNavLink>
         </div>
       </div>
     </div>

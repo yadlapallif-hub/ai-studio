@@ -1,7 +1,7 @@
 "use client";
 
 import React, { Suspense, useEffect, useState } from "react";
-import Link from "next/link";
+import { SafeNavLink } from "@/components/ui/SafeNavLink";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   AlertCircle,
@@ -355,12 +355,12 @@ function LoginForm() {
                 <label className="text-xs font-semibold" htmlFor="login-password">
                   Password
                 </label>
-                <Link
+                <SafeNavLink
                   href="/auth/forgot-password"
                   className="text-xs font-medium text-teal-700 hover:underline dark:text-teal-400"
                 >
                   Forgot password?
-                </Link>
+                </SafeNavLink>
               </div>
               <div className="relative">
                 <Lock className="absolute top-2.5 left-3 h-4 w-4 text-[var(--fcs-ink-muted)]" />
@@ -390,12 +390,12 @@ function LoginForm() {
 
         <div className="mt-5 border-t border-[var(--fcs-border)] pt-4 text-center text-xs text-[var(--fcs-ink-muted)]">
           New to Creator Studio?{" "}
-          <Link
+          <SafeNavLink
             href={`/auth/signup${safeNext !== "/dashboard" ? `?next=${encodeURIComponent(safeNext)}` : ""}`}
             className="font-semibold text-teal-700 hover:underline dark:text-teal-400"
           >
             Create a free account
-          </Link>
+          </SafeNavLink>
         </div>
       </div>
     </div>

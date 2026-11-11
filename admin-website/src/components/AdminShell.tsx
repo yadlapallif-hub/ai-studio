@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   BarChart3,
@@ -19,7 +18,10 @@ import {
   Sun,
   Users,
 } from "lucide-react";
+import { formatRoleLabel, type AppRole } from "@francis/shared";
 import { createClient } from "@/lib/supabase/client";
+import { canAccessAdminRoute } from "@/lib/admin-auth-client";
+import { SafeNavLink } from "@/components/ui/SafeNavLink";
 import { CreatorStudioLogo } from "./brand/CreatorStudioLogo";
 
 interface AdminShellProps {
@@ -30,16 +32,21 @@ interface AdminShellProps {
 }
 
 const NAV_ITEMS = [
-  { href: "/", label: "Overview", icon: LayoutDashboard },
-  { href: "/users", label: "Users & Roles", icon: Users },
-  { href: "/messages", label: "Messages & Support", icon: MessageSquare },
-  { href: "/verifications", label: "Verifications & Issuers", icon: FileCheck2 },
-  { href: "/ai", label: "AI Management", icon: Bot },
-  { href: "/templates", label: "Templates", icon: Layers },
-  { href: "/website", label: "Website & Announcements", icon: Globe },
-  { href: "/analytics", label: "Analytics", icon: BarChart3 },
-  { href: "/audit", label: "Audit Logs", icon: ScrollText },
-  { href: "/security", label: "MFA & Security", icon: Lock },
+  { href: "/", routeKey: "overview", label: "Overview", icon: LayoutDashboard },
+  { href: "/messages", routeKey: "messages", label: "Support Super Agent", icon: MessageSquare },
+  { href: "/users", routeKey: "users", label: "Users & Roles", icon: Users },
+  {
+    href: "/verifications",
+    routeKey: "verifications",
+    label: "Verifications & Issuers",
+    icon: FileCheck2,
+  },
+  { href: "/templates", routeKey: "templates", label: "Templates", icon: Layers },
+  { href: "/website", routeKey: "website", label: "Website & Announcements", icon: Globe },
+  { href: "/ai", routeKey: "ai", label: "AI Management", icon: Bot },
+  { href: "/analytics", routeKey: "analytics", label: "Analytics", icon: BarChart3 },
+  { href: "/audit", routeKey: "audit", label: "Audit Logs", icon: ScrollText },
+  { href: "/security", routeKey: "security", label: "MFA & Security", icon: Lock },
 ];
 
 export function AdminShell({ adminName, adminEmail, roles, children }: AdminShellProps) {
@@ -68,7 +75,12 @@ export function AdminShell({ adminName, adminEmail, roles, children }: AdminShel
   };
 
   const customerSiteUrl =
-    process.env.NEXT_PUBLIC_CUSTOMER_SITE_URL || "http://localhost:3000";
+    process.env.NEXT_PUBLIC_CUSTOMER_SITE_URL || "https://francis-creator-studio.vercel.app";
+
+  const visibleNavItems = NAV_ITEMS.filter((item) =>
+    canAccessAdminRoute(roles as AppRole[], item.routeKey)
+  );
+  const staffRoles = roles.filter((r) => r !== "customer");
 
   return (
     <div className="flex min-h-screen bg-[var(--adm-bg)] text-[var(--adm-ink)]">
@@ -79,20 +91,20 @@ export function AdminShell({ adminName, adminEmail, roles, children }: AdminShel
             <CreatorStudioLogo size={34} className="shrink-0" />
             <div>
               <p className="text-xs font-bold tracking-wide uppercase">CREATOR ADMIN</p>
-              <p className="text-[10px] text-[var(--adm-ink-muted)]">Operations & Governance</p>
+              <p className="text-[10px] text-[var(--adm-ink-muted)]">Operations &amp; Support</p>
             </div>
           </div>
         </div>
 
         <nav className="flex-1 space-y-1 p-3">
-          {NAV_ITEMS.map((item) => {
+          {visibleNavItems.map((item) => {
             const active =
               item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
             return (
-              <Link
+              <SafeNavLink
                 key={item.href}
                 href={item.href}
-                className={`flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-semibold transition ${
+                className={`flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-semibold transition ${
                   active
                     ? "bg-teal-700 text-white"
                     : "text-[var(--adm-ink-muted)] hover:bg-[var(--adm-surface-muted)] hover:text-[var(--adm-ink)]"
@@ -100,7 +112,7 @@ export function AdminShell({ adminName, adminEmail, roles, children }: AdminShel
               >
                 <item.icon className="h-4 w-4 shrink-0" />
                 <span>{item.label}</span>
-              </Link>
+              </SafeNavLink>
             );
           })}
         </nav>
@@ -110,13 +122,13 @@ export function AdminShell({ adminName, adminEmail, roles, children }: AdminShel
             <p className="truncate font-bold">{adminName}</p>
             <p className="truncate text-[11px] text-[var(--adm-ink-muted)]">{adminEmail}</p>
             <div className="mt-2 flex flex-wrap gap-1">
-              {roles.map((r) => (
+              {(staffRoles.length > 0 ? staffRoles : roles).map((r) => (
                 <span
                   key={r}
                   className="inline-flex items-center gap-1 rounded bg-teal-700/15 px-1.5 py-0.5 text-[10px] font-bold uppercase text-teal-700 dark:text-teal-300"
                 >
                   <Shield className="h-2.5 w-2.5" />
-                  {r.replace(/_/g, " ")}
+                  {formatRoleLabel(r)}
                 </span>
               ))}
             </div>
@@ -125,7 +137,7 @@ export function AdminShell({ adminName, adminEmail, roles, children }: AdminShel
           <button
             type="button"
             onClick={handleLogout}
-            className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-[var(--adm-border)] py-2 font-semibold text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30"
+            className="flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-[var(--adm-border)] py-2 font-semibold text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30"
           >
             <LogOut className="h-3.5 w-3.5" /> Sign Out
           </button>
@@ -139,22 +151,21 @@ export function AdminShell({ adminName, adminEmail, roles, children }: AdminShel
             <span className="text-xs font-bold uppercase">CREATOR ADMIN</span>
           </div>
           <div className="hidden text-xs text-[var(--adm-ink-muted)] lg:block">
-            CREATOR STUDIO Management Console
+            CREATOR STUDIO Management &amp; Customer Support Console
           </div>
           <div className="flex items-center gap-2.5">
-            <a
+            <SafeNavLink
               href={customerSiteUrl}
-              target="_blank"
-              rel="noreferrer"
+              external
               className="rounded-lg border border-[var(--adm-border)] px-3 py-1.5 text-xs font-semibold hover:bg-[var(--adm-surface-muted)]"
             >
               Open Customer Site ↗
-            </a>
+            </SafeNavLink>
             <button
               type="button"
               onClick={toggleTheme}
               aria-label="Toggle theme"
-              className="rounded-lg border border-[var(--adm-border)] p-1.5 hover:bg-[var(--adm-surface-muted)]"
+              className="cursor-pointer rounded-lg border border-[var(--adm-border)] p-1.5 hover:bg-[var(--adm-surface-muted)]"
             >
               {dark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
             </button>
@@ -163,8 +174,8 @@ export function AdminShell({ adminName, adminEmail, roles, children }: AdminShel
 
         {/* Mobile Quick Nav */}
         <div className="flex gap-1 overflow-x-auto border-b border-[var(--adm-border)] bg-[var(--adm-surface)] px-4 py-2 lg:hidden">
-          {NAV_ITEMS.map((item) => (
-            <Link
+          {visibleNavItems.map((item) => (
+            <SafeNavLink
               key={item.href}
               href={item.href}
               className={`shrink-0 rounded-lg px-2.5 py-1.5 text-xs font-semibold ${
@@ -174,7 +185,7 @@ export function AdminShell({ adminName, adminEmail, roles, children }: AdminShel
               }`}
             >
               {item.label}
-            </Link>
+            </SafeNavLink>
           ))}
         </div>
 

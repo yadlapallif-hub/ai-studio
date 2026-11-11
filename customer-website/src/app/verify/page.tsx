@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import Link from "next/link";
+import { SafeNavLink } from "@/components/ui/SafeNavLink";
 import { useRouter } from "next/navigation";
 import {
   Award,
@@ -328,18 +328,18 @@ export default function VerifyLookupPage() {
                     {renderStatusBadge(app.verification_status)}
                     {app.verification_status === "approved" && (
                       <>
-                        <Link
+                        <SafeNavLink
                           href="/stamps"
                           className="inline-flex items-center gap-1 rounded-lg bg-teal-700 px-2.5 py-1 text-[11px] font-semibold text-white hover:bg-teal-800"
                         >
                           <Stamp className="h-3 w-3" /> Open Stamp Studio
-                        </Link>
-                        <Link
+                        </SafeNavLink>
+                        <SafeNavLink
                           href={`/certificate-builder/new?tab=stamps&issuer=${encodeURIComponent(app.id)}`}
                           className="inline-flex items-center gap-1 rounded-lg border border-teal-700/40 bg-teal-50 px-2.5 py-1 text-[11px] font-semibold text-teal-900 hover:bg-teal-100"
                         >
                           <Award className="h-3 w-3" /> Certificate Studio
-                        </Link>
+                        </SafeNavLink>
                       </>
                     )}
                   </div>
@@ -363,14 +363,14 @@ export default function VerifyLookupPage() {
                   <div className="min-w-0">
                     <p className="truncate font-semibold">{iss.organization_name}</p>
                     {iss.website && (
-                      <a
+                      <SafeNavLink
                         href={iss.website}
                         target="_blank"
                         rel="noreferrer"
                         className="inline-flex items-center gap-1 truncate text-[10px] text-teal-700 hover:underline dark:text-teal-400"
                       >
                         <Globe className="h-2.5 w-2.5" /> {iss.website.replace(/^https?:\/\//, "")}
-                      </a>
+                      </SafeNavLink>
                     )}
                   </div>
                   <span className="ml-2 shrink-0 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300">

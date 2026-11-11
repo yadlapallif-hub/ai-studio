@@ -20,7 +20,12 @@ const VerificationPatchSchema = z.discriminatedUnion("target", [
 ]);
 
 export async function PATCH(request: Request) {
-  const admin = await getAdminContext(["super_admin", "admin", "content_manager"]);
+  const admin = await getAdminContext([
+    "super_admin",
+    "admin",
+    "content_manager",
+    "support_agent",
+  ]);
   if (!admin) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
   }

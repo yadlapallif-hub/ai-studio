@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import Link from "next/link";
+import { SafeNavLink } from "@/components/ui/SafeNavLink";
 import { useRouter } from "next/navigation";
 import {
   analyzeCertificateDesign,
@@ -548,12 +548,12 @@ export function CertificateStudio(props: CertificateStudioProps) {
       <div className="no-print border-b border-[var(--fcs-border)] bg-[var(--fcs-surface)] px-4 py-3 sm:px-6">
         <div className="mx-auto flex max-w-[1550px] flex-wrap items-center justify-between gap-3">
           <div className="flex flex-wrap items-center gap-3">
-            <Link
+            <SafeNavLink
               href="/certificate-builder"
               className="rounded-lg border border-[var(--fcs-border)] px-2.5 py-1.5 text-xs font-medium hover:bg-[var(--fcs-surface-muted)]"
             >
               ← Gallery
-            </Link>
+            </SafeNavLink>
             <select
               value={templateSlug}
               onChange={(e) => applyTemplate(e.target.value)}
@@ -600,14 +600,14 @@ export function CertificateStudio(props: CertificateStudioProps) {
             </button>
             {props.isAuthenticated && hasApprovedIssuer && (
               verificationStatus === "verified" ? (
-                <Link
+                <SafeNavLink
                   href={`/verify/${certificateCode}`}
                   target="_blank"
                   className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-600/40 bg-emerald-600 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700"
                 >
                   <CheckCircle2 className="h-3.5 w-3.5" />
                   Verified Certificate • Check Registry ↗
-                </Link>
+                </SafeNavLink>
               ) : (
                 <button
                   type="button"
@@ -671,13 +671,13 @@ export function CertificateStudio(props: CertificateStudioProps) {
             <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-teal-500/30 bg-teal-50 px-4 py-2 text-xs text-teal-800 dark:bg-teal-950/40 dark:text-teal-300">
               <span>{statusMsg}</span>
               {verificationStatus === "verified" && (
-                <Link
+                <SafeNavLink
                   href={`/verify/${certificateCode}`}
                   target="_blank"
                   className="font-bold underline underline-offset-2"
                 >
                   Open Verification Check (/verify/{certificateCode}) →
-                </Link>
+                </SafeNavLink>
               )}
             </div>
           )}
@@ -782,13 +782,13 @@ export function CertificateStudio(props: CertificateStudioProps) {
                         <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
                         Published as Verified Certificate
                       </span>
-                      <Link
+                      <SafeNavLink
                         href={`/verify/${certificateCode}`}
                         target="_blank"
                         className="font-semibold underline"
                       >
                         Check on /verify →
-                      </Link>
+                      </SafeNavLink>
                     </div>
                   ) : (
                     <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-amber-500/30 bg-amber-50 p-2.5 text-[11px] text-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
@@ -829,12 +829,12 @@ export function CertificateStudio(props: CertificateStudioProps) {
                     is waiting for Administrator approval. Authorized organization access and
                     Verified QR issuance will unlock once approved by an Admin.
                   </p>
-                  <Link
+                  <SafeNavLink
                     href="/verify"
                     className="mt-1.5 inline-block font-semibold text-amber-800 underline dark:text-amber-300"
                   >
                     View application status →
-                  </Link>
+                  </SafeNavLink>
                 </div>
               ) : blockedApplications.length > 0 ? (
                 <div className="rounded-xl border border-red-500/30 bg-red-50 p-3 text-[11px] text-red-800 dark:bg-red-950/40 dark:text-red-200">
@@ -846,9 +846,9 @@ export function CertificateStudio(props: CertificateStudioProps) {
                     </strong>
                     . Admin approval is required to issue Verified certificates.
                   </p>
-                  <Link href="/verify" className="mt-1.5 inline-block font-semibold underline">
+                  <SafeNavLink href="/verify" className="mt-1.5 inline-block font-semibold underline">
                     Review status at /verify →
-                  </Link>
+                  </SafeNavLink>
                 </div>
               ) : (
                 <div className="rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] p-3 text-[11px] text-[var(--fcs-ink-muted)]">
@@ -859,12 +859,12 @@ export function CertificateStudio(props: CertificateStudioProps) {
                   <p className="mt-1">
                     Apply with your organization name and email. Once approved by an Admin, you can
                     issue Officially Verified QR certificates.{" "}
-                    <Link
+                    <SafeNavLink
                       href="/verify"
                       className="font-semibold text-teal-700 hover:underline dark:text-teal-400"
                     >
                       Apply as Authorized Organization →
-                    </Link>
+                    </SafeNavLink>
                   </p>
                 </div>
               )}
@@ -1327,12 +1327,12 @@ export function CertificateStudio(props: CertificateStudioProps) {
                     <span className="text-[var(--fcs-ink-muted)]">
                       Want full-screen stamp design & library management?
                     </span>
-                    <Link
+                    <SafeNavLink
                       href="/stamps"
                       className="font-semibold text-teal-700 hover:underline dark:text-teal-400"
                     >
                       Open Stamp Studio →
-                    </Link>
+                    </SafeNavLink>
                   </div>
                 </>
               ) : (
@@ -1352,11 +1352,11 @@ export function CertificateStudio(props: CertificateStudioProps) {
                               ", "
                             )} is awaiting Administrator approval. Official stamp creation, seal uploads, and signature tools unlock automatically once approved.`
                         : "Creating and uploading genuine organizational ink stamps and gold seals is unlocked once your Authorized Organization request is approved by an Administrator."}{" "}
-                      <Link href="/verify" className="font-semibold underline">
+                      <SafeNavLink href="/verify" className="font-semibold underline">
                         {pendingApplications.length > 0
                           ? "Check approval status →"
                           : "Apply as Authorized Organization →"}
-                      </Link>
+                      </SafeNavLink>
                     </p>
                   </div>
                 </div>
@@ -1411,12 +1411,12 @@ export function CertificateStudio(props: CertificateStudioProps) {
               )}
 
               <div className="border-t border-[var(--fcs-border)] pt-3">
-                <Link
+                <SafeNavLink
                   href={`/verify/${certificateCode}`}
                   className="inline-flex items-center gap-1.5 font-semibold text-teal-700 hover:underline dark:text-teal-400"
                 >
                   <QrCode className="h-3.5 w-3.5" /> Open Public Verification Page →
-                </Link>
+                </SafeNavLink>
               </div>
             </div>
           )}
@@ -1439,13 +1439,13 @@ export function CertificateStudio(props: CertificateStudioProps) {
                 </button>
               )}
               {verificationStatus === "verified" ? (
-                <Link
+                <SafeNavLink
                   href={`/verify/${certificateCode}`}
                   target="_blank"
                   className="inline-flex items-center gap-1 rounded-full border border-emerald-500/40 bg-emerald-50 px-2.5 py-0.5 text-[11px] font-bold text-emerald-800 hover:bg-emerald-100 dark:bg-emerald-950/50 dark:text-emerald-300"
                 >
                   <CheckCircle2 className="h-3 w-3 text-emerald-600" /> Verified Certificate ↗
-                </Link>
+                </SafeNavLink>
               ) : (
                 <span className="inline-flex items-center gap-1 rounded-full border border-[var(--fcs-border)] bg-[var(--fcs-surface)] px-2.5 py-0.5 text-[11px] font-medium">
                   {verificationStatus.replace(/_/g, " ")}

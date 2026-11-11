@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useState } from "react";
-import Link from "next/link";
+import { SafeNavLink } from "@/components/ui/SafeNavLink";
 import {
   CheckCircle2,
   LifeBuoy,
@@ -248,18 +248,18 @@ export default function CustomerSupportPage() {
           Creator Studio Support Agents.
         </p>
         <div className="mt-6 flex justify-center gap-3">
-          <Link
+          <SafeNavLink
             href="/auth/login?redirect=/support"
             className="rounded-xl bg-teal-700 px-6 py-2.5 text-sm font-semibold text-white"
           >
             Sign In
-          </Link>
-          <Link
+          </SafeNavLink>
+          <SafeNavLink
             href="/assistant"
             className="rounded-xl border border-[var(--fcs-border)] px-5 py-2.5 text-sm font-semibold"
           >
             Ask AI Assistant
-          </Link>
+          </SafeNavLink>
         </div>
       </div>
     );

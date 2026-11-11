@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import Link from "next/link";
+import { SafeNavLink } from "@/components/ui/SafeNavLink";
 import { type OrganizationStampRecord } from "@francis/shared";
 import { Award, Clock, Lock, ShieldAlert, ShieldCheck, Stamp } from "lucide-react";
 import { SlideReveal } from "@/components/motion/SlideReveal";
@@ -51,18 +51,18 @@ export function StampStudioPageClient({
             gold seals, authorized signatures, and reusable emblem stamps.
           </p>
           <div className="mt-6 flex flex-wrap justify-center gap-3">
-            <Link
+            <SafeNavLink
               href="/auth/login?next=/stamps"
               className="rounded-xl bg-teal-700 px-6 py-2.5 text-sm font-semibold text-white hover:bg-teal-800"
             >
               Sign In to Open Stamps
-            </Link>
-            <Link
+            </SafeNavLink>
+            <SafeNavLink
               href="/verify"
               className="rounded-xl border border-[var(--fcs-border)] px-6 py-2.5 text-sm font-semibold hover:bg-[var(--fcs-surface-muted)]"
             >
               Apply as Organization
-            </Link>
+            </SafeNavLink>
           </div>
         </SlideReveal>
       </div>
@@ -107,7 +107,7 @@ export function StampStudioPageClient({
             </p>
 
             <div className="mt-6 flex flex-wrap gap-3">
-              <Link
+              <SafeNavLink
                 href="/verify"
                 className="inline-flex items-center gap-2 rounded-xl bg-teal-700 px-5 py-2.5 text-xs font-semibold text-white hover:bg-teal-800"
               >
@@ -115,13 +115,13 @@ export function StampStudioPageClient({
                 {pendingApps.length > 0
                   ? "View Application Status"
                   : "Apply as Authorized Organization"}
-              </Link>
-              <Link
+              </SafeNavLink>
+              <SafeNavLink
                 href="/dashboard"
                 className="inline-flex items-center gap-2 rounded-xl border border-[var(--fcs-border)] px-5 py-2.5 text-xs font-semibold hover:bg-[var(--fcs-surface-muted)]"
               >
                 Back to Dashboard
-              </Link>
+              </SafeNavLink>
             </div>
 
             {blockedApps.length > 0 && blockedApps[0].notes && (
@@ -153,14 +153,14 @@ export function StampStudioPageClient({
             </p>
           </div>
 
-          <Link
+          <SafeNavLink
             href={`/certificate-builder/new?tab=stamps${
               selectedIssuerId ? `&issuer=${encodeURIComponent(selectedIssuerId)}` : ""
             }`}
             className="inline-flex items-center gap-2 rounded-xl bg-teal-700 px-5 py-2.5 text-sm font-semibold text-white hover:bg-teal-800"
           >
             <Award className="h-4 w-4" /> Open Certificate Studio with Stamps
-          </Link>
+          </SafeNavLink>
         </div>
       </SlideReveal>
 

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { STAFF_ROLES, type AppRole } from "@francis/shared";
 import { getAdminContext, recordAdminAudit } from "@/lib/admin-auth";
 import { createServiceSupabase } from "@/lib/supabase/server";
 
@@ -14,7 +15,7 @@ const UserPatchSchema = z.object({
 });
 
 export async function PATCH(request: Request) {
-  const admin = await getAdminContext(["super_admin", "admin"]);
+  const admin = await getAdminContext(["super_admin", "admin", "support_agent"]);
   if (!admin) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
   }
@@ -26,6 +27,14 @@ export async function PATCH(request: Request) {
 
   const { userId, fullName, headline, status, roles } = parsed.data;
   const service = createServiceSupabase();
+
+  const { data: targetRoleRows } = await service
+    .from("fcs_user_roles")
+    .select("role")
+    .eq("user_id", userId);
+  const targetRoles = (targetRoleRows ?? []).map((r) => r.role as AppRole);
+  const targetIsStaff = targetRoles.some((r) => STAFF_ROLES.includes(r));
+  const targetIsSuperAdmin = targetRoles.includes("super_admin");
 
   if (roles !== undefined) {
     if (!admin.isSuperAdmin) {
@@ -51,6 +60,22 @@ export async function PATCH(request: Request) {
     );
   }
 
+  if (
+    !admin.isSuperAdmin &&
+    ((admin.isAdmin && targetIsSuperAdmin) ||
+      (!admin.isAdmin && admin.isSupportAgent && targetIsStaff))
+  ) {
+    if (status !== undefined || fullName !== undefined || headline !== undefined) {
+      return NextResponse.json(
+        {
+          error:
+            "Support Agents can manage customer-only accounts; staff accounts require Admin/Super Admin.",
+        },
+        { status: 403 }
+      );
+    }
+  }
+
   const profilePatch: Record<string, unknown> = {};
   if (fullName !== undefined) profilePatch.full_name = fullName.trim();
   if (headline !== undefined) profilePatch.headline = headline.trim();
@@ -70,6 +95,7 @@ export async function PATCH(request: Request) {
 
   await recordAdminAudit({
     actorId: admin.userId,
+    actorRole: admin.roles.find((r) => r !== "customer") || "admin",
     action: "admin.user.updated",
     targetType: "user",
     targetId: userId,
@@ -101,6 +127,7 @@ export async function DELETE(request: Request) {
 
   await recordAdminAudit({
     actorId: admin.userId,
+    actorRole: "super_admin",
     action: "admin.user.deleted",
     targetType: "user",
     targetId: body.userId,

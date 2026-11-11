@@ -246,7 +246,7 @@ WHERE NOT EXISTS (SELECT 1 FROM public.fcs_faqs LIMIT 1);
 -- 5. Initial Announcement
 INSERT INTO public.fcs_announcements (title, message, variant, link_label, link_url, is_active)
 SELECT
-  'Welcome to FRANCIS Creator Studio',
+  'Welcome to CREATOR STUDIO',
   'Open-source AI Resume Builder, Certificate Studio with QR Verification, and Document Vault — 100% free forever.',
   'info',
   'Explore Studios',

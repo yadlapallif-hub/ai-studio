@@ -136,6 +136,17 @@ body {
   }
 }
 
+@keyframes fcsProgressSweep {
+  0% {
+    width: 0%;
+    opacity: 0.7;
+  }
+  100% {
+    width: 100%;
+    opacity: 1;
+  }
+}
+
 .fcs-intro-emblem {
   animation: fcsLogoPop 640ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
@@ -170,6 +181,10 @@ body {
 
 .fcs-intro-bottom {
   animation: fcsSlideRevealUp 640ms cubic-bezier(0.22, 1, 0.36, 1) 560ms both;
+}
+
+.fcs-intro-progress {
+  animation: fcsProgressSweep 1650ms cubic-bezier(0.22, 1, 0.36, 1) 120ms both;
 }
 
 /* Section Slide Reveal transitions */
@@ -216,7 +231,8 @@ body {
   .fcs-intro-title,
   .fcs-intro-rule,
   .fcs-intro-subtitle,
-  .fcs-intro-bottom {
+  .fcs-intro-bottom,
+  .fcs-intro-progress {
     animation: none !important;
     transition: none !important;
     opacity: 1 !important;

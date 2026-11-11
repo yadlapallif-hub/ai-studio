@@ -1,6 +1,6 @@
 import React from "react";
 import { redirect } from "next/navigation";
-import { getAdminContext } from "@/lib/admin-auth";
+import { getAdminContext, getSignedInSessionInfo } from "@/lib/admin-auth";
 import { createServiceSupabase } from "@/lib/supabase/server";
 import { AdminShell } from "@/components/AdminShell";
 import { SecurityClient } from "@/components/SecurityClient";
@@ -8,6 +8,9 @@ import { SecurityClient } from "@/components/SecurityClient";
 export const dynamic = "force-dynamic";
 
 export default async function AdminSecurityPage() {
+  const session = await getSignedInSessionInfo();
+  if (!session) redirect("/login");
+
   const admin = await getAdminContext();
   if (!admin) redirect("/login");
 

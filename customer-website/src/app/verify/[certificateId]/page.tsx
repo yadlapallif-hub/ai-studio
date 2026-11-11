@@ -1,5 +1,5 @@
 import React from "react";
-import Link from "next/link";
+import { SafeNavLink } from "@/components/ui/SafeNavLink";
 import { AlertTriangle, CheckCircle2, Clock, ShieldAlert, XCircle } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 
@@ -47,12 +47,12 @@ export default async function VerifyResultPage({
             No certificate with this ID exists in the CREATOR STUDIO verification
             registry. Check the code or contact the issuing organization.
           </p>
-          <Link
+          <SafeNavLink
             href="/verify"
             className="mt-6 inline-block rounded-xl bg-teal-700 px-5 py-2.5 text-sm font-semibold text-white hover:bg-teal-800"
           >
             Search Another ID
-          </Link>
+          </SafeNavLink>
         </div>
       </div>
     );
@@ -114,12 +114,12 @@ export default async function VerifyResultPage({
               </p>
               <p className="mt-0.5 font-mono text-lg font-bold">{record.certificate_code}</p>
             </div>
-            <Link
+            <SafeNavLink
               href="/verify"
               className="rounded-lg border border-[var(--fcs-border)] px-3 py-1.5 text-xs font-semibold hover:bg-[var(--fcs-surface-muted)]"
             >
               Verify Another
-            </Link>
+            </SafeNavLink>
           </div>
 
           <dl className="grid gap-4 text-sm sm:grid-cols-2">

@@ -1,5 +1,5 @@
 import React from "react";
-import Link from "next/link";
+import { SafeNavLink } from "@/components/ui/SafeNavLink";
 import {
   ArrowRight,
   Award,
@@ -47,28 +47,28 @@ export default async function HomePage() {
               </p>
 
               <div className="mt-7 flex flex-wrap items-center gap-3">
-                <Link
+                <SafeNavLink
                   href="/resume-builder/new"
                   className="inline-flex items-center gap-2 rounded-xl bg-teal-700 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-teal-800 dark:bg-teal-600 dark:hover:bg-teal-500"
                 >
                   <FileText className="h-4 w-4" />
                   <span>{websiteContent.primaryCta}</span>
                   <ArrowRight className="h-4 w-4" />
-                </Link>
-                <Link
+                </SafeNavLink>
+                <SafeNavLink
                   href="/certificate-builder"
                   className="inline-flex items-center gap-2 rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] px-5 py-3 text-sm font-semibold text-[var(--fcs-ink)] transition hover:border-teal-600/50"
                 >
                   <Award className="h-4 w-4 text-amber-600" />
                   <span>{websiteContent.secondaryCta}</span>
-                </Link>
-                <Link
+                </SafeNavLink>
+                <SafeNavLink
                   href="/verify"
                   className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-[var(--fcs-ink-muted)] hover:text-teal-700 dark:hover:text-teal-300"
                 >
                   <QrCode className="h-4 w-4" />
                   Verify a Certificate
-                </Link>
+                </SafeNavLink>
               </div>
 
               <div className="mt-8 grid grid-cols-2 gap-4 border-t border-[var(--fcs-border)] pt-6 sm:grid-cols-4">
@@ -174,12 +174,12 @@ export default async function HomePage() {
                   <Sparkles className="h-4 w-4 text-teal-600" />
                   <span className="font-medium">Creator AI</span>
                 </div>
-                <Link
+                <SafeNavLink
                   href="/assistant"
                   className="text-xs font-semibold text-teal-700 hover:underline dark:text-teal-400"
                 >
                   Open Studio →
-                </Link>
+                </SafeNavLink>
               </div>
               </div>
             </SlideReveal>
@@ -213,12 +213,12 @@ export default async function HomePage() {
               100 distinct resume layouts, 14 structured sections, drag-and-drop ordering, real
               background removal photo studio, and print-ready A4 PDF/PNG export.
             </p>
-            <Link
+            <SafeNavLink
               href="/resume-builder"
               className="mt-4 inline-flex items-center gap-1 text-xs font-semibold text-teal-700 hover:underline dark:text-teal-400"
             >
               Open Resume Builder <ArrowRight className="h-3.5 w-3.5" />
-            </Link>
+            </SafeNavLink>
             </div>
           </SlideReveal>
 
@@ -230,12 +230,12 @@ export default async function HomePage() {
               100 certificate designs across 9 categories, exclusively unlocked for Admin-approved
               Authorized Organizations with custom stamps, deletion controls, and QR verification.
             </p>
-            <Link
+            <SafeNavLink
               href="/certificate-builder"
               className="mt-4 inline-flex items-center gap-1 text-xs font-semibold text-teal-700 hover:underline dark:text-teal-400"
             >
               View Certificate Studio <ArrowRight className="h-3.5 w-3.5" />
-            </Link>
+            </SafeNavLink>
             </div>
           </SlideReveal>
 
@@ -247,12 +247,12 @@ export default async function HomePage() {
               Transparent resume quality scoring, website &amp; certificate building guidance, job
               description comparison, and layout reviews — never applying changes without approval.
             </p>
-            <Link
+            <SafeNavLink
               href="/assistant"
               className="mt-4 inline-flex items-center gap-1 text-xs font-semibold text-teal-700 hover:underline dark:text-teal-400"
             >
               Explore Intelligence <ArrowRight className="h-3.5 w-3.5" />
-            </Link>
+            </SafeNavLink>
             </div>
           </SlideReveal>
 
@@ -264,12 +264,12 @@ export default async function HomePage() {
               Real-time support chat, screenshot attachments, structured ticket tracking, and instant
               escalation from AI troubleshooting to human support agents.
             </p>
-            <Link
+            <SafeNavLink
               href="/support"
               className="mt-4 inline-flex items-center gap-1 text-xs font-semibold text-teal-700 hover:underline dark:text-teal-400"
             >
               Visit Support Center <ArrowRight className="h-3.5 w-3.5" />
-            </Link>
+            </SafeNavLink>
             </div>
           </SlideReveal>
         </div>
@@ -311,12 +311,12 @@ export default async function HomePage() {
               </li>
             </ul>
             <div className="mt-6">
-              <Link
+              <SafeNavLink
                 href="/resume-builder/new"
                 className="inline-flex items-center gap-2 rounded-lg bg-teal-700 px-4 py-2 text-xs font-semibold text-white hover:bg-teal-800"
               >
                 Start Building Resume <ArrowRight className="h-3.5 w-3.5" />
-              </Link>
+              </SafeNavLink>
             </div>
           </div>
           </SlideReveal>
@@ -354,18 +354,18 @@ export default async function HomePage() {
               </li>
             </ul>
             <div className="mt-6 flex flex-wrap gap-3">
-              <Link
+              <SafeNavLink
                 href="/certificate-builder"
                 className="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-xs font-semibold text-white hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900"
               >
                 Certificate Studio <ArrowRight className="h-3.5 w-3.5" />
-              </Link>
-              <Link
+              </SafeNavLink>
+              <SafeNavLink
                 href="/verify"
                 className="inline-flex items-center gap-2 rounded-lg border border-[var(--fcs-border)] bg-[var(--fcs-surface)] px-4 py-2 text-xs font-semibold"
               >
                 <ShieldCheck className="h-3.5 w-3.5 text-teal-600" /> Public Verify Portal
-              </Link>
+              </SafeNavLink>
             </div>
           </div>
           </SlideReveal>
@@ -438,7 +438,7 @@ export default async function HomePage() {
             </p>
           </div>
           <div className="flex flex-wrap gap-3">
-            <a
+            <SafeNavLink
               href={branding.githubUrl}
               target="_blank"
               rel="noreferrer"
@@ -446,13 +446,13 @@ export default async function HomePage() {
             >
               <Code2 className="h-4 w-4" />
               View on GitHub
-            </a>
-            <Link
+            </SafeNavLink>
+            <SafeNavLink
               href="/auth/signup"
               className="inline-flex items-center gap-2 rounded-xl bg-teal-700 px-4 py-2.5 text-xs font-semibold text-white hover:bg-teal-800"
             >
               Create Free Account
-            </Link>
+            </SafeNavLink>
           </div>
           </div>
         </SlideReveal>
