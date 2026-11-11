@@ -41,7 +41,7 @@ const DEFAULT_WEBSITE_CONTENT: WebsiteContent = {
   heroBadge: "100% Free & Open-Source • MIT Licensed",
   heroHeadline: "Precision Resume & Certificate Engineering, Built for Everyone.",
   heroSubheadline:
-    "Craft ATS-ready resumes, design verifiable institutional or personal certificates with custom seals and QR verification, and get transparent guidance from FRANCIS Intelligence — with zero paywalls.",
+    "Craft ATS-ready resumes and—for Admin-approved Authorized Organizations—design verifiable official certificates with custom stamps and QR verification, guided by FRANCIS Intelligence with zero paywalls.",
   primaryCta: "Launch Resume Studio",
   secondaryCta: "Launch Certificate Studio",
   openSourceNote:
@@ -54,7 +54,7 @@ const DEFAULT_FOOTER = {
   githubUrl: "https://github.com/yadlapallif-hub/ai-studio",
   contactEmail: "support@franciscreatorstudio.org",
   disclaimer:
-    "Decorative preview stamps are clearly distinguished from genuine organizational authorization.",
+    "Certificate creation and official organizational stamps are restricted exclusively to Admin-approved Authorized Organizations.",
 };
 
 export async function getPublicPlatformData(): Promise<PublicPlatformData> {
