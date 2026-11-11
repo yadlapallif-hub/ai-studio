@@ -44,16 +44,10 @@ test("analyzeCareerRecommendations derives paths without fabricating live job po
   assert.match(rec.disclaimer, /never fabricated|never invented/i);
 });
 
-test("decorative sample stamps are explicitly labeled sample/preview only", () => {
-  const gold = shared.createDecorativeSampleStampSvg("gold_seal_sample");
-  const blue = shared.createDecorativeSampleStampSvg("round_sample");
-  const red = shared.createDecorativeSampleStampSvg("rect_draft_stamp");
-
-  for (const stamp of [gold, blue, red]) {
-    assert.match(stamp.label, /Sample Only/i);
-    assert.ok(stamp.svgDataUrl.startsWith("data:image/svg+xml;utf8,"));
-    assert.match(decodeURIComponent(stamp.svgDataUrl), /SAMPLE|PREVIEW|DECORATIVE/i);
-  }
+test("createDefaultCertificateElements starts clean with no decorative sample stamps", () => {
+  const defaults = shared.createDefaultCertificateElements();
+  assert.deepEqual(defaults, []);
+  assert.equal(typeof shared.createDecorativeSampleStampSvg, "undefined");
 });
 
 test("generateCertificateCode returns valid FCS-YYYY-XXXXXX format", () => {

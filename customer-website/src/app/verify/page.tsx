@@ -15,6 +15,7 @@ import {
   ShieldCheck,
   Stamp,
 } from "lucide-react";
+import { SlideReveal } from "@/components/motion/SlideReveal";
 
 interface ApprovedIssuerRow {
   id: string;
@@ -145,7 +146,8 @@ export default function VerifyLookupPage() {
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-14 sm:px-6">
-      <div className="rounded-3xl border border-[var(--fcs-border)] bg-[var(--fcs-surface)] p-8">
+      <SlideReveal direction="clip">
+        <div className="rounded-3xl border border-[var(--fcs-border)] bg-[var(--fcs-surface)] p-8">
         <div className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-teal-700 text-white">
           <ShieldCheck className="h-5 w-5" />
         </div>
@@ -178,16 +180,18 @@ export default function VerifyLookupPage() {
         </form>
 
         <div className="mt-8 rounded-2xl border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] p-5 text-xs text-[var(--fcs-ink-muted)]">
-          <p className="font-bold text-[var(--fcs-ink)]">Verification Transparency Policy</p>
+          <p className="font-bold text-[var(--fcs-ink)]">Verification & Issuance Policy</p>
           <p className="mt-1 leading-relaxed">
-            FRANCIS CREATOR STUDIO never marks a self-created draft or decorative sample stamp as
-            officially verified. A credential displays <strong>Officially Verified</strong> only
-            when issued under an Authorized Organization explicitly approved by an Administrator.
+            Certificate creation and official organizational stamps are restricted exclusively to
+            Authorized Organizations approved by an Administrator. Every issued certificate displays{" "}
+            <strong>Officially Verified</strong> only when issued by an approved organization.
           </p>
         </div>
-      </div>
+        </div>
+      </SlideReveal>
 
       {/* Authorized Organization Application (Requires Admin Approval) */}
+      <SlideReveal direction="up" delay={100}>
       <div className="mt-8 rounded-2xl border border-[var(--fcs-border)] bg-[var(--fcs-surface)] p-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
@@ -378,6 +382,7 @@ export default function VerifyLookupPage() {
           </div>
         )}
       </div>
+      </SlideReveal>
     </div>
   );
 }

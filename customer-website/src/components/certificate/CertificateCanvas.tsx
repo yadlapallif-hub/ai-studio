@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import QRCode from "qrcode";
+import { Trash2 } from "lucide-react";
 import type { CertificateCanvasElement, CertificateStyleConfig } from "@francis/shared";
 
 interface CertificateCanvasProps {
@@ -22,6 +23,7 @@ interface CertificateCanvasProps {
   interactive?: boolean;
   onSelectElement?: (id: string | null) => void;
   onUpdateElementPosition?: (id: string, x: number, y: number) => void;
+  onDeleteElement?: (id: string) => void;
 }
 
 const FONT_MAP: Record<string, string> = {
@@ -454,6 +456,24 @@ export const CertificateCanvas = React.forwardRef<HTMLDivElement, CertificateCan
                     }`}
                   />
                 ) : null}
+
+                {isSelected && props.onDeleteElement && (
+                  <button
+                    type="button"
+                    data-export-ignore="true"
+                    title={`Delete ${el.label} from certificate`}
+                    aria-label={`Delete ${el.label} from certificate`}
+                    onPointerDown={(e) => e.stopPropagation()}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      props.onDeleteElement?.(el.id);
+                    }}
+                    className="no-print absolute -top-3.5 -right-3.5 z-40 inline-flex items-center gap-1 rounded-full border border-red-200 bg-red-600 px-2 py-1 text-[10px] font-bold text-white shadow-md transition hover:bg-red-700"
+                  >
+                    <Trash2 className="h-3 w-3" />
+                    <span>Delete</span>
+                  </button>
+                )}
               </div>
             );
           })}

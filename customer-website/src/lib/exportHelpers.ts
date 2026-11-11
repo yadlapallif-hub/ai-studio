@@ -33,6 +33,8 @@ export async function exportElementAsPng(
   const dataUrl = await toPng(node, {
     pixelRatio: 2.5,
     cacheBust: true,
+    filter: (domNode) =>
+      !(domNode instanceof HTMLElement && domNode.dataset?.exportIgnore === "true"),
   });
   triggerBrowserDownload(dataUrl, filename);
   const res = await fetch(dataUrl);
@@ -48,6 +50,8 @@ export async function exportElementAsA4Pdf(
   const dataUrl = await toPng(node, {
     pixelRatio: 2.5,
     cacheBust: true,
+    filter: (domNode) =>
+      !(domNode instanceof HTMLElement && domNode.dataset?.exportIgnore === "true"),
   });
 
   const img = new Image();

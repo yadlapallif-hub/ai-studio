@@ -55,7 +55,7 @@ export function FloatingAiAssistant() {
     : pathname.startsWith("/certificate-builder")
       ? [
           "Recommend a layout for an internship certificate.",
-          "Explain decorative sample stamps vs genuine seals.",
+          "How do I create or delete an official organization stamp?",
           "How does QR certificate verification work?",
         ]
       : [

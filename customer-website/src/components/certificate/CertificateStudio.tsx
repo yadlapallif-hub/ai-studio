@@ -1,18 +1,16 @@
 "use client";
 
-import React, { useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   analyzeCertificateDesign,
-  createDecorativeSampleStampSvg,
   generateCertificateCode,
   type CertificateCanvasElement,
   type CertificateStyleConfig,
   type OrganizationStampRecord,
 } from "@francis/shared";
 import {
-  AlertTriangle,
   ArrowDown,
   ArrowUp,
   Camera,
@@ -31,7 +29,6 @@ import {
   Stamp,
   Trash2,
   Type,
-  Upload,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { CertificateCanvas } from "./CertificateCanvas";
@@ -177,6 +174,33 @@ export function CertificateStudio(props: CertificateStudioProps) {
     if (cfg.titleDefault) setTitle(cfg.titleDefault);
   };
 
+  const deleteCanvasElement = useCallback((id: string) => {
+    setElements((prev) => prev.filter((el) => el.id !== id));
+    setSelectedElementId((prev) => (prev === id ? null : prev));
+    setStatusMsg("Removed stamp/element from certificate.");
+  }, []);
+
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (!selectedElementId) return;
+      if (e.key !== "Delete" && e.key !== "Backspace") return;
+      const target = e.target as HTMLElement | null;
+      if (
+        target &&
+        (target.tagName === "INPUT" ||
+          target.tagName === "TEXTAREA" ||
+          target.tagName === "SELECT" ||
+          target.isContentEditable)
+      ) {
+        return;
+      }
+      e.preventDefault();
+      deleteCanvasElement(selectedElementId);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [selectedElementId, deleteCanvasElement]);
+
   const handleSave = async () => {
     setErrorMsg(null);
     setStatusMsg(null);
@@ -212,18 +236,15 @@ export function CertificateStudio(props: CertificateStudioProps) {
       } = await supabase.auth.getUser();
       if (!user) return;
 
-      const hasOnlySampleStamps = elements
-        .filter((e) => e.type === "stamp" || e.type === "seal" || e.type === "decorative_badge")
-        .every((e) => e.isSampleDecorative);
-
       const approvedIssuer =
         props.approvedIssuers.find((i) => i.id === selectedIssuerId) ?? null;
 
-      const authorizationType = approvedIssuer
-        ? "authorized_issuer"
-        : hasOnlySampleStamps
-          ? "sample_preview"
-          : "self_issued_draft";
+      if (!approvedIssuer) {
+        setErrorMsg("An Admin-approved Authorized Organization is required to save certificates.");
+        return;
+      }
+
+      const authorizationType = "authorized_issuer";
 
       const payload = {
         user_id: user.id,
@@ -421,30 +442,6 @@ export function CertificateStudio(props: CertificateStudioProps) {
     setElements((prev) => [...prev, newEl]);
     setSelectedElementId(newEl.id);
     setStatusMsg(`${type.toUpperCase()} added — drag on the canvas to position.`);
-  };
-
-  const addSampleDecorativeStamp = (
-    variant: "round_sample" | "gold_seal_sample" | "rect_draft_stamp"
-  ) => {
-    const preset = createDecorativeSampleStampSvg(variant);
-    const newEl: CertificateCanvasElement = {
-      id: `sample-${Date.now()}`,
-      type: "decorative_badge",
-      label: preset.label,
-      src: preset.svgDataUrl,
-      x: 76,
-      y: 65,
-      width: variant === "rect_draft_stamp" ? 175 : 116,
-      height: variant === "rect_draft_stamp" ? 78 : 116,
-      rotation: variant === "rect_draft_stamp" ? -8 : 0,
-      opacity: 0.9,
-      zIndex: elements.length + 1,
-      shape: preset.shape,
-      inkStyle: preset.inkStyle,
-      isSampleDecorative: true,
-    };
-    setElements((prev) => [...prev, newEl]);
-    setSelectedElementId(newEl.id);
   };
 
   const handleApplyRecipientPhoto = async (res: EditedPhotoResult) => {
@@ -1157,22 +1154,29 @@ export function CertificateStudio(props: CertificateStudioProps) {
                   </p>
                   <ul className="space-y-1">
                     {elements.map((el) => (
-                      <li key={el.id}>
+                      <li key={el.id} className="flex items-center gap-1.5">
                         <button
                           type="button"
                           onClick={() => setSelectedElementId(el.id)}
-                          className={`flex w-full items-center justify-between rounded-lg border px-2.5 py-1.5 text-left ${
+                          className={`flex min-w-0 flex-1 items-center justify-between rounded-lg border px-2.5 py-1.5 text-left ${
                             selectedElementId === el.id
                               ? "border-teal-600 bg-teal-50/70 dark:bg-teal-950/40"
                               : "border-[var(--fcs-border)]"
                           }`}
                         >
                           <span className="truncate font-medium">{el.label}</span>
-                          {el.isSampleDecorative && (
-                            <span className="ml-2 shrink-0 rounded bg-amber-100 px-1.5 py-0.5 text-[9px] font-bold text-amber-800 uppercase">
-                              Sample Only
-                            </span>
-                          )}
+                          <span className="ml-2 shrink-0 rounded bg-[var(--fcs-surface-muted)] px-1.5 py-0.5 text-[9px] font-semibold uppercase text-[var(--fcs-ink-muted)]">
+                            {el.type.replace(/_/g, " ")}
+                          </span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => deleteCanvasElement(el.id)}
+                          title={`Delete ${el.label} from certificate`}
+                          aria-label={`Delete ${el.label} from certificate`}
+                          className="shrink-0 rounded-lg border border-red-500/30 p-1.5 text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
                         </button>
                       </li>
                     ))}
@@ -1184,6 +1188,76 @@ export function CertificateStudio(props: CertificateStudioProps) {
 
           {activeTab === "stamps" && (
             <div className="space-y-4 rounded-2xl border border-[var(--fcs-border)] bg-[var(--fcs-surface)] p-4 text-xs">
+              {/* Printed Stamps & Seals currently on this certificate — instant Delete */}
+              <div className="rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] p-3">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="font-bold">
+                    Stamps & Elements Printed on Certificate ({elements.length})
+                  </p>
+                  {elements.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setElements([]);
+                        setSelectedElementId(null);
+                        setStatusMsg("All stamps and graphic elements cleared from certificate.");
+                      }}
+                      className="text-[11px] font-semibold text-red-600 hover:underline"
+                    >
+                      Clear All
+                    </button>
+                  )}
+                </div>
+
+                {elements.length === 0 ? (
+                  <p className="mt-1.5 text-[11px] text-[var(--fcs-ink-muted)]">
+                    No stamps, seals, or signatures are currently placed on this certificate.
+                    Create or apply an official organization stamp below.
+                  </p>
+                ) : (
+                  <ul className="mt-2 space-y-1.5">
+                    {elements.map((el) => (
+                      <li
+                        key={el.id}
+                        className={`flex items-center justify-between gap-2 rounded-lg border bg-[var(--fcs-surface)] px-2.5 py-1.5 ${
+                          selectedElementId === el.id
+                            ? "border-teal-600"
+                            : "border-[var(--fcs-border)]"
+                        }`}
+                      >
+                        <button
+                          type="button"
+                          onClick={() => setSelectedElementId(el.id)}
+                          className="flex min-w-0 flex-1 items-center gap-2 text-left"
+                        >
+                          {el.src && (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={el.src}
+                              alt={el.label}
+                              className="h-7 w-7 shrink-0 rounded border border-black/10 bg-white object-contain p-0.5"
+                            />
+                          )}
+                          <div className="min-w-0">
+                            <p className="truncate font-semibold">{el.label}</p>
+                            <p className="text-[10px] uppercase text-[var(--fcs-ink-muted)]">
+                              {el.type.replace(/_/g, " ")}
+                            </p>
+                          </div>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => deleteCanvasElement(el.id)}
+                          className="inline-flex shrink-0 items-center gap-1 rounded-lg border border-red-500/40 bg-red-50 px-2.5 py-1 text-[11px] font-semibold text-red-700 hover:bg-red-100 dark:bg-red-950/40 dark:text-red-300"
+                        >
+                          <Trash2 className="h-3 w-3" /> Delete
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+
               {hasApprovedIssuer ? (
                 <>
                   <OrganizationStampStudio
@@ -1208,7 +1282,7 @@ export function CertificateStudio(props: CertificateStudioProps) {
                       setElements((prev) => [...prev, newEl]);
                       setSelectedElementId(newEl.id);
                       setStatusMsg(
-                        `${item.label} placed on canvas — drag or resize anytime.`
+                        `${item.label} placed on canvas — drag, resize, or click Delete anytime.`
                       );
                     }}
                   />
@@ -1249,87 +1323,8 @@ export function CertificateStudio(props: CertificateStudioProps) {
                       </Link>
                     </p>
                   </div>
-
-                  <div className="grid grid-cols-2 gap-2 opacity-50">
-                    <div className="flex items-center justify-center gap-1.5 rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] py-2 font-semibold">
-                      <Stamp className="h-3.5 w-3.5 text-blue-600" />
-                      Create Org Stamp
-                    </div>
-                    <div className="flex items-center justify-center gap-1.5 rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] py-2 font-semibold">
-                      <Upload className="h-3.5 w-3.5 text-amber-600" />
-                      Upload Gold Seal
-                    </div>
-                  </div>
                 </div>
               )}
-
-              {/* Decorative Sample Stamps & Personal Signature Upload */}
-              <div className="space-y-3 border-t border-[var(--fcs-border)] pt-3">
-                <div className="rounded-xl border border-amber-500/30 bg-amber-50/70 p-2.5 text-[11px] text-amber-900 dark:bg-amber-950/30 dark:text-amber-200">
-                  <p className="flex items-center gap-1.5 font-bold">
-                    <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
-                    Preview Sample Stamps & Integrity Policy
-                  </p>
-                  <p className="mt-0.5">
-                    Sample stamps below are clearly marked <strong>PREVIEW ONLY</strong> for draft
-                    testing.
-                  </p>
-                </div>
-
-                <div className="grid grid-cols-1 gap-1.5">
-                  <button
-                    type="button"
-                    onClick={() => addSampleDecorativeStamp("gold_seal_sample")}
-                    className="flex items-center justify-between rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] px-3 py-2 font-medium hover:border-amber-600/50"
-                  >
-                    <span>Gold Embossed Sample Seal</span>
-                    <span className="text-[10px] uppercase text-amber-700">Decorative</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => addSampleDecorativeStamp("round_sample")}
-                    className="flex items-center justify-between rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] px-3 py-2 font-medium hover:border-blue-600/50"
-                  >
-                    <span>Blue Circular Sample Stamp</span>
-                    <span className="text-[10px] uppercase text-blue-700">Decorative</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => addSampleDecorativeStamp("rect_draft_stamp")}
-                    className="flex items-center justify-between rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] px-3 py-2 font-medium hover:border-red-600/50"
-                  >
-                    <span>Red Rectangular Draft Stamp</span>
-                    <span className="text-[10px] uppercase text-red-700">Decorative</span>
-                  </button>
-                </div>
-
-                {!hasApprovedIssuer && (
-                  <div className="space-y-2 border-t border-[var(--fcs-border)] pt-2">
-                    <label className="flex items-start gap-2 rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] p-2 text-[11px]">
-                      <input
-                        type="checkbox"
-                        checked={authorizedConfirm}
-                        onChange={(e) => setAuthorizedConfirm(e.target.checked)}
-                        className="mt-0.5 accent-teal-700"
-                      />
-                      <span>I confirm I am authorized to place my personal signature image.</span>
-                    </label>
-                    <label className="flex cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] py-2 font-semibold hover:border-teal-600/50">
-                      <Upload className="h-3.5 w-3.5 text-teal-600" />
-                      Upload Personal Signature PNG
-                      <input
-                        type="file"
-                        accept="image/png,image/webp,image/svg+xml"
-                        className="hidden"
-                        onChange={(e) => {
-                          const f = e.target.files?.[0];
-                          if (f) addCanvasAssetUpload(f, "signature", "default");
-                        }}
-                      />
-                    </label>
-                  </div>
-                )}
-              </div>
             </div>
           )}
 
@@ -1394,10 +1389,19 @@ export function CertificateStudio(props: CertificateStudioProps) {
         {/* RIGHT LIVE INTERACTIVE CANVAS */}
         <div className="lg:col-span-8">
           <div className="no-print mb-3 flex flex-wrap items-center justify-between gap-2">
-            <div className="flex items-center gap-2 text-xs">
+            <div className="flex flex-wrap items-center gap-2 text-xs">
               <span className="font-semibold text-[var(--fcs-ink-muted)]">
                 Drag stamps, logos & photos directly on canvas
               </span>
+              {selectedElement && (
+                <button
+                  type="button"
+                  onClick={() => deleteCanvasElement(selectedElement.id)}
+                  className="inline-flex items-center gap-1 rounded-full border border-red-500/40 bg-red-50 px-2.5 py-0.5 text-[11px] font-semibold text-red-700 hover:bg-red-100 dark:bg-red-950/40 dark:text-red-300"
+                >
+                  <Trash2 className="h-3 w-3" /> Delete &ldquo;{selectedElement.label}&rdquo;
+                </button>
+              )}
               <span className="inline-flex items-center gap-1 rounded-full border border-[var(--fcs-border)] bg-[var(--fcs-surface)] px-2.5 py-0.5 text-[11px] font-medium">
                 {verificationStatus === "verified" ? (
                   <>
@@ -1453,6 +1457,7 @@ export function CertificateStudio(props: CertificateStudioProps) {
                 selectedElementId={selectedElementId}
                 interactive={true}
                 onSelectElement={setSelectedElementId}
+                onDeleteElement={deleteCanvasElement}
                 onUpdateElementPosition={(id, x, y) =>
                   setElements((prev) =>
                     prev.map((el) => (el.id === id ? { ...el, x, y } : el))

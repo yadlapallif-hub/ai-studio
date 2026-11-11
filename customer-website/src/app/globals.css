@@ -55,11 +55,11 @@ body {
   background: rgba(100, 116, 139, 0.55);
 }
 
-/* Intro logo reveal keyframes */
+/* Intro & Page Slide Reveal Keyframes */
 @keyframes fcsLogoPop {
   0% {
     opacity: 0;
-    transform: scale(0.84) translateY(8px);
+    transform: scale(0.84) translateY(12px);
   }
   65% {
     opacity: 1;
@@ -99,13 +99,28 @@ body {
   }
 }
 
-@keyframes fcsFadeUp {
+@keyframes fcsSlideRevealClip {
   0% {
     opacity: 0;
-    transform: translateY(10px);
+    clip-path: inset(0 100% 0 0);
+    transform: translateX(-18px);
   }
   100% {
     opacity: 1;
+    clip-path: inset(0 0 0 0);
+    transform: translateX(0);
+  }
+}
+
+@keyframes fcsSlideRevealUp {
+  0% {
+    opacity: 0;
+    clip-path: inset(0 0 100% 0);
+    transform: translateY(22px);
+  }
+  100% {
+    opacity: 1;
+    clip-path: inset(0 0 0 0);
     transform: translateY(0);
   }
 }
@@ -113,7 +128,7 @@ body {
 @keyframes fcsExpandLine {
   0% {
     opacity: 0;
-    transform: scaleX(0.15);
+    transform: scaleX(0);
   }
   100% {
     opacity: 1;
@@ -122,19 +137,19 @@ body {
 }
 
 .fcs-intro-emblem {
-  animation: fcsLogoPop 680ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation: fcsLogoPop 640ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
 .fcs-logo-draw {
-  animation: fcsStrokeDraw 720ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation: fcsStrokeDraw 700ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
 .fcs-logo-draw-delay {
-  animation: fcsStrokeDraw 760ms cubic-bezier(0.22, 1, 0.36, 1) 180ms both;
+  animation: fcsStrokeDraw 740ms cubic-bezier(0.22, 1, 0.36, 1) 160ms both;
 }
 
 .fcs-logo-seal {
-  animation: fcsLogoPop 550ms cubic-bezier(0.22, 1, 0.36, 1) 340ms both;
+  animation: fcsLogoPop 520ms cubic-bezier(0.22, 1, 0.36, 1) 320ms both;
 }
 
 .fcs-intro-ring {
@@ -142,19 +157,72 @@ body {
 }
 
 .fcs-intro-title {
-  animation: fcsFadeUp 600ms cubic-bezier(0.22, 1, 0.36, 1) 280ms both;
+  animation: fcsSlideRevealClip 680ms cubic-bezier(0.22, 1, 0.36, 1) 240ms both;
 }
 
 .fcs-intro-rule {
-  animation: fcsExpandLine 600ms cubic-bezier(0.22, 1, 0.36, 1) 420ms both;
+  animation: fcsExpandLine 580ms cubic-bezier(0.22, 1, 0.36, 1) 380ms both;
 }
 
 .fcs-intro-subtitle {
-  animation: fcsFadeUp 600ms cubic-bezier(0.22, 1, 0.36, 1) 520ms both;
+  animation: fcsSlideRevealUp 620ms cubic-bezier(0.22, 1, 0.36, 1) 460ms both;
 }
 
 .fcs-intro-bottom {
-  animation: fcsFadeUp 680ms cubic-bezier(0.22, 1, 0.36, 1) 620ms both;
+  animation: fcsSlideRevealUp 640ms cubic-bezier(0.22, 1, 0.36, 1) 560ms both;
+}
+
+/* Section Slide Reveal transitions */
+.fcs-slide-reveal {
+  transition-property: opacity, transform, clip-path;
+  transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: opacity, transform;
+}
+
+.fcs-slide-reveal-hidden-up {
+  opacity: 0;
+  transform: translate3d(0, 24px, 0);
+}
+
+.fcs-slide-reveal-hidden-left {
+  opacity: 0;
+  transform: translate3d(28px, 0, 0);
+}
+
+.fcs-slide-reveal-hidden-right {
+  opacity: 0;
+  transform: translate3d(-28px, 0, 0);
+}
+
+.fcs-slide-reveal-hidden-clip {
+  opacity: 0;
+  clip-path: inset(0 100% 0 0);
+  transform: translate3d(-14px, 0, 0);
+}
+
+.fcs-slide-reveal-visible {
+  opacity: 1;
+  clip-path: inset(0 0 0 0);
+  transform: translate3d(0, 0, 0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fcs-slide-reveal,
+  .fcs-intro-emblem,
+  .fcs-logo-draw,
+  .fcs-logo-draw-delay,
+  .fcs-logo-seal,
+  .fcs-intro-ring,
+  .fcs-intro-title,
+  .fcs-intro-rule,
+  .fcs-intro-subtitle,
+  .fcs-intro-bottom {
+    animation: none !important;
+    transition: none !important;
+    opacity: 1 !important;
+    clip-path: none !important;
+    transform: none !important;
+  }
 }
 
 /* Print-ready A4 styling */

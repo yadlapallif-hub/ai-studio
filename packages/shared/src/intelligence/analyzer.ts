@@ -432,15 +432,12 @@ export function analyzeCertificateDesign(params: {
 
   const seals = params.elements.filter((e) => e.type === "seal" || e.type === "stamp" || e.type === "decorative_badge");
   if (seals.length === 0) {
-    sealPlacementNotes.push("Consider placing an authorized seal or decorative preview badge in the lower-right corner (x: 74–86%, y: 64–78%).");
+    sealPlacementNotes.push("Optional: place an official organization stamp or seal from the Stamps & Seals tab in the lower-right corner (x: 74–86%, y: 64–78%).");
   } else {
     for (const s of seals) {
       if (s.x > 25 && s.x < 65 && s.y > 25 && s.y < 65) {
         score -= 8;
         sealPlacementNotes.push(`Element "${s.label}" overlaps the central recipient text zone; move toward bottom corners.`);
-      }
-      if (s.isSampleDecorative) {
-        sealPlacementNotes.push(`"${s.label}" is marked as a decorative preview stamp — replace with your organization's genuine seal if issuing officially.`);
       }
     }
   }

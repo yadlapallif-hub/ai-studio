@@ -18,6 +18,7 @@ import {
   Wand2,
 } from "lucide-react";
 import { getPublicPlatformData } from "@/lib/platform";
+import { SlideReveal } from "@/components/motion/SlideReveal";
 
 export const dynamic = "force-dynamic";
 
@@ -28,78 +29,81 @@ export default async function HomePage() {
   return (
     <div className="bg-[var(--fcs-bg)] text-[var(--fcs-ink)]">
       {/* HERO SECTION */}
-      <section className="border-b border-[var(--fcs-border)] bg-[var(--fcs-surface)]">
+      <section className="overflow-hidden border-b border-[var(--fcs-border)] bg-[var(--fcs-surface)]">
         <div className="mx-auto grid max-w-7xl items-center gap-12 px-4 py-14 sm:px-6 lg:grid-cols-12 lg:py-20">
           <div className="lg:col-span-7">
-            <div className="inline-flex items-center gap-2 rounded-full border border-teal-700/25 bg-teal-50 px-3 py-1 text-xs font-semibold text-teal-800 dark:bg-teal-950/50 dark:text-teal-300">
-              <Code2 className="h-3.5 w-3.5" />
-              <span>{websiteContent.heroBadge}</span>
-            </div>
-
-            <h1 className="mt-5 text-3xl font-bold tracking-tight text-[var(--fcs-ink)] sm:text-5xl sm:leading-[1.08]">
-              {websiteContent.heroHeadline}
-            </h1>
-
-            <p className="mt-4 max-w-2xl text-base leading-relaxed text-[var(--fcs-ink-muted)] sm:text-lg">
-              {websiteContent.heroSubheadline}
-            </p>
-
-            <div className="mt-7 flex flex-wrap items-center gap-3">
-              <Link
-                href="/resume-builder/new"
-                className="inline-flex items-center gap-2 rounded-xl bg-teal-700 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-teal-800 dark:bg-teal-600 dark:hover:bg-teal-500"
-              >
-                <FileText className="h-4 w-4" />
-                <span>{websiteContent.primaryCta}</span>
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-              <Link
-                href="/certificate-builder/new"
-                className="inline-flex items-center gap-2 rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] px-5 py-3 text-sm font-semibold text-[var(--fcs-ink)] transition hover:border-teal-600/50"
-              >
-                <Award className="h-4 w-4 text-amber-600" />
-                <span>{websiteContent.secondaryCta}</span>
-              </Link>
-              <Link
-                href="/verify"
-                className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-[var(--fcs-ink-muted)] hover:text-teal-700 dark:hover:text-teal-300"
-              >
-                <QrCode className="h-4 w-4" />
-                Verify a Certificate
-              </Link>
-            </div>
-
-            <div className="mt-8 grid grid-cols-2 gap-4 border-t border-[var(--fcs-border)] pt-6 sm:grid-cols-4">
-              <div>
-                <p className="text-xs font-semibold text-[var(--fcs-ink)]">No Paywalls</p>
-                <p className="mt-0.5 text-[11px] text-[var(--fcs-ink-muted)]">
-                  Free PDF & PNG exports
-                </p>
+            <SlideReveal direction="right" duration={560}>
+              <div className="inline-flex items-center gap-2 rounded-full border border-teal-700/25 bg-teal-50 px-3 py-1 text-xs font-semibold text-teal-800 dark:bg-teal-950/50 dark:text-teal-300">
+                <Code2 className="h-3.5 w-3.5" />
+                <span>{websiteContent.heroBadge}</span>
               </div>
-              <div>
-                <p className="text-xs font-semibold text-[var(--fcs-ink)]">Try Instantly</p>
-                <p className="mt-0.5 text-[11px] text-[var(--fcs-ink-muted)]">
-                  Explore tools pre-signup
-                </p>
+
+              <h1 className="mt-5 text-3xl font-bold tracking-tight text-[var(--fcs-ink)] sm:text-5xl sm:leading-[1.08]">
+                {websiteContent.heroHeadline}
+              </h1>
+
+              <p className="mt-4 max-w-2xl text-base leading-relaxed text-[var(--fcs-ink-muted)] sm:text-lg">
+                {websiteContent.heroSubheadline}
+              </p>
+
+              <div className="mt-7 flex flex-wrap items-center gap-3">
+                <Link
+                  href="/resume-builder/new"
+                  className="inline-flex items-center gap-2 rounded-xl bg-teal-700 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-teal-800 dark:bg-teal-600 dark:hover:bg-teal-500"
+                >
+                  <FileText className="h-4 w-4" />
+                  <span>{websiteContent.primaryCta}</span>
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+                <Link
+                  href="/certificate-builder"
+                  className="inline-flex items-center gap-2 rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] px-5 py-3 text-sm font-semibold text-[var(--fcs-ink)] transition hover:border-teal-600/50"
+                >
+                  <Award className="h-4 w-4 text-amber-600" />
+                  <span>{websiteContent.secondaryCta}</span>
+                </Link>
+                <Link
+                  href="/verify"
+                  className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-[var(--fcs-ink-muted)] hover:text-teal-700 dark:hover:text-teal-300"
+                >
+                  <QrCode className="h-4 w-4" />
+                  Verify a Certificate
+                </Link>
               </div>
-              <div>
-                <p className="text-xs font-semibold text-[var(--fcs-ink)]">QR Verification</p>
-                <p className="mt-0.5 text-[11px] text-[var(--fcs-ink-muted)]">
-                  Database-backed registry
-                </p>
+
+              <div className="mt-8 grid grid-cols-2 gap-4 border-t border-[var(--fcs-border)] pt-6 sm:grid-cols-4">
+                <div>
+                  <p className="text-xs font-semibold text-[var(--fcs-ink)]">No Paywalls</p>
+                  <p className="mt-0.5 text-[11px] text-[var(--fcs-ink-muted)]">
+                    Free PDF & PNG exports
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs font-semibold text-[var(--fcs-ink)]">Authorized Issuance</p>
+                  <p className="mt-0.5 text-[11px] text-[var(--fcs-ink-muted)]">
+                    Admin-approved certificates
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs font-semibold text-[var(--fcs-ink)]">QR Verification</p>
+                  <p className="mt-0.5 text-[11px] text-[var(--fcs-ink-muted)]">
+                    Database-backed registry
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs font-semibold text-[var(--fcs-ink)]">Open AI Support</p>
+                  <p className="mt-0.5 text-[11px] text-[var(--fcs-ink-muted)]">
+                    Ollama, OpenAI, Gemini, Groq
+                  </p>
+                </div>
               </div>
-              <div>
-                <p className="text-xs font-semibold text-[var(--fcs-ink)]">Open AI Support</p>
-                <p className="mt-0.5 text-[11px] text-[var(--fcs-ink-muted)]">
-                  Ollama, OpenAI, Gemini, Groq
-                </p>
-              </div>
-            </div>
+            </SlideReveal>
           </div>
 
           {/* ARCHITECTURAL LIVE STUDIO SHOWCASE */}
           <div className="lg:col-span-5">
-            <div className="relative rounded-2xl border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] p-4 sm:p-5">
+            <SlideReveal direction="left" delay={120} duration={640}>
+              <div className="relative rounded-2xl border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] p-4 sm:p-5">
               <div className="mb-3 flex items-center justify-between border-b border-[var(--fcs-border)] pb-2.5">
                 <div className="flex items-center gap-2 text-xs font-semibold">
                   <span className="h-2.5 w-2.5 rounded-full bg-teal-600" />
@@ -177,28 +181,32 @@ export default async function HomePage() {
                   Open Studio →
                 </Link>
               </div>
-            </div>
+              </div>
+            </SlideReveal>
           </div>
         </div>
       </section>
 
       {/* PLATFORM OVERVIEW */}
       <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6">
-        <div className="max-w-2xl">
-          <p className="text-xs font-semibold tracking-widest uppercase text-teal-700 dark:text-teal-400">
-            Platform Architecture
-          </p>
-          <h2 className="mt-2 text-2xl font-bold tracking-tight sm:text-3xl">
-            Every core studio built as real document engineering software
-          </h2>
-          <p className="mt-2 text-sm leading-relaxed text-[var(--fcs-ink-muted)]">
-            {branding.tagline} Designed with clean typography, honest AI recommendations, private
-            cloud storage, and verifiable credentials.
-          </p>
-        </div>
+        <SlideReveal direction="clip">
+          <div className="max-w-2xl">
+            <p className="text-xs font-semibold tracking-widest uppercase text-teal-700 dark:text-teal-400">
+              Platform Architecture
+            </p>
+            <h2 className="mt-2 text-2xl font-bold tracking-tight sm:text-3xl">
+              Every core studio built as real document engineering software
+            </h2>
+            <p className="mt-2 text-sm leading-relaxed text-[var(--fcs-ink-muted)]">
+              {branding.tagline} Designed with clean typography, honest AI recommendations, private
+              cloud storage, and verifiable credentials.
+            </p>
+          </div>
+        </SlideReveal>
 
         <div className="mt-10 grid gap-5 md:grid-cols-2 lg:grid-cols-4">
-          <div className="rounded-2xl border border-[var(--fcs-border)] bg-[var(--fcs-surface)] p-6">
+          <SlideReveal delay={0}>
+            <div className="h-full rounded-2xl border border-[var(--fcs-border)] bg-[var(--fcs-surface)] p-6">
             <FileText className="h-6 w-6 text-teal-700 dark:text-teal-400" />
             <h3 className="mt-4 text-base font-bold">AI Resume Builder</h3>
             <p className="mt-2 text-xs leading-relaxed text-[var(--fcs-ink-muted)]">
@@ -211,24 +219,28 @@ export default async function HomePage() {
             >
               Open Resume Builder <ArrowRight className="h-3.5 w-3.5" />
             </Link>
-          </div>
+            </div>
+          </SlideReveal>
 
-          <div className="rounded-2xl border border-[var(--fcs-border)] bg-[var(--fcs-surface)] p-6">
+          <SlideReveal delay={70}>
+            <div className="h-full rounded-2xl border border-[var(--fcs-border)] bg-[var(--fcs-surface)] p-6">
             <Award className="h-6 w-6 text-amber-600" />
-            <h3 className="mt-4 text-base font-bold">AI Certificate Studio</h3>
+            <h3 className="mt-4 text-base font-bold">Authorized Certificate Studio</h3>
             <p className="mt-2 text-xs leading-relaxed text-[var(--fcs-ink-muted)]">
-              100 certificate designs across 9 categories, A4 portrait & landscape canvas,
-              stamp/seal/signature layering, unique certificate IDs, and QR verification.
+              100 certificate designs across 9 categories, exclusively unlocked for Admin-approved
+              Authorized Organizations with custom stamps, deletion controls, and QR verification.
             </p>
             <Link
               href="/certificate-builder"
               className="mt-4 inline-flex items-center gap-1 text-xs font-semibold text-teal-700 hover:underline dark:text-teal-400"
             >
-              Open Certificate Studio <ArrowRight className="h-3.5 w-3.5" />
+              View Certificate Studio <ArrowRight className="h-3.5 w-3.5" />
             </Link>
-          </div>
+            </div>
+          </SlideReveal>
 
-          <div className="rounded-2xl border border-[var(--fcs-border)] bg-[var(--fcs-surface)] p-6">
+          <SlideReveal delay={140}>
+            <div className="h-full rounded-2xl border border-[var(--fcs-border)] bg-[var(--fcs-surface)] p-6">
             <Compass className="h-6 w-6 text-teal-700 dark:text-teal-400" />
             <h3 className="mt-4 text-base font-bold">FRANCIS Intelligence</h3>
             <p className="mt-2 text-xs leading-relaxed text-[var(--fcs-ink-muted)]">
@@ -241,9 +253,11 @@ export default async function HomePage() {
             >
               Explore Intelligence <ArrowRight className="h-3.5 w-3.5" />
             </Link>
-          </div>
+            </div>
+          </SlideReveal>
 
-          <div className="rounded-2xl border border-[var(--fcs-border)] bg-[var(--fcs-surface)] p-6">
+          <SlideReveal delay={210}>
+            <div className="h-full rounded-2xl border border-[var(--fcs-border)] bg-[var(--fcs-surface)] p-6">
             <LifeBuoy className="h-6 w-6 text-teal-700 dark:text-teal-400" />
             <h3 className="mt-4 text-base font-bold">Live Customer Support</h3>
             <p className="mt-2 text-xs leading-relaxed text-[var(--fcs-ink-muted)]">
@@ -256,14 +270,16 @@ export default async function HomePage() {
             >
               Visit Support Center <ArrowRight className="h-3.5 w-3.5" />
             </Link>
-          </div>
+            </div>
+          </SlideReveal>
         </div>
       </section>
 
       {/* DEEP DIVE: RESUME + CERTIFICATE BUILDERS */}
-      <section className="border-y border-[var(--fcs-border)] bg-[var(--fcs-surface)]">
+      <section className="overflow-hidden border-y border-[var(--fcs-border)] bg-[var(--fcs-surface)]">
         <div className="mx-auto grid max-w-7xl gap-8 px-4 py-16 sm:px-6 lg:grid-cols-2">
-          <div className="rounded-2xl border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] p-7">
+          <SlideReveal direction="right">
+          <div className="h-full rounded-2xl border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] p-7">
             <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-teal-700 dark:text-teal-400">
               <Layers className="h-4 w-4" />
               <span>Resume Studio Highlights</span>
@@ -303,28 +319,30 @@ export default async function HomePage() {
               </Link>
             </div>
           </div>
+          </SlideReveal>
 
-          <div className="rounded-2xl border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] p-7">
+          <SlideReveal direction="left" delay={90}>
+          <div className="h-full rounded-2xl border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] p-7">
             <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-amber-700 dark:text-amber-400">
               <Stamp className="h-4 w-4" />
-              <span>Certificate & Seal Studio Highlights</span>
+              <span>Certificate & Stamp Studio Highlights</span>
             </div>
             <h3 className="mt-3 text-xl font-bold">
-              Graphic design flexibility with strict verification integrity
+              Authorized organization issuance with custom stamp control
             </h3>
             <ul className="mt-5 space-y-2.5 text-sm text-[var(--fcs-ink-muted)]">
               <li className="flex items-start gap-2.5">
                 <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
                 <span>
-                  Drag, resize, rotate, and layer logos, recipient photos, stamps, gold seals, and
-                  authorized signatures across A4 Landscape or Portrait canvases.
+                  Drag, resize, rotate, apply, or delete logos, recipient photos, official stamps,
+                  gold seals, and authorized signatures across A4 canvases.
                 </span>
               </li>
               <li className="flex items-start gap-2.5">
                 <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
                 <span>
-                  Ethical distinction: Sample preview stamps are clearly labeled decorative, while
-                  genuine organizational seals & verification require authorized issuer approval.
+                  Strict Admin approval gate: certificate creation and Stamp Studio unlock only for
+                  verified, authorized organizations (no decorative sample stamps).
                 </span>
               </li>
               <li className="flex items-start gap-2.5">
@@ -337,10 +355,10 @@ export default async function HomePage() {
             </ul>
             <div className="mt-6 flex flex-wrap gap-3">
               <Link
-                href="/certificate-builder/new"
+                href="/certificate-builder"
                 className="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-xs font-semibold text-white hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900"
               >
-                Open Certificate Studio <ArrowRight className="h-3.5 w-3.5" />
+                Certificate Studio <ArrowRight className="h-3.5 w-3.5" />
               </Link>
               <Link
                 href="/verify"
@@ -350,18 +368,21 @@ export default async function HomePage() {
               </Link>
             </div>
           </div>
+          </SlideReveal>
         </div>
       </section>
 
       {/* HOW IT WORKS */}
       <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6">
-        <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">How It Works</h2>
+        <SlideReveal direction="clip">
+          <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">How It Works</h2>
+        </SlideReveal>
         <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
           {[
             {
               step: "01",
               title: "Choose a Studio & Template",
-              desc: "Explore 100 ATS-ready resume templates or 100 certificate designs across 9 categories immediately without creating an account.",
+              desc: "Explore 100 ATS-ready resume templates immediately, or apply for Authorized Organization access to unlock 100 certificate designs.",
               icon: Wand2,
             },
             {
@@ -372,8 +393,8 @@ export default async function HomePage() {
             },
             {
               step: "03",
-              title: "Save to Private Vault",
-              desc: "Sign in for free to store multiple versions, logos, stamps, signatures, and exports securely in Supabase.",
+              title: "Manage Stamps & Vault",
+              desc: "Design official stamps and signatures in Stamp Studio, place or delete them on certificates, and save securely in Supabase.",
               icon: FolderLock,
             },
             {
@@ -382,29 +403,29 @@ export default async function HomePage() {
               desc: "Download crisp print-ready A4 PDFs or PNGs and verify certificates publicly via unique ID or QR code.",
               icon: Download,
             },
-          ].map((item) => (
-            <div
-              key={item.step}
-              className="rounded-2xl border border-[var(--fcs-border)] bg-[var(--fcs-surface)] p-5"
-            >
-              <div className="flex items-center justify-between">
-                <span className="font-mono text-xs font-semibold text-teal-700 dark:text-teal-400">
-                  STEP {item.step}
-                </span>
-                <item.icon className="h-4 w-4 text-[var(--fcs-ink-muted)]" />
+          ].map((item, idx) => (
+            <SlideReveal key={item.step} delay={idx * 75}>
+              <div className="h-full rounded-2xl border border-[var(--fcs-border)] bg-[var(--fcs-surface)] p-5">
+                <div className="flex items-center justify-between">
+                  <span className="font-mono text-xs font-semibold text-teal-700 dark:text-teal-400">
+                    STEP {item.step}
+                  </span>
+                  <item.icon className="h-4 w-4 text-[var(--fcs-ink-muted)]" />
+                </div>
+                <h3 className="mt-3 text-sm font-bold">{item.title}</h3>
+                <p className="mt-1.5 text-xs leading-relaxed text-[var(--fcs-ink-muted)]">
+                  {item.desc}
+                </p>
               </div>
-              <h3 className="mt-3 text-sm font-bold">{item.title}</h3>
-              <p className="mt-1.5 text-xs leading-relaxed text-[var(--fcs-ink-muted)]">
-                {item.desc}
-              </p>
-            </div>
+            </SlideReveal>
           ))}
         </div>
       </section>
 
       {/* OPEN SOURCE SECTION */}
       <section className="border-y border-[var(--fcs-border)] bg-[var(--fcs-surface)]">
-        <div className="mx-auto flex max-w-7xl flex-col items-start justify-between gap-6 px-4 py-12 sm:px-6 lg:flex-row lg:items-center">
+        <SlideReveal direction="up">
+          <div className="mx-auto flex max-w-7xl flex-col items-start justify-between gap-6 px-4 py-12 sm:px-6 lg:flex-row lg:items-center">
           <div className="max-w-2xl">
             <p className="text-xs font-semibold tracking-widest uppercase text-teal-700 dark:text-teal-400">
               Free & Open-Source Software
@@ -433,21 +454,23 @@ export default async function HomePage() {
               Create Free Account
             </Link>
           </div>
-        </div>
+          </div>
+        </SlideReveal>
       </section>
 
       {/* FAQ SECTION */}
       <section id="faq" className="mx-auto max-w-4xl px-4 py-16 sm:px-6">
-        <div className="text-center">
-          <p className="text-xs font-semibold tracking-widest uppercase text-teal-700 dark:text-teal-400">
-            Frequently Asked Questions
-          </p>
-          <h2 className="mt-2 text-2xl font-bold tracking-tight sm:text-3xl">
-            Clear answers on privacy, AI & verification
-          </h2>
-        </div>
+        <SlideReveal direction="up">
+          <div className="text-center">
+            <p className="text-xs font-semibold tracking-widest uppercase text-teal-700 dark:text-teal-400">
+              Frequently Asked Questions
+            </p>
+            <h2 className="mt-2 text-2xl font-bold tracking-tight sm:text-3xl">
+              Clear answers on privacy, AI & verification
+            </h2>
+          </div>
 
-        <div className="mt-8 space-y-3">
+          <div className="mt-8 space-y-3">
           {faqs.map((faq) => (
             <details
               key={faq.id}
@@ -464,7 +487,8 @@ export default async function HomePage() {
               </p>
             </details>
           ))}
-        </div>
+          </div>
+        </SlideReveal>
       </section>
     </div>
   );

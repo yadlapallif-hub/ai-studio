@@ -597,11 +597,11 @@ export function Navbar({
                         <FileText className="h-3.5 w-3.5 text-teal-600" /> New Resume
                       </Link>
                       <Link
-                        href="/certificate-builder/new"
+                        href="/certificate-builder"
                         onClick={() => setSearchOpen(false)}
                         className="flex items-center gap-2 rounded-lg px-2.5 py-2 text-xs font-medium hover:bg-[var(--fcs-surface-muted)]"
                       >
-                        <Award className="h-3.5 w-3.5 text-amber-600" /> New Certificate
+                        <Award className="h-3.5 w-3.5 text-amber-600" /> Certificate Studio (Auth Only)
                       </Link>
                       <Link
                         href="/verify"

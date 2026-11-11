@@ -13,6 +13,7 @@ import {
   getStampsForApprovedIssuers,
 } from "@/lib/issuers";
 import { getAuthenticatedContext } from "@/lib/supabase/server";
+import { CertificateAccessGate } from "@/components/certificate/CertificateAccessGate";
 import { CertificateStudio } from "@/components/certificate/CertificateStudio";
 
 export const dynamic = "force-dynamic";
@@ -28,16 +29,9 @@ export default async function CertificateEditorPage({
   const { template, tab, issuer } = await searchParams;
   const { supabase, user } = await getAuthenticatedContext();
 
-  const [{ data: templates }, accessResult] = await Promise.all([
-    supabase
-      .from("fcs_certificate_templates")
-      .select("id, slug, name, category, orientation, layout_config")
-      .eq("is_active", true)
-      .order("sort_order", { ascending: true }),
-    user
-      ? getAccessibleIssuersForUser(user)
-      : Promise.resolve({ applications: [], approvedIssuers: [] }),
-  ]);
+  const accessResult = user
+    ? await getAccessibleIssuersForUser(user)
+    : { applications: [], approvedIssuers: [] };
 
   const orgApplications = accessResult.applications.map((item) => ({
     id: item.id,
@@ -53,7 +47,25 @@ export default async function CertificateEditorPage({
     organization_name: item.organization_name,
   }));
 
-  const organizationStamps = await getStampsForApprovedIssuers(approvedIssuers);
+  // Certificate creation & editing is strictly limited to Admin-approved Authorized Organizations
+  if (!user || approvedIssuers.length === 0) {
+    return (
+      <CertificateAccessGate
+        isAuthenticated={Boolean(user)}
+        applications={orgApplications}
+      />
+    );
+  }
+
+  const [{ data: templates }, organizationStamps] = await Promise.all([
+    supabase
+      .from("fcs_certificate_templates")
+      .select("id, slug, name, category, orientation, layout_config")
+      .eq("is_active", true)
+      .order("sort_order", { ascending: true }),
+    getStampsForApprovedIssuers(approvedIssuers),
+  ]);
+
   const initialTab = tab === "stamps" ? "stamps" : "details";
 
   const tplList = (
@@ -83,14 +95,12 @@ export default async function CertificateEditorPage({
 
     const defaultIssuer =
       (issuer && approvedIssuers.find((item) => item.id === issuer)) ||
-      approvedIssuers[0] ||
-      null;
+      approvedIssuers[0];
 
-    const defaultStamp = defaultIssuer
-      ? organizationStamps.find(
-          (st) => st.issuer_id === defaultIssuer.id && st.is_default && st.preview_url
-        ) || null
-      : null;
+    const defaultStamp =
+      organizationStamps.find(
+        (st) => st.issuer_id === defaultIssuer.id && st.is_default && st.preview_url
+      ) || null;
 
     const initialElements: CertificateCanvasElement[] = defaultStamp
       ? [
@@ -127,15 +137,13 @@ export default async function CertificateEditorPage({
     return (
       <CertificateStudio
         initialCertId={null}
-        initialIssuerId={defaultIssuer?.id || ""}
+        initialIssuerId={defaultIssuer.id}
         initialCertificateCode={generateCertificateCode()}
         initialTemplateSlug={matched?.slug || "course-completion"}
         initialTitle={cfg.titleDefault || "Certificate of Completion"}
         initialRecipientName="Jordan Taylor"
         initialCourse="Full-Stack Web Engineering Cohort"
-        initialOrganization={
-          defaultIssuer?.organization_name || "FRANCIS Open Learning Initiative"
-        }
+        initialOrganization={defaultIssuer.organization_name}
         initialDescription="For demonstrating practical engineering excellence, consistent contribution, and completing all capstone evaluations."
         initialIssueDate={today}
         initialExpiryDate=""
@@ -158,13 +166,9 @@ export default async function CertificateEditorPage({
         approvedIssuers={approvedIssuers}
         organizationApplications={orgApplications}
         initialOrganizationStamps={organizationStamps}
-        isAuthenticated={Boolean(user)}
+        isAuthenticated={true}
       />
     );
-  }
-
-  if (!user) {
-    notFound();
   }
 
   const { data: cert } = await supabase
@@ -187,7 +191,12 @@ export default async function CertificateEditorPage({
   const validSavedIssuerId =
     cert.issuer_id && approvedIssuers.some((iss) => iss.id === cert.issuer_id)
       ? cert.issuer_id
-      : "";
+      : approvedIssuers[0].id;
+
+  // Strip any legacy decorative sample stamps automatically so saved certificates stay official
+  const cleanedElements = ((cert.canvas_elements as CertificateCanvasElement[]) || []).filter(
+    (el) => !el.isSampleDecorative && el.type !== "decorative_badge"
+  );
 
   return (
     <CertificateStudio
@@ -205,7 +214,7 @@ export default async function CertificateEditorPage({
       initialSignatoryName={cert.signatory_name || ""}
       initialSignatoryDesignation={cert.signatory_designation || ""}
       initialOrientation={cert.orientation}
-      initialElements={(cert.canvas_elements as CertificateCanvasElement[]) || []}
+      initialElements={cleanedElements}
       initialStyle={{
         ...createDefaultCertificateStyle(),
         ...(cert.style_config as Partial<CertificateStyleConfig>),

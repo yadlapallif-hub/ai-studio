@@ -5,7 +5,7 @@ import { CreatorStudioLogo } from "./CreatorStudioLogo";
 
 export function IntroSplash() {
   const [visible, setVisible] = useState(true);
-  const [fadingOut, setFadingOut] = useState(false);
+  const [slidingOut, setSlidingOut] = useState(false);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -17,16 +17,16 @@ export function IntroSplash() {
       return;
     }
 
-    const fadeTimer = window.setTimeout(() => {
-      setFadingOut(true);
-    }, 1850);
+    const slideTimer = window.setTimeout(() => {
+      setSlidingOut(true);
+    }, 1750);
 
     const doneTimer = window.setTimeout(() => {
       setVisible(false);
     }, 2400);
 
     return () => {
-      window.clearTimeout(fadeTimer);
+      window.clearTimeout(slideTimer);
       window.clearTimeout(doneTimer);
     };
   }, []);
@@ -37,10 +37,19 @@ export function IntroSplash() {
     <div
       role="dialog"
       aria-label="FRANCIS CREATOR STUDIO Welcome Intro"
-      className={`no-print fixed inset-0 z-[100] flex flex-col items-center justify-center overflow-hidden bg-[#060A0F] text-white transition-all duration-500 ${
-        fadingOut ? "pointer-events-none opacity-0 scale-[1.015]" : "opacity-100 scale-100"
+      style={{
+        transition: "transform 650ms cubic-bezier(0.76, 0, 0.24, 1), opacity 550ms ease",
+      }}
+      className={`no-print fixed inset-0 z-[100] flex flex-col items-center justify-center overflow-hidden bg-[#060A0F] text-white ${
+        slidingOut ? "pointer-events-none -translate-y-full opacity-95" : "translate-y-0 opacity-100"
       }`}
     >
+      {/* Bottom Slide Curtain Edge Accent */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-x-0 bottom-0 h-1 bg-gradient-to-r from-teal-500 via-amber-400 to-teal-500 opacity-85"
+      />
+
       {/* Ambient Radial Studio Glow & Precision Grid */}
       <div
         aria-hidden="true"
@@ -56,22 +65,26 @@ export function IntroSplash() {
       <button
         type="button"
         onClick={() => {
-          setFadingOut(true);
-          window.setTimeout(() => setVisible(false), 220);
+          setSlidingOut(true);
+          window.setTimeout(() => setVisible(false), 520);
         }}
         className="absolute top-5 right-5 z-10 rounded-full border border-white/15 bg-white/5 px-3 py-1 text-[11px] font-medium text-slate-300 transition hover:border-teal-400/50 hover:text-white"
       >
         Skip →
       </button>
 
-      {/* Center Logo Reveal Stage */}
+      {/* Center Logo Slide Reveal Stage */}
       <div className="relative z-10 flex flex-col items-center px-6 text-center">
         <div className="fcs-intro-emblem relative flex items-center justify-center">
           <div
             aria-hidden="true"
             className="fcs-intro-ring absolute -inset-4 rounded-3xl border border-teal-400/25"
           />
-          <CreatorStudioLogo size={102} animated={true} className="drop-shadow-[0_14px_40px_rgba(20,184,166,0.35)]" />
+          <CreatorStudioLogo
+            size={102}
+            animated={true}
+            className="drop-shadow-[0_14px_40px_rgba(20,184,166,0.35)]"
+          />
         </div>
 
         <h1 className="fcs-intro-title mt-7 text-xl font-bold tracking-[0.26em] text-white uppercase sm:text-2xl">

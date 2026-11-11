@@ -2,8 +2,9 @@
 
 import React, { useMemo, useState } from "react";
 import Link from "next/link";
-import { Award, Search } from "lucide-react";
+import { Award, Lock, Search } from "lucide-react";
 import { getCertificateTemplateConfig } from "@francis/shared";
+import { SlideReveal } from "@/components/motion/SlideReveal";
 
 export interface CertificateTemplateCardItem {
   id: string;
@@ -30,8 +31,10 @@ const CATEGORIES = [
 
 export function CertificateTemplateGallery({
   templates,
+  canCreateCertificates = false,
 }: {
   templates: CertificateTemplateCardItem[];
+  canCreateCertificates?: boolean;
 }) {
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("all");
@@ -126,6 +129,7 @@ export function CertificateTemplateGallery({
           No certificate templates matched &ldquo;{search}&rdquo;. Try clearing your filters.
         </div>
       ) : (
+        <SlideReveal direction="up" delay={70}>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {filtered.map((tpl) => {
             const fallback = getCertificateTemplateConfig(tpl.slug)?.layoutConfig;
@@ -186,16 +190,26 @@ export function CertificateTemplateGallery({
                   </p>
                 </div>
 
-                <Link
-                  href={`/certificate-builder/new?template=${tpl.slug}`}
-                  className="mt-4 inline-flex items-center justify-center rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] py-2 text-xs font-semibold transition hover:border-teal-600/50 hover:text-teal-700 dark:hover:text-teal-300"
-                >
-                  Open Template →
-                </Link>
+                {canCreateCertificates ? (
+                  <Link
+                    href={`/certificate-builder/new?template=${tpl.slug}`}
+                    className="mt-4 inline-flex items-center justify-center rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] py-2 text-xs font-semibold transition hover:border-teal-600/50 hover:text-teal-700 dark:hover:text-teal-300"
+                  >
+                    Open Template →
+                  </Link>
+                ) : (
+                  <Link
+                    href="/verify"
+                    className="mt-4 inline-flex items-center justify-center gap-1.5 rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] py-2 text-xs font-semibold text-[var(--fcs-ink-muted)] transition hover:border-amber-600/40 hover:text-amber-800 dark:hover:text-amber-300"
+                  >
+                    <Lock className="h-3.5 w-3.5" /> Authorized Access Required
+                  </Link>
+                )}
               </div>
             );
           })}
         </div>
+        </SlideReveal>
       )}
     </section>
   );

@@ -29,6 +29,7 @@ import {
   X,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { SlideReveal } from "@/components/motion/SlideReveal";
 
 interface ResumeRow {
   id: string;
@@ -100,6 +101,9 @@ export function DashboardClient(props: Props) {
   const openTicketsCount = props.tickets.filter(
     (t) => t.status !== "resolved" && t.status !== "closed"
   ).length;
+  const hasApprovedOrg = (props.orgApplications ?? []).some(
+    (o) => o.verification_status === "approved"
+  );
 
   const duplicateResume = async (resume: ResumeRow) => {
     setBusyId(resume.id);
@@ -211,6 +215,7 @@ export function DashboardClient(props: Props) {
   return (
     <div className="mx-auto max-w-7xl space-y-8 px-4 py-8 sm:px-6">
       {/* Header Welcome */}
+      <SlideReveal direction="clip">
       <div className="flex flex-col justify-between gap-4 rounded-2xl border border-[var(--fcs-border)] bg-[var(--fcs-surface)] p-6 sm:flex-row sm:items-center">
         <div>
           <p className="text-xs font-semibold tracking-wider uppercase text-teal-700 dark:text-teal-400">
@@ -231,12 +236,29 @@ export function DashboardClient(props: Props) {
           >
             <Plus className="h-3.5 w-3.5" /> New Resume
           </Link>
-          <Link
-            href="/certificate-builder/new"
-            className="inline-flex items-center gap-1.5 rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] px-4 py-2 text-xs font-semibold hover:border-teal-600/40"
-          >
-            <Plus className="h-3.5 w-3.5" /> New Certificate
-          </Link>
+          {hasApprovedOrg ? (
+            <>
+              <Link
+                href="/certificate-builder/new"
+                className="inline-flex items-center gap-1.5 rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] px-4 py-2 text-xs font-semibold hover:border-teal-600/40"
+              >
+                <Plus className="h-3.5 w-3.5" /> New Certificate
+              </Link>
+              <Link
+                href="/stamps"
+                className="inline-flex items-center gap-1.5 rounded-xl border border-[var(--fcs-border)] px-3.5 py-2 text-xs font-semibold hover:bg-[var(--fcs-surface-muted)]"
+              >
+                <Stamp className="h-3.5 w-3.5 text-teal-600" /> Stamps
+              </Link>
+            </>
+          ) : (
+            <Link
+              href="/verify"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-amber-500/40 bg-amber-50 px-4 py-2 text-xs font-semibold text-amber-900 hover:bg-amber-100 dark:bg-amber-950/40 dark:text-amber-200"
+            >
+              <ShieldCheck className="h-3.5 w-3.5" /> Request Certificate Access
+            </Link>
+          )}
           <Link
             href="/vault"
             className="inline-flex items-center gap-1.5 rounded-xl border border-[var(--fcs-border)] px-3.5 py-2 text-xs font-semibold hover:bg-[var(--fcs-surface-muted)]"
@@ -251,6 +273,7 @@ export function DashboardClient(props: Props) {
           </Link>
         </div>
       </div>
+      </SlideReveal>
 
       {/* Metrics Strip */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -553,16 +576,27 @@ export function DashboardClient(props: Props) {
             <h2 className="flex items-center gap-2 text-base font-bold">
               <Award className="h-4 w-4 text-amber-600" /> Recent Certificates
             </h2>
-            <Link
-              href="/certificate-builder/new"
-              className="text-xs font-semibold text-teal-700 hover:underline dark:text-teal-400"
-            >
-              + Create Certificate
-            </Link>
+            {hasApprovedOrg ? (
+              <Link
+                href="/certificate-builder/new"
+                className="text-xs font-semibold text-teal-700 hover:underline dark:text-teal-400"
+              >
+                + Create Certificate
+              </Link>
+            ) : (
+              <Link
+                href="/verify"
+                className="text-xs font-semibold text-amber-700 hover:underline dark:text-amber-400"
+              >
+                Authorized Access Required →
+              </Link>
+            )}
           </div>
           {certificates.length === 0 ? (
             <p className="py-8 text-center text-xs text-[var(--fcs-ink-muted)]">
-              No saved certificates yet. Design one in the Certificate Studio.
+              {hasApprovedOrg
+                ? "No saved certificates yet. Design one in the Certificate Studio."
+                : "Certificate creation unlocks once your Authorized Organization request is approved by an Admin."}
             </p>
           ) : (
             <ul className="mt-4 space-y-2.5">
@@ -635,11 +669,13 @@ export function DashboardClient(props: Props) {
             {props.certTemplates.slice(0, 3).map((t) => (
               <Link
                 key={t.id}
-                href={`/certificate-builder/new?template=${t.slug}`}
+                href={hasApprovedOrg ? `/certificate-builder/new?template=${t.slug}` : "/certificate-builder"}
                 className="flex items-center justify-between rounded-lg border border-[var(--fcs-border)] px-3 py-2 text-xs hover:border-amber-600/40"
               >
                 <span className="font-medium">{t.name}</span>
-                <span className="text-[10px] uppercase text-[var(--fcs-ink-muted)]">Cert</span>
+                <span className="text-[10px] uppercase text-[var(--fcs-ink-muted)]">
+                  {hasApprovedOrg ? "Cert" : "Auth Only"}
+                </span>
               </Link>
             ))}
           </div>
