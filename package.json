@@ -1,0 +1,28 @@
+{
+  "name": "francis-creator-studio",
+  "version": "1.0.0",
+  "private": true,
+  "description": "FRANCIS CREATOR STUDIO — Free & Open-Source AI-Powered Resume and Certificate Platform. Created & Developed by FRANCIS.",
+  "license": "MIT",
+  "workspaces": [
+    "packages/shared",
+    "customer-website",
+    "admin-website"
+  ],
+  "scripts": {
+    "dev:customer": "npm run dev --workspace=customer-website",
+    "dev:admin": "npm run dev --workspace=admin-website",
+    "build:customer": "npm run build --workspace=customer-website",
+    "build:admin": "npm run build --workspace=admin-website",
+    "build": "npm run build:customer && npm run build:admin",
+    "typecheck:shared": "tsc --noEmit -p packages/shared/tsconfig.json",
+    "typecheck:customer": "npm run typecheck --workspace=customer-website",
+    "typecheck:admin": "npm run typecheck --workspace=admin-website",
+    "typecheck": "npm run typecheck:shared && npm run typecheck:customer && npm run typecheck:admin",
+    "lint": "npm run lint --workspace=customer-website && npm run lint --workspace=admin-website",
+    "test": "tsc -p packages/shared/tsconfig.test.json && node --test packages/shared/tests/*.test.mjs"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.3"
+  }
+}

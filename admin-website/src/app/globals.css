@@ -1,0 +1,31 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  --font-sans: "Plus Jakarta Sans", system-ui, -apple-system, sans-serif;
+  --font-serif: "Cormorant Garamond", Georgia, serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, monospace;
+  --adm-bg: #f4f5f7;
+  --adm-surface: #ffffff;
+  --adm-surface-muted: #eef0f4;
+  --adm-border: #dde1e8;
+  --adm-ink: #0f172a;
+  --adm-ink-muted: #475569;
+  --adm-accent: #0f766e;
+}
+
+.dark {
+  --adm-bg: #090d12;
+  --adm-surface: #11161f;
+  --adm-surface-muted: #18202c;
+  --adm-border: #253041;
+  --adm-ink: #f1f5f9;
+  --adm-ink-muted: #94a3b8;
+  --adm-accent: #14b8a6;
+}
+
+body {
+  background-color: var(--adm-bg);
+  color: var(--adm-ink);
+}
