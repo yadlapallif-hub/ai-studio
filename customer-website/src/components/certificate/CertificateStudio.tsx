@@ -201,7 +201,7 @@ export function CertificateStudio(props: CertificateStudioProps) {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [selectedElementId, deleteCanvasElement]);
 
-  const handleSave = async () => {
+  const saveCertificate = async (publishAsVerified: boolean) => {
     setErrorMsg(null);
     setStatusMsg(null);
     if (!props.isAuthenticated) {
@@ -228,6 +228,16 @@ export function CertificateStudio(props: CertificateStudioProps) {
       return;
     }
 
+    const effectiveIssuerId = selectedIssuerId || props.approvedIssuers[0]?.id || "";
+    const approvedIssuer =
+      props.approvedIssuers.find((i) => i.id === effectiveIssuerId) ?? null;
+
+    if (!approvedIssuer) {
+      setErrorMsg("An Admin-approved Authorized Organization is required to save or publish certificates.");
+      return;
+    }
+
+    if (publishAsVerified) setSubmittingVerify(true);
     setSaving(true);
     try {
       const supabase = createClient();
@@ -236,25 +246,19 @@ export function CertificateStudio(props: CertificateStudioProps) {
       } = await supabase.auth.getUser();
       if (!user) return;
 
-      const approvedIssuer =
-        props.approvedIssuers.find((i) => i.id === selectedIssuerId) ?? null;
-
-      if (!approvedIssuer) {
-        setErrorMsg("An Admin-approved Authorized Organization is required to save certificates.");
-        return;
+      if (!selectedIssuerId) {
+        setSelectedIssuerId(approvedIssuer.id);
       }
-
-      const authorizationType = "authorized_issuer";
 
       const payload = {
         user_id: user.id,
         template_slug: templateSlug,
-        issuer_id: approvedIssuer ? approvedIssuer.id : null,
+        issuer_id: approvedIssuer.id,
         certificate_code: certificateCode,
         title: title.trim() || "Certificate",
         recipient_name: recipientName.trim() || "Recipient",
         course_or_achievement: courseOrAchievement.trim() || "Achievement",
-        organization_name: organizationName.trim() || "Organization",
+        organization_name: organizationName.trim() || approvedIssuer.organization_name,
         description: description.trim() || null,
         issue_date: issueDate,
         expiry_date: expiryDate || null,
@@ -263,7 +267,7 @@ export function CertificateStudio(props: CertificateStudioProps) {
         orientation,
         canvas_elements: elements,
         style_config: style,
-        authorization_type: authorizationType,
+        authorization_type: "authorized_issuer",
       };
 
       let savedCertId = certId;
@@ -291,72 +295,63 @@ export function CertificateStudio(props: CertificateStudioProps) {
         setCertId(savedCertId);
       }
 
-      // Sync public verification record (never sets 'verified' on client!)
-      if (savedCertId) {
+      const shouldVerify = publishAsVerified || verificationStatus === "verified";
+
+      if (savedCertId && shouldVerify) {
+        const res = await fetch("/api/certificates/submit-verification", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            certificateId: savedCertId,
+            issuerId: approvedIssuer.id,
+          }),
+        });
+        const json = (await res.json()) as {
+          verificationStatus?: string;
+          error?: string;
+        };
+        if (!res.ok) {
+          setErrorMsg(json.error || "Saved certificate, but verification publish failed.");
+          return;
+        }
+        setVerificationStatus(json.verificationStatus || "verified");
+        setStatusMsg(
+          `Published as Verified Certificate (${certificateCode}) under ${approvedIssuer.organization_name}.`
+        );
+      } else if (savedCertId) {
         await supabase.from("fcs_certificate_verifications").upsert(
           {
             certificate_id: savedCertId,
             certificate_code: certificateCode,
-            issuer_id: approvedIssuer ? approvedIssuer.id : null,
+            issuer_id: approvedIssuer.id,
             recipient_name: payload.recipient_name,
             certificate_title: payload.title,
             course_or_achievement: payload.course_or_achievement,
             issuing_organization: payload.organization_name,
             issue_date: payload.issue_date,
             expiry_date: payload.expiry_date,
-            verification_status:
-              verificationStatus === "verified" && approvedIssuer
-                ? "verified"
-                : "unverified_draft",
+            verification_status: "unverified_draft",
           },
           { onConflict: "certificate_id" }
         );
+        setStatusMsg("Draft saved. Click 'Publish Verified Certificate' when ready to verify publicly.");
       }
 
-      setStatusMsg("Certificate and QR registry record saved.");
       if (!certId && savedCertId) {
         router.replace(`/certificate-builder/${savedCertId}`);
       }
     } finally {
       setSaving(false);
+      setSubmittingVerify(false);
     }
   };
 
+  const handleSave = async () => {
+    await saveCertificate(false);
+  };
+
   const handleSubmitForVerification = async () => {
-    if (!certId || !props.isAuthenticated) {
-      setErrorMsg("Save the certificate to your account first before requesting verification.");
-      return;
-    }
-    if (!selectedIssuerId) {
-      setErrorMsg(
-        "Admin-approved Authorized Organization required: select your approved organization in Details, or apply/check Admin approval at /verify."
-      );
-      return;
-    }
-    setSubmittingVerify(true);
-    setErrorMsg(null);
-    try {
-      const res = await fetch("/api/certificates/submit-verification", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          certificateId: certId,
-          issuerId: selectedIssuerId,
-        }),
-      });
-      const json = (await res.json()) as {
-        verificationStatus?: string;
-        error?: string;
-      };
-      if (!res.ok) {
-        setErrorMsg(json.error || "Unable to submit verification.");
-        return;
-      }
-      setVerificationStatus(json.verificationStatus || "verified");
-      setStatusMsg("Officially verified under your Admin-Approved Authorized Organization.");
-    } finally {
-      setSubmittingVerify(false);
-    }
+    await saveCertificate(true);
   };
 
   const addCanvasAssetUpload = async (
@@ -594,36 +589,41 @@ export function CertificateStudio(props: CertificateStudioProps) {
               type="button"
               onClick={handleSave}
               disabled={saving}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-teal-700 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-teal-800 disabled:opacity-60"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] px-3 py-1.5 text-xs font-semibold hover:border-teal-600/40 disabled:opacity-60"
             >
-              {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
-              {props.isAuthenticated ? "Save" : "Save Draft"}
+              {saving && !submittingVerify ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Save className="h-3.5 w-3.5" />
+              )}
+              {verificationStatus === "verified" ? "Save Changes" : "Save Draft"}
             </button>
-            {props.isAuthenticated && certId && (
-              <button
-                type="button"
-                onClick={handleSubmitForVerification}
-                disabled={submittingVerify || verificationStatus === "verified"}
-                title={
-                  selectedIssuerId
-                    ? "Issue officially verified QR credential under your Admin-approved organization"
-                    : "Requires an Admin-Approved Authorized Organization selected in Details"
-                }
-                className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold ${
-                  verificationStatus === "verified"
-                    ? "border-emerald-600/40 bg-emerald-50 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300"
-                    : selectedIssuerId
-                      ? "border-teal-600/40 bg-teal-50 text-teal-800 hover:bg-teal-100 dark:bg-teal-950/50 dark:text-teal-300"
-                      : "border-amber-500/40 bg-amber-50 text-amber-800 dark:bg-amber-950/40 dark:text-amber-200"
-                }`}
-              >
-                <ShieldCheck className="h-3.5 w-3.5" />
-                {verificationStatus === "verified"
-                  ? "Officially Verified"
-                  : selectedIssuerId
-                    ? "Issue Verified Credential"
-                    : "Verified Issuer Required"}
-              </button>
+            {props.isAuthenticated && hasApprovedIssuer && (
+              verificationStatus === "verified" ? (
+                <Link
+                  href={`/verify/${certificateCode}`}
+                  target="_blank"
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-600/40 bg-emerald-600 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700"
+                >
+                  <CheckCircle2 className="h-3.5 w-3.5" />
+                  Verified Certificate • Check Registry ↗
+                </Link>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleSubmitForVerification}
+                  disabled={saving || submittingVerify}
+                  title="Save and publish this certificate as an officially Verified Credential on /verify"
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-teal-700 px-3.5 py-1.5 text-xs font-semibold text-white shadow-xs hover:bg-teal-800 disabled:opacity-60"
+                >
+                  {submittingVerify ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <ShieldCheck className="h-3.5 w-3.5" />
+                  )}
+                  {submittingVerify ? "Publishing..." : "Publish Verified Certificate"}
+                </button>
+              )
             )}
             {hasApprovedIssuer && (
               <button
@@ -668,8 +668,17 @@ export function CertificateStudio(props: CertificateStudioProps) {
       {(statusMsg || errorMsg) && (
         <div className="no-print mx-auto mt-3 max-w-[1550px] px-4 sm:px-6">
           {statusMsg && (
-            <div className="rounded-xl border border-teal-500/30 bg-teal-50 px-4 py-2 text-xs text-teal-800 dark:bg-teal-950/40 dark:text-teal-300">
-              {statusMsg}
+            <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-teal-500/30 bg-teal-50 px-4 py-2 text-xs text-teal-800 dark:bg-teal-950/40 dark:text-teal-300">
+              <span>{statusMsg}</span>
+              {verificationStatus === "verified" && (
+                <Link
+                  href={`/verify/${certificateCode}`}
+                  target="_blank"
+                  className="font-bold underline underline-offset-2"
+                >
+                  Open Verification Check (/verify/{certificateCode}) →
+                </Link>
+              )}
             </div>
           )}
           {errorMsg && (
@@ -744,10 +753,10 @@ export function CertificateStudio(props: CertificateStudioProps) {
                 />
               </div>
               {hasApprovedIssuer ? (
-                <div className="space-y-2">
+                <div className="space-y-2.5">
                   <div>
                     <label className="mb-1 block font-semibold">
-                      Admin-Approved Authorized Organization (Optional)
+                      Admin-Approved Authorized Organization
                     </label>
                     <select
                       value={selectedIssuerId}
@@ -759,7 +768,6 @@ export function CertificateStudio(props: CertificateStudioProps) {
                       }}
                       className="w-full rounded-lg border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] px-3 py-2"
                     >
-                      <option value="">Personal / Self-Created Draft</option>
                       {props.approvedIssuers.map((iss) => (
                         <option key={iss.id} value={iss.id}>
                           {iss.organization_name} (Approved by Admin)
@@ -767,6 +775,34 @@ export function CertificateStudio(props: CertificateStudioProps) {
                       ))}
                     </select>
                   </div>
+
+                  {verificationStatus === "verified" ? (
+                    <div className="flex items-center justify-between gap-2 rounded-lg border border-emerald-500/40 bg-emerald-50 p-2.5 text-[11px] text-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-200">
+                      <span className="flex items-center gap-1.5 font-bold">
+                        <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
+                        Published as Verified Certificate
+                      </span>
+                      <Link
+                        href={`/verify/${certificateCode}`}
+                        target="_blank"
+                        className="font-semibold underline"
+                      >
+                        Check on /verify →
+                      </Link>
+                    </div>
+                  ) : (
+                    <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-amber-500/30 bg-amber-50 p-2.5 text-[11px] text-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
+                      <span>Status: Draft — publish so /verify shows this ID as Verified.</span>
+                      <button
+                        type="button"
+                        onClick={handleSubmitForVerification}
+                        disabled={saving || submittingVerify}
+                        className="rounded-md bg-teal-700 px-2.5 py-1 text-[11px] font-semibold text-white hover:bg-teal-800 disabled:opacity-60"
+                      >
+                        {submittingVerify ? "Publishing..." : "Publish Verified"}
+                      </button>
+                    </div>
+                  )}
                   {pendingApplications.length > 0 && (
                     <div className="flex items-start gap-2 rounded-lg border border-amber-500/30 bg-amber-50 p-2.5 text-[11px] text-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
                       <Clock className="mt-0.5 h-3.5 w-3.5 shrink-0" />
@@ -1365,7 +1401,7 @@ export function CertificateStudio(props: CertificateStudioProps) {
                 className="flex w-full items-center justify-center gap-1.5 rounded-xl bg-teal-700 py-2.5 font-semibold text-white hover:bg-teal-800 disabled:opacity-60"
               >
                 {aiLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
-                Ask FRANCIS AI for Wording & Design Advice
+                Ask Creator AI for Wording & Design Advice
               </button>
 
               {aiAdvice && (
@@ -1402,15 +1438,19 @@ export function CertificateStudio(props: CertificateStudioProps) {
                   <Trash2 className="h-3 w-3" /> Delete &ldquo;{selectedElement.label}&rdquo;
                 </button>
               )}
-              <span className="inline-flex items-center gap-1 rounded-full border border-[var(--fcs-border)] bg-[var(--fcs-surface)] px-2.5 py-0.5 text-[11px] font-medium">
-                {verificationStatus === "verified" ? (
-                  <>
-                    <CheckCircle2 className="h-3 w-3 text-teal-600" /> Verified
-                  </>
-                ) : (
-                  verificationStatus.replace(/_/g, " ")
-                )}
-              </span>
+              {verificationStatus === "verified" ? (
+                <Link
+                  href={`/verify/${certificateCode}`}
+                  target="_blank"
+                  className="inline-flex items-center gap-1 rounded-full border border-emerald-500/40 bg-emerald-50 px-2.5 py-0.5 text-[11px] font-bold text-emerald-800 hover:bg-emerald-100 dark:bg-emerald-950/50 dark:text-emerald-300"
+                >
+                  <CheckCircle2 className="h-3 w-3 text-emerald-600" /> Verified Certificate ↗
+                </Link>
+              ) : (
+                <span className="inline-flex items-center gap-1 rounded-full border border-[var(--fcs-border)] bg-[var(--fcs-surface)] px-2.5 py-0.5 text-[11px] font-medium">
+                  {verificationStatus.replace(/_/g, " ")}
+                </span>
+              )}
             </div>
             <div className="flex items-center gap-1">
               {[0.5, 0.64, 0.72, 0.85].map((z) => (
@@ -1454,6 +1494,7 @@ export function CertificateStudio(props: CertificateStudioProps) {
                 orientation={orientation}
                 elements={elements}
                 style={style}
+                isVerified={verificationStatus === "verified"}
                 selectedElementId={selectedElementId}
                 interactive={true}
                 onSelectElement={setSelectedElementId}

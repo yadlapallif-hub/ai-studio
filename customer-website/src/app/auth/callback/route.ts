@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
   } else if (tokenHash && type) {
     const { error } = await supabase.auth.verifyOtp({
       token_hash: tokenHash,
-      type: type as "signup" | "recovery" | "email",
+      type: type as "signup" | "recovery" | "email" | "magiclink",
     });
     if (error) {
       return NextResponse.redirect(`${origin}/auth/login?error=${encodeURIComponent(error.message)}`);

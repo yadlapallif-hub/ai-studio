@@ -8,9 +8,9 @@ import "@fontsource/ibm-plex-mono/500.css";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "FRANCIS CREATOR STUDIO — Admin Operations Console",
+  title: "CREATOR STUDIO — Admin Operations Console",
   description:
-    "Authorized Administrator, Support Agent, and Content Manager portal for FRANCIS CREATOR STUDIO.",
+    "Authorized Administrator, Support Agent, and Content Manager portal for CREATOR STUDIO.",
 };
 
 export default function AdminRootLayout({

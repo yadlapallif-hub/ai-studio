@@ -36,7 +36,7 @@ export function IntroSplash() {
   return (
     <div
       role="dialog"
-      aria-label="FRANCIS CREATOR STUDIO Welcome Intro"
+      aria-label="CREATOR STUDIO Welcome Intro"
       style={{
         transition: "transform 650ms cubic-bezier(0.76, 0, 0.24, 1), opacity 550ms ease",
       }}
@@ -88,7 +88,7 @@ export function IntroSplash() {
         </div>
 
         <h1 className="fcs-intro-title mt-7 text-xl font-bold tracking-[0.26em] text-white uppercase sm:text-2xl">
-          FRANCIS CREATOR STUDIO
+          CREATOR STUDIO
         </h1>
 
         <div className="fcs-intro-rule mt-3 h-px w-28 bg-gradient-to-r from-transparent via-teal-400 to-transparent" />
@@ -102,7 +102,7 @@ export function IntroSplash() {
       <div className="fcs-intro-bottom absolute inset-x-0 bottom-8 z-10 flex flex-col items-center gap-2 sm:bottom-11">
         <div className="h-px w-16 bg-gradient-to-r from-transparent via-amber-400/80 to-transparent" />
         <p className="text-xs font-semibold tracking-[0.44em] text-amber-300/95 uppercase sm:text-sm">
-          FRANCIS BUILT
+          BUILT BY FRANCIS
         </p>
       </div>
     </div>

@@ -44,7 +44,7 @@ export default async function VerifyResultPage({
           <h1 className="mt-4 text-2xl font-bold">Certificate Record Not Found</h1>
           <p className="mt-2 font-mono text-sm text-[var(--fcs-ink-muted)]">{code}</p>
           <p className="mt-3 text-sm text-[var(--fcs-ink-muted)]">
-            No certificate with this ID exists in the FRANCIS CREATOR STUDIO verification
+            No certificate with this ID exists in the CREATOR STUDIO verification
             registry. Check the code or contact the issuing organization.
           </p>
           <Link
@@ -64,8 +64,8 @@ export default async function VerifyResultPage({
       ? {
           icon: CheckCircle2,
           color: "border-emerald-500/40 bg-emerald-50 text-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-200",
-          label: "Officially Verified Credential",
-          note: "This certificate is verified against an approved Authorized Issuer in FRANCIS CREATOR STUDIO.",
+          label: "Verified Certificate — Officially Verified Credential",
+          note: "This certificate is published and verified against an approved Authorized Issuer in CREATOR STUDIO.",
         }
       : status === "pending_approval"
         ? {
@@ -87,8 +87,8 @@ export default async function VerifyResultPage({
           : {
               icon: AlertTriangle,
               color: "border-slate-400/40 bg-slate-100 text-slate-900 dark:bg-slate-900 dark:text-slate-200",
-              label: "Unverified Self-Created Draft / Sample",
-              note: "Created with FRANCIS CREATOR STUDIO design tools. Not verified by an officially approved issuing organization.",
+              label: "Unverified Draft (Not Yet Published)",
+              note: "Saved in CREATOR STUDIO as a draft. Click 'Publish Verified Certificate' in Certificate Studio so this check displays Verified.",
             };
 
   const StatusIcon = statusBanner.icon;

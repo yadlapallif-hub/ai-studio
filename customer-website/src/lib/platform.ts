@@ -28,9 +28,9 @@ export interface PublicPlatformData {
 }
 
 const DEFAULT_BRANDING: PublicBranding = {
-  platformName: "FRANCIS CREATOR STUDIO",
+  platformName: "CREATOR STUDIO",
   tagline: "Create Your Future. Design Your Identity.",
-  developerCredit: "Created & Developed by FRANCIS",
+  developerCredit: "Built by Francis",
   accentHex: "#0F766E",
   githubUrl: "https://github.com/yadlapallif-hub/ai-studio",
   supportEmail: "support@franciscreatorstudio.org",
@@ -41,15 +41,15 @@ const DEFAULT_WEBSITE_CONTENT: WebsiteContent = {
   heroBadge: "100% Free & Open-Source • MIT Licensed",
   heroHeadline: "Precision Resume & Certificate Engineering, Built for Everyone.",
   heroSubheadline:
-    "Craft ATS-ready resumes and—for Admin-approved Authorized Organizations—design verifiable official certificates with custom stamps and QR verification, guided by FRANCIS Intelligence with zero paywalls.",
+    "Craft ATS-ready resumes and—for Admin-approved Authorized Organizations—design verifiable official certificates with custom stamps and QR verification, guided by Creator AI with zero paywalls.",
   primaryCta: "Launch Resume Studio",
   secondaryCta: "Launch Certificate Studio",
   openSourceNote:
-    "FRANCIS Creator Studio is free software with zero subscriptions, zero paid downloads, and zero hidden locks. Self-host with your own Supabase instance and AI provider.",
+    "Creator Studio is free software with zero subscriptions, zero paid downloads, and zero hidden locks. Self-host with your own Supabase instance and AI provider.",
 };
 
 const DEFAULT_FOOTER = {
-  credit: "Created & Developed by FRANCIS",
+  credit: "Built by Francis",
   license: "Released under the MIT Open-Source License",
   githubUrl: "https://github.com/yadlapallif-hub/ai-studio",
   contactEmail: "support@franciscreatorstudio.org",

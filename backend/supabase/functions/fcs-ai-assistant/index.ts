@@ -47,7 +47,7 @@ Deno.serve(async (req: Request) => {
 
   const authHeader = req.headers.get("Authorization");
   if (!authHeader?.startsWith("Bearer ")) {
-    return Response.json({ error: "UNAUTHORIZED", message: "Sign in required to use FRANCIS AI." }, { status: 401, headers: corsHeaders });
+    return Response.json({ error: "UNAUTHORIZED", message: "Sign in required to use Creator AI." }, { status: 401, headers: corsHeaders });
   }
 
   const userClient = createClient(supabaseUrl, supabaseAnonKey, {
@@ -87,7 +87,7 @@ Deno.serve(async (req: Request) => {
 
   if (aiConfig.enabled === false) {
     return Response.json(
-      { error: "AI_DISABLED", message: "FRANCIS AI Assistant is currently disabled by an administrator." },
+      { error: "AI_DISABLED", message: "Creator AI Assistant is currently disabled by an administrator." },
       { status: 503, headers: corsHeaders }
     );
   }
@@ -126,7 +126,8 @@ Deno.serve(async (req: Request) => {
 
   const systemPrompt = [
     aiConfig.system_instructions ||
-      "You are FRANCIS AI ASSISTANT inside FRANCIS CREATOR STUDIO (Created & Developed by FRANCIS). Be truthful, practical, and concise.",
+      "You are Creator AI inside CREATOR STUDIO (Built by Francis). Be truthful, practical, and concise.",
+    "Website Information: Creator Studio is a 100% free, open-source (MIT) document engineering platform Built by Francis with AI Resume Studio (/resume-builder, 100 templates, 14 sections, ATS score, free A4 PDF/PNG export), Authorized Certificate Studio (/certificate-builder, 100 templates exclusively for Admin-approved Authorized Organizations, Stamp Studio /stamps, and one-click Publish Verified Certificate), Public Verification (/verify), Document Vault (/vault), and Just Email login (/auth/login). Also explain clearly how to build a website or build and verify a certificate when asked.",
     `Current surface/context page: ${body.contextPage ?? "general"}.`,
     `Mode: ${body.mode ?? "chat"}.`,
     faqKnowledge ? `Platform FAQ Knowledge:\n${faqKnowledge}` : "",

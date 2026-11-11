@@ -155,7 +155,7 @@ export default function VerifyLookupPage() {
           Public Certificate Verification
         </h1>
         <p className="mt-2 text-sm text-[var(--fcs-ink-muted)]">
-          Enter a FRANCIS CREATOR STUDIO Certificate ID (or scan its QR code) to verify authentic
+          Enter a CREATOR STUDIO Certificate ID (or scan its QR code) to verify authentic
           issuance status against our live database registry.
         </p>
 

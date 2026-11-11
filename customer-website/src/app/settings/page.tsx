@@ -266,7 +266,7 @@ export default function SettingsPage() {
               onChange={(e) => setAiRecsEnabled(e.target.checked)}
               className="h-4 w-4 accent-teal-700"
             />
-            Enable FRANCIS Intelligence personalized dashboard recommendations
+            Enable Creator AI personalized dashboard recommendations
           </label>
           <label className="flex items-center gap-2.5 text-xs font-medium">
             <input

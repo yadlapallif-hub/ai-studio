@@ -49,7 +49,7 @@ export default async function AdminAiPage() {
     privacy_retain_conversations: true,
     recommendations_enabled: true,
     system_instructions:
-      "You are FRANCIS AI, the helpful, honest assistant for FRANCIS CREATOR STUDIO.",
+      "You are Creator AI, the helpful, honest assistant for CREATOR STUDIO (Built by Francis).",
   };
 
   const providerStatuses = [

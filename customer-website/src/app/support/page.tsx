@@ -245,7 +245,7 @@ export default function CustomerSupportPage() {
         <h1 className="mt-4 text-2xl font-bold">Customer Support & Live Help</h1>
         <p className="mt-2 text-sm text-[var(--fcs-ink-muted)]">
           Sign in to open support tickets, attach screenshots, and chat directly in real time with
-          FRANCIS Support Agents.
+          Creator Studio Support Agents.
         </p>
         <div className="mt-6 flex justify-center gap-3">
           <Link
@@ -453,7 +453,7 @@ export default function CustomerSupportPage() {
                   >
                     <div className="mb-1 flex items-center justify-between text-[10px] opacity-80">
                       <span className="font-bold uppercase">
-                        {m.sender_role === "customer" ? "You" : "FRANCIS Support"}
+                        {m.sender_role === "customer" ? "You" : "Creator Studio Support"}
                       </span>
                       <span>{new Date(m.created_at).toLocaleTimeString()}</span>
                     </div>

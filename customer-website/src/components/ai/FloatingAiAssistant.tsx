@@ -30,7 +30,7 @@ export function FloatingAiAssistant() {
     {
       role: "assistant",
       content:
-        "Hello! I am FRANCIS AI ASSISTANT. I understand which studio page you are on and can help craft resumes, check ATS clarity, guide certificate & stamp workflows, or troubleshoot platform issues.",
+        "Hello! I am CREATOR AI. Ask me about the Creator Studio website, how to create & publish a verified certificate, how to build a website, or how to build an ATS-ready resume.",
     },
   ]);
 
@@ -44,24 +44,24 @@ export function FloatingAiAssistant() {
           ? "Certificate Verification"
           : pathname.startsWith("/vault")
             ? "Document Vault"
-            : "Customer Platform";
+            : "Creator Studio";
 
   const quickPrompts = pathname.startsWith("/resume-builder")
     ? [
-        "Create a fresher software developer resume outline.",
+        "How do I build an ATS-ready resume here?",
         "How do I quantify bullet points for ATS clarity?",
-        "What sections should a student include?",
+        "Tell me about Creator Studio website.",
       ]
     : pathname.startsWith("/certificate-builder")
       ? [
-          "Recommend a layout for an internship certificate.",
-          "How do I create or delete an official organization stamp?",
-          "How does QR certificate verification work?",
+          "How do I create & publish a verified certificate?",
+          "How do I create or delete an official stamp?",
+          "How do I build a website?",
         ]
       : [
-          "How do I export a print-ready A4 PDF for free?",
-          "Why is my certificate showing as Unverified Draft?",
-          "Guide me through creating my first resume.",
+          "Tell me about Creator Studio website",
+          "How do I create & publish a verified certificate?",
+          "How do I build a website?",
         ];
 
   const sendMessage = async (textToSend?: string) => {
@@ -104,7 +104,7 @@ export function FloatingAiAssistant() {
       if (data.conversationId) setConversationId(data.conversationId);
       setMessages([...nextMessages, { role: "assistant", content: data.reply }]);
     } catch {
-      setErrorHint("Network error reaching FRANCIS AI service.");
+      setErrorHint("Network error reaching Creator AI service.");
     } finally {
       setLoading(false);
     }
@@ -120,7 +120,7 @@ export function FloatingAiAssistant() {
                 <Bot className="h-4 w-4" />
               </span>
               <div>
-                <p className="text-xs font-bold tracking-wide">FRANCIS AI ASSISTANT</p>
+                <p className="text-xs font-bold tracking-wide">CREATOR AI</p>
                 <p className="text-[10px] text-[var(--fcs-ink-muted)]">Context: {contextLabel}</p>
               </div>
             </div>
@@ -223,7 +223,7 @@ export function FloatingAiAssistant() {
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Ask FRANCIS AI..."
+              placeholder="Ask Creator AI..."
               className="flex-1 rounded-lg border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] px-3 py-2 text-xs outline-none focus:border-teal-600"
             />
             <button
@@ -253,7 +253,7 @@ export function FloatingAiAssistant() {
           className="flex items-center gap-2 rounded-full border border-teal-700/30 bg-teal-700 px-4 py-2.5 text-xs font-semibold text-white shadow-lg transition hover:bg-teal-800"
         >
           <Sparkles className="h-4 w-4" />
-          <span>FRANCIS AI</span>
+          <span>CREATOR AI</span>
         </button>
       )}
     </div>

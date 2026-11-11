@@ -22,7 +22,7 @@ export function Footer({
           <div className="md:col-span-2">
             <div className="flex items-center gap-2.5">
               <CreatorStudioLogo size={28} className="shrink-0" />
-              <p className="text-sm font-bold tracking-wide uppercase">FRANCIS CREATOR STUDIO</p>
+              <p className="text-sm font-bold tracking-wide uppercase">CREATOR STUDIO</p>
             </div>
             <p className="mt-1.5 text-xs font-medium text-teal-700 dark:text-teal-400">
               Create Your Future. Design Your Identity.
@@ -61,7 +61,7 @@ export function Footer({
               </li>
               <li>
                 <Link href="/assistant" className="hover:text-teal-700 dark:hover:text-teal-400">
-                  FRANCIS Intelligence & AI
+                  Creator AI &amp; Intelligence
                 </Link>
               </li>
               <li>

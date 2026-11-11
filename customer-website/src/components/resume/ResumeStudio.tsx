@@ -410,13 +410,13 @@ export function ResumeStudio(props: ResumeStudioProps) {
       if (!res.ok || !json.reply) {
         setAiError(
           json.message ||
-            "FRANCIS AI requires sign-in and a configured AI provider."
+            "Creator AI requires sign-in for personalized resume editing."
         );
         return;
       }
       setAiSuggestion({ mode, label, text: json.reply });
     } catch {
-      setAiError("Network error communicating with FRANCIS AI.");
+      setAiError("Network error communicating with Creator AI.");
     } finally {
       setAiLoading(false);
     }
@@ -578,7 +578,7 @@ export function ResumeStudio(props: ResumeStudioProps) {
             {[
               { id: "content", label: "14 Sections" },
               { id: "layout", label: "Drag & Style" },
-              { id: "ai", label: `FRANCIS AI • ATS ${qualityReport.atsReadiness}%` },
+              { id: "ai", label: `Creator AI • ATS ${qualityReport.atsReadiness}%` },
             ].map((tab) => (
               <button
                 key={tab.id}
@@ -1859,7 +1859,7 @@ export function ResumeStudio(props: ResumeStudioProps) {
             </div>
           )}
 
-          {/* FRANCIS INTELLIGENCE & AI TAB */}
+          {/* CREATOR AI TAB */}
           {activeTab === "ai" && (
             <div className="space-y-4 rounded-2xl border border-[var(--fcs-border)] bg-[var(--fcs-surface)] p-4 text-xs">
               <div className="grid grid-cols-2 gap-3">
@@ -2017,7 +2017,7 @@ export function ResumeStudio(props: ResumeStudioProps) {
 
                 {aiLoading && (
                   <div className="mt-3 flex items-center gap-2 text-xs text-[var(--fcs-ink-muted)]">
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" /> Running FRANCIS AI...
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" /> Running Creator AI...
                   </div>
                 )}
 

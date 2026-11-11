@@ -1,4 +1,5 @@
 import { createServiceSupabase } from "@/lib/supabase/server";
+import { buildCreatorAiGuideReply } from "@/lib/creator-ai-guide";
 
 export interface AiInvocationInput {
   accessToken: string;
@@ -102,7 +103,7 @@ function getLocalProviderConfig(provider: string, configuredModel?: string) {
   return { endpoint: "", apiKey: "", model: configuredModel || "", isOllamaNative: false };
 }
 
-export async function invokeFrancisAi(input: AiInvocationInput): Promise<AiInvocationResult> {
+export async function invokeCreatorAi(input: AiInvocationInput): Promise<AiInvocationResult> {
   const adminDb = createServiceSupabase();
 
   const { data: settingsRow } = await adminDb
@@ -118,7 +119,7 @@ export async function invokeFrancisAi(input: AiInvocationInput): Promise<AiInvoc
       ok: false,
       status: 503,
       error: "AI_DISABLED",
-      message: "FRANCIS AI Assistant is currently disabled by an administrator.",
+      message: "Creator AI Assistant is currently disabled by an administrator.",
     };
   }
 
@@ -126,8 +127,10 @@ export async function invokeFrancisAi(input: AiInvocationInput): Promise<AiInvoc
   const localCfg = getLocalProviderConfig(provider, aiConfig.model);
 
   let reply = "";
+  let usedProvider = provider;
   let usedModel = localCfg.model;
   let tokensUsed = 0;
+  let fallbackReason: string | null = null;
 
   if (localCfg.endpoint) {
     // Rate limit locally before calling upstream directly
@@ -179,7 +182,9 @@ export async function invokeFrancisAi(input: AiInvocationInput): Promise<AiInvoc
 
     const systemPrompt = [
       aiConfig.system_instructions ||
-        "You are FRANCIS AI ASSISTANT inside FRANCIS CREATOR STUDIO (Created & Developed by FRANCIS). Be factual, practical, and helpful.",
+        "You are Creator AI inside CREATOR STUDIO (Built by Francis). Be factual, practical, and helpful.",
+      "Platform Overview: Creator Studio is a 100% free, open-source (MIT) website Built by Francis offering (1) AI Resume Studio (/resume-builder, 100 templates, 14 sections, ATS scoring, free A4 PDF/PNG export), (2) Authorized Certificate Studio (/certificate-builder, 100 templates exclusively for Admin-approved Authorized Organizations, Stamp Studio /stamps with add/delete controls, and one-click 'Publish Verified Certificate' turning drafts into Verified records on /verify), (3) Public Certificate Verification (/verify), (4) Document Vault (/vault), and (5) Just Email magic-link or password login (/auth/login).",
+      "Also help users who ask how to build a website (planning pages, Next.js + React + Tailwind frontend, Supabase/PostgreSQL auth & RLS database, API routes, testing, and Vercel deployment) or how to build/publish a verified certificate.",
       `Active route context: ${input.contextPage}. Task mode: ${input.mode}.`,
       faqKnowledge ? `Platform FAQ Knowledge:\n${faqKnowledge}` : "",
       "Never fabricate user employment, degrees, or credentials. Never guarantee ATS selection. If the user faces an unresolved technical/account issue, advise opening live support or a ticket at /support.",
@@ -222,93 +227,82 @@ export async function invokeFrancisAi(input: AiInvocationInput): Promise<AiInvoc
       });
 
       if (!upstream.ok) {
-        const errDetail = await upstream.text();
-        return {
-          ok: false,
-          status: 502,
-          provider,
-          error: "AI_UPSTREAM_ERROR",
-          message: `Configured provider "${provider}" returned HTTP ${upstream.status}. ${errDetail.slice(0, 180)}`,
-        };
+        fallbackReason = `Upstream ${provider} HTTP ${upstream.status}`;
+      } else {
+        const json = await upstream.json();
+        reply = json?.choices?.[0]?.message?.content ?? json?.message?.content ?? "";
+        tokensUsed =
+          Number(json?.usage?.total_tokens ?? ((json?.prompt_eval_count ?? 0) + (json?.eval_count ?? 0))) || 0;
       }
-
-      const json = await upstream.json();
-      reply = json?.choices?.[0]?.message?.content ?? json?.message?.content ?? "";
-      tokensUsed =
-        Number(json?.usage?.total_tokens ?? ((json?.prompt_eval_count ?? 0) + (json?.eval_count ?? 0))) || 0;
-    } catch (err) {
-      return {
-        ok: false,
-        status: 502,
-        provider,
-        error: "AI_NETWORK_ERROR",
-        message: err instanceof Error ? err.message : "Failed to reach AI provider.",
-      };
+    } catch {
+      fallbackReason = "Upstream network unreachable";
     }
   } else {
     // Delegate to Supabase Edge Function fcs-ai-assistant (which reads Supabase Edge Secrets)
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
     if (!supabaseUrl || !anonKey) {
-      return {
-        ok: false,
-        status: 503,
-        provider,
-        error: "AI_PROVIDER_NOT_CONFIGURED",
-        message: `AI provider "${provider}" has no server API key or Supabase URL configured.`,
-      };
-    }
+      fallbackReason = "Edge function env not configured";
+    } else {
+      try {
+        const fnResp = await fetch(`${supabaseUrl}/functions/v1/fcs-ai-assistant`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${input.accessToken}`,
+            apikey: anonKey,
+          },
+          body: JSON.stringify({
+            mode: input.mode,
+            contextPage: input.contextPage,
+            contextData: input.contextData,
+            jobDescription: input.jobDescription,
+            messages: input.messages,
+          }),
+        });
 
-    try {
-      const fnResp = await fetch(`${supabaseUrl}/functions/v1/fcs-ai-assistant`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${input.accessToken}`,
-          apikey: anonKey,
-        },
-        body: JSON.stringify({
-          mode: input.mode,
-          contextPage: input.contextPage,
-          contextData: input.contextData,
-          jobDescription: input.jobDescription,
-          messages: input.messages,
-        }),
-      });
-
-      const fnData = (await fnResp.json()) as {
-        reply?: string;
-        provider?: string;
-        model?: string;
-        tokensUsed?: number;
-        error?: string;
-        message?: string;
-      };
-
-      if (!fnResp.ok || !fnData.reply) {
-        return {
-          ok: false,
-          status: fnResp.status || 503,
-          provider: fnData.provider || provider,
-          error: fnData.error || "AI_PROVIDER_NOT_CONFIGURED",
-          message:
-            fnData.message ||
-            `AI provider "${provider}" is not configured. Add the API key in Vercel env vars or Supabase Edge Function secrets.`,
+        const fnData = (await fnResp.json()) as {
+          reply?: string;
+          provider?: string;
+          model?: string;
+          tokensUsed?: number;
+          error?: string;
+          message?: string;
         };
-      }
 
-      reply = fnData.reply;
-      usedModel = fnData.model || usedModel;
-      tokensUsed = fnData.tokensUsed || 0;
-    } catch (err) {
-      return {
-        ok: false,
-        status: 502,
-        provider,
-        error: "AI_EDGE_ERROR",
-        message: err instanceof Error ? err.message : "Failed calling AI Edge Function.",
-      };
+        if (fnResp.status === 429) {
+          return {
+            ok: false,
+            status: 429,
+            provider: fnData.provider || provider,
+            error: fnData.error || "RATE_LIMIT_EXCEEDED",
+            message: fnData.message || "Hourly AI limit reached.",
+          };
+        }
+
+        if (!fnResp.ok || !fnData.reply) {
+          fallbackReason = fnData.error || "Provider unconfigured";
+        } else {
+          reply = fnData.reply;
+          usedModel = fnData.model || usedModel;
+          tokensUsed = fnData.tokensUsed || 0;
+        }
+      } catch {
+        fallbackReason = "Edge function unavailable";
+      }
     }
+  }
+
+  // Fallback gracefully to built-in Creator AI guide whenever external LLM keys are missing/unavailable
+  if (!reply) {
+    reply = buildCreatorAiGuideReply({
+      mode: input.mode,
+      contextPage: input.contextPage,
+      messages: input.messages,
+      contextData: input.contextData,
+    });
+    usedProvider = "creator-ai-guide";
+    usedModel = fallbackReason ? "built-in-guide" : "creator-ai-guide";
   }
 
   // Persist conversation history if retention enabled
@@ -323,7 +317,7 @@ export async function invokeFrancisAi(input: AiInvocationInput): Promise<AiInvoc
           title: (lastUserMessage?.content || "AI Conversation").slice(0, 70),
           context_page: input.contextPage,
           context_document_id: input.contextDocumentId ?? null,
-          provider,
+          provider: usedProvider,
           model: usedModel,
         })
         .select("id")
@@ -332,7 +326,7 @@ export async function invokeFrancisAi(input: AiInvocationInput): Promise<AiInvoc
     } else {
       await adminDb
         .from("fcs_ai_conversations")
-        .update({ updated_at: new Date().toISOString(), provider, model: usedModel })
+        .update({ updated_at: new Date().toISOString(), provider: usedProvider, model: usedModel })
         .eq("id", conversationId)
         .eq("user_id", input.userId);
     }
@@ -345,7 +339,7 @@ export async function invokeFrancisAi(input: AiInvocationInput): Promise<AiInvoc
           user_id: input.userId,
           role: "user",
           content: lastUserMessage.content,
-          provider,
+          provider: usedProvider,
           model: usedModel,
         });
       }
@@ -355,7 +349,7 @@ export async function invokeFrancisAi(input: AiInvocationInput): Promise<AiInvoc
         role: "assistant",
         content: reply,
         tokens_used: tokensUsed,
-        provider,
+        provider: usedProvider,
         model: usedModel,
       });
       await adminDb.from("fcs_ai_messages").insert(rowsToInsert);
@@ -366,9 +360,11 @@ export async function invokeFrancisAi(input: AiInvocationInput): Promise<AiInvoc
     ok: true,
     status: 200,
     reply,
-    provider,
+    provider: usedProvider,
     model: usedModel,
     tokensUsed,
     conversationId,
   };
 }
+
+export const invokeFrancisAi = invokeCreatorAi;

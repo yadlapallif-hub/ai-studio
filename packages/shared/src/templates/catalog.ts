@@ -846,7 +846,7 @@ function buildCertificateCatalog(): CertificateTemplateCatalogItem[] {
   if (list.length < 100) {
     list.push({
       slug: "francis-flagship-fellow-100",
-      name: "FRANCIS Flagship Open-Source Award",
+      name: "Creator Studio Flagship Open-Source Award",
       description:
         "Signature commemorative open-source achievement credential combining antique brass double framing and deep teal ink.",
       category: "excellence",

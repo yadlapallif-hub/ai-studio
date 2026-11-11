@@ -47,7 +47,7 @@ export default function ResetPasswordPage() {
       <div className="w-full rounded-2xl border border-[var(--fcs-border)] bg-[var(--fcs-surface)] p-7 shadow-sm">
         <h1 className="text-xl font-bold">Choose a new password</h1>
         <p className="mt-1 text-xs text-[var(--fcs-ink-muted)]">
-          Set a strong password for your FRANCIS Creator Studio account.
+          Set a strong password for your Creator Studio account.
         </p>
 
         {done && (

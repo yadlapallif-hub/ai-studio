@@ -39,7 +39,7 @@ export function SecurityClient({
     const supabase = createClient();
     const { data, error } = await supabase.auth.mfa.enroll({
       factorType: "totp",
-      friendlyName: "FRANCIS Admin Authenticator",
+      friendlyName: "Creator Studio Admin Authenticator",
     });
     if (error || !data) {
       setErr(error?.message || "Failed initializing TOTP enrollment.");

@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { aiChatRequestSchema } from "@francis/shared";
 import { createServerSupabase } from "@/lib/supabase/server";
-import { invokeFrancisAi } from "@/lib/ai-server";
+import { invokeCreatorAi } from "@/lib/ai-server";
+import { buildCreatorAiGuideReply } from "@/lib/creator-ai-guide";
 
 export async function GET(request: NextRequest) {
   const supabase = await createServerSupabase();
@@ -43,24 +44,6 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const supabase = await createServerSupabase();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-
-  if (!user || !session?.access_token) {
-    return NextResponse.json(
-      {
-        error: "UNAUTHORIZED",
-        message: "Please sign in to chat with FRANCIS AI Assistant and save conversation history.",
-      },
-      { status: 401 }
-    );
-  }
-
   let body: unknown;
   try {
     body = await request.json();
@@ -76,7 +59,40 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const result = await invokeFrancisAi({
+  const supabase = await createServerSupabase();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  if (!user || !session?.access_token) {
+    if (parsed.data.mode === "chat" || parsed.data.mode === "certificate_assist") {
+      const reply = buildCreatorAiGuideReply({
+        mode: parsed.data.mode,
+        contextPage: parsed.data.contextPage,
+        messages: parsed.data.messages,
+        contextData: parsed.data.contextData,
+      });
+      return NextResponse.json({
+        reply,
+        provider: "creator-ai-guide",
+        model: "built-in-guide",
+        tokensUsed: 0,
+      });
+    }
+
+    return NextResponse.json(
+      {
+        error: "UNAUTHORIZED",
+        message: "Please sign in to chat with Creator AI and save personalized workspace history.",
+      },
+      { status: 401 }
+    );
+  }
+
+  const result = await invokeCreatorAi({
     accessToken: session.access_token,
     userId: user.id,
     mode: parsed.data.mode,

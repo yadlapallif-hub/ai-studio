@@ -51,6 +51,10 @@ interface CertRow {
   template_slug: string;
   download_count: number;
   updated_at: string;
+  fcs_certificate_verifications?:
+    | { verification_status?: string }
+    | Array<{ verification_status?: string }>
+    | null;
 }
 
 interface RecRow {
@@ -225,7 +229,7 @@ export function DashboardClient(props: Props) {
             Welcome back, {props.userName}
           </h1>
           <p className="mt-1 text-xs text-[var(--fcs-ink-muted)]">
-            Manage your resumes, certificates, private document vault, FRANCIS Intelligence insights,
+            Manage your resumes, certificates, private document vault, Creator AI insights,
             and support tickets.
           </p>
         </div>
@@ -360,7 +364,7 @@ export function DashboardClient(props: Props) {
         )}
       </section>
 
-      {/* FRANCIS INTELLIGENCE SMART RECOMMENDATIONS */}
+      {/* CREATOR AI SMART RECOMMENDATIONS */}
       <section className="rounded-2xl border border-[var(--fcs-border)] bg-[var(--fcs-surface)] p-6">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--fcs-border)] pb-4">
           <div className="flex items-center gap-2.5">
@@ -368,7 +372,7 @@ export function DashboardClient(props: Props) {
               <Sparkles className="h-4 w-4" />
             </span>
             <div>
-              <h2 className="text-base font-bold">FRANCIS Intelligence Recommendations</h2>
+              <h2 className="text-base font-bold">Creator AI Recommendations</h2>
               <p className="text-xs text-[var(--fcs-ink-muted)]">
                 Personalized improvements generated from your actual profile and documents. Changes
                 never apply automatically without your confirmation.
@@ -600,18 +604,34 @@ export function DashboardClient(props: Props) {
             </p>
           ) : (
             <ul className="mt-4 space-y-2.5">
-              {certificates.map((c) => (
+              {certificates.map((c) => {
+                const verRel = Array.isArray(c.fcs_certificate_verifications)
+                  ? c.fcs_certificate_verifications[0]
+                  : c.fcs_certificate_verifications;
+                const isVerified = verRel?.verification_status === "verified";
+                return (
                 <li
                   key={c.id}
                   className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] p-3.5"
                 >
                   <div className="min-w-0">
-                    <Link
-                      href={`/certificate-builder/${c.id}`}
-                      className="block truncate text-sm font-semibold hover:text-teal-700 dark:hover:text-teal-300"
-                    >
-                      {c.title}
-                    </Link>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Link
+                        href={`/certificate-builder/${c.id}`}
+                        className="block truncate text-sm font-semibold hover:text-teal-700 dark:hover:text-teal-300"
+                      >
+                        {c.title}
+                      </Link>
+                      {isVerified ? (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">
+                          <CheckCircle2 className="h-2.5 w-2.5" /> Verified
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center rounded-full bg-slate-200/80 px-2 py-0.5 text-[10px] font-semibold text-slate-700 dark:bg-slate-800 dark:text-slate-300">
+                          Draft
+                        </span>
+                      )}
+                    </div>
                     <p className="text-[11px] text-[var(--fcs-ink-muted)]">
                       {c.recipient_name} •{" "}
                       <span className="font-mono">{c.certificate_code}</span>
@@ -642,7 +662,8 @@ export function DashboardClient(props: Props) {
                     </button>
                   </div>
                 </li>
-              ))}
+                );
+              })}
             </ul>
           )}
         </section>

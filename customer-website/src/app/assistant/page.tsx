@@ -101,9 +101,8 @@ export default function AssistantAndIntelligencePage() {
     setMessages(((data as AiMessage[]) ?? []).filter((m) => m.role === "user" || m.role === "assistant"));
   };
 
-  const handleSend = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const trimmed = input.trim();
+  const sendDirectPrompt = async (promptText: string) => {
+    const trimmed = promptText.trim();
     if (!trimmed || sending) return;
     setErrorMsg(null);
     setInput("");
@@ -114,9 +113,9 @@ export default function AssistantAndIntelligencePage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          conversationId: activeConvId,
+          conversationId: activeConvId ?? undefined,
           mode,
-          contextPage: "FRANCIS AI Hub",
+          contextPage: "Creator AI Hub",
           messages: [
             ...messages.slice(-10).map((m) => ({ role: m.role, content: m.content })),
             { role: "user", content: trimmed },
@@ -130,7 +129,7 @@ export default function AssistantAndIntelligencePage() {
         message?: string;
       };
       if (!res.ok) {
-        setErrorMsg(json.message || "AI service is currently unavailable.");
+        setErrorMsg(json.message || "Creator AI service is currently unavailable.");
         return;
       }
       if (json.conversationId && !activeConvId) {
@@ -144,6 +143,11 @@ export default function AssistantAndIntelligencePage() {
     } finally {
       setSending(false);
     }
+  };
+
+  const handleSend = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await sendDirectPrompt(input);
   };
 
   const handleCareerGuidance = async (e: React.FormEvent) => {
@@ -219,14 +223,14 @@ export default function AssistantAndIntelligencePage() {
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <p className="text-xs font-semibold tracking-widest uppercase text-teal-700 dark:text-teal-400">
-            FRANCIS AI & Intelligence
+            CREATOR AI & Intelligence
           </p>
           <h1 className="mt-1 text-3xl font-bold tracking-tight">
-            AI Assistant, ATS Insights & Career Roadmap
+            Creator AI Assistant, Website & Certificate Guide
           </h1>
           <p className="mt-1 text-sm text-[var(--fcs-ink-muted)]">
-            Every recommendation includes a transparent reason, requires your approval before any
-            document edit, and never fabricates live job openings.
+            Ask Creator AI about Creator Studio website tools, how to build a website, how to create
+            and publish verified certificates, or how to build an ATS resume.
           </p>
         </div>
 
@@ -316,14 +320,14 @@ export default function AssistantAndIntelligencePage() {
           <div className="flex items-center justify-between border-b border-[var(--fcs-border)] px-4 py-3">
             <div className="flex items-center gap-2 text-sm font-bold">
               <Bot className="h-4 w-4 text-teal-600" />
-              FRANCIS AI Chat
+              CREATOR AI Chat
             </div>
             <select
               value={mode}
               onChange={(e) => setMode(e.target.value as never)}
               className="rounded-lg border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] px-2.5 py-1 text-xs"
             >
-              <option value="chat">General Studio Guide</option>
+              <option value="chat">Website & Certificate Guide</option>
               <option value="resume_improve">Resume & Bullet Critic</option>
               <option value="resume_summary">Career Summary Helper</option>
             </select>
@@ -331,9 +335,29 @@ export default function AssistantAndIntelligencePage() {
 
           <div className="flex-1 space-y-3 overflow-y-auto p-4 text-xs" style={{ minHeight: 360, maxHeight: 460 }}>
             {messages.length === 0 && (
-              <div className="rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] p-4 text-[var(--fcs-ink-muted)]">
-                Ask how to use the Resume Studio, improve bullet points, prepare for interviews, or
-                check official certificate verification policies.
+              <div className="space-y-3 rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] p-4 text-[var(--fcs-ink-muted)]">
+                <p>
+                  Ask Creator AI for complete information about the Creator Studio website, how to
+                  build a website step by step, how to create &amp; publish verified certificates,
+                  or how to improve your resume.
+                </p>
+                <div className="flex flex-wrap gap-1.5">
+                  {[
+                    "Tell me about Creator Studio website",
+                    "How do I create & publish a verified certificate?",
+                    "How do I build a website?",
+                    "How do I build an ATS resume?",
+                  ].map((prompt) => (
+                    <button
+                      key={prompt}
+                      type="button"
+                      onClick={() => void sendDirectPrompt(prompt)}
+                      className="rounded-full border border-[var(--fcs-border)] bg-[var(--fcs-surface)] px-2.5 py-1 text-[11px] font-medium text-[var(--fcs-ink)] transition hover:border-teal-600/50 hover:text-teal-700 dark:hover:text-teal-300"
+                    >
+                      {prompt}
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
             {messages.map((m) => (
@@ -361,7 +385,7 @@ export default function AssistantAndIntelligencePage() {
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Ask FRANCIS AI..."
+              placeholder="Ask Creator AI..."
               className="flex-1 rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] px-3 py-2 text-xs"
             />
             <button

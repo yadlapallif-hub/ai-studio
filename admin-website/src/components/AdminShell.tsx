@@ -78,7 +78,7 @@ export function AdminShell({ adminName, adminEmail, roles, children }: AdminShel
           <div className="flex items-center gap-2.5">
             <CreatorStudioLogo size={34} className="shrink-0" />
             <div>
-              <p className="text-xs font-bold tracking-wide uppercase">FRANCIS ADMIN</p>
+              <p className="text-xs font-bold tracking-wide uppercase">CREATOR ADMIN</p>
               <p className="text-[10px] text-[var(--adm-ink-muted)]">Operations & Governance</p>
             </div>
           </div>
@@ -136,10 +136,10 @@ export function AdminShell({ adminName, adminEmail, roles, children }: AdminShel
       <div className="flex flex-1 flex-col min-w-0">
         <header className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--adm-border)] bg-[var(--adm-surface)] px-4 py-3 sm:px-6">
           <div className="flex items-center gap-2 lg:hidden">
-            <span className="text-xs font-bold uppercase">FRANCIS ADMIN</span>
+            <span className="text-xs font-bold uppercase">CREATOR ADMIN</span>
           </div>
           <div className="hidden text-xs text-[var(--adm-ink-muted)] lg:block">
-            FRANCIS CREATOR STUDIO Management Console
+            CREATOR STUDIO Management Console
           </div>
           <div className="flex items-center gap-2.5">
             <a

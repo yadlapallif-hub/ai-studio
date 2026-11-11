@@ -15,6 +15,20 @@ export default function AdminLoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const [googleEnabled, setGoogleEnabled] = useState(false);
+
+  React.useEffect(() => {
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    if (!url || !key) return;
+    fetch(`${url}/auth/v1/settings`, { headers: { apikey: key } })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((settings: { external?: { google?: boolean } } | null) => {
+        if (settings?.external?.google) setGoogleEnabled(true);
+      })
+      .catch(() => {});
+  }, []);
+
   const handlePasswordLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -114,7 +128,7 @@ export default function AdminLoginPage() {
           <CreatorStudioLogo size={42} className="shrink-0" />
           <div>
             <p className="text-xs font-bold tracking-wider uppercase text-teal-700 dark:text-teal-400">
-              FRANCIS CREATOR STUDIO
+              CREATOR STUDIO
             </p>
             <h1 className="text-xl font-bold tracking-tight">Admin Console Login</h1>
           </div>
@@ -168,20 +182,24 @@ export default function AdminLoginPage() {
               </button>
             </form>
 
-            <div className="flex items-center gap-3 text-[11px] text-[var(--adm-ink-muted)]">
-              <div className="h-px flex-1 bg-[var(--adm-border)]" />
-              <span>or</span>
-              <div className="h-px flex-1 bg-[var(--adm-border)]" />
-            </div>
+            {googleEnabled && (
+              <>
+                <div className="flex items-center gap-3 text-[11px] text-[var(--adm-ink-muted)]">
+                  <div className="h-px flex-1 bg-[var(--adm-border)]" />
+                  <span>or</span>
+                  <div className="h-px flex-1 bg-[var(--adm-border)]" />
+                </div>
 
-            <button
-              type="button"
-              disabled={loading}
-              onClick={handleGoogleAdminLogin}
-              className="flex w-full items-center justify-center gap-2 rounded-xl border border-[var(--adm-border)] bg-[var(--adm-surface-muted)] py-2.5 text-xs font-semibold hover:border-teal-600/50"
-            >
-              <span>Continue with Google Admin Account</span>
-            </button>
+                <button
+                  type="button"
+                  disabled={loading}
+                  onClick={handleGoogleAdminLogin}
+                  className="flex w-full items-center justify-center gap-2 rounded-xl border border-[var(--adm-border)] bg-[var(--adm-surface-muted)] py-2.5 text-xs font-semibold hover:border-teal-600/50"
+                >
+                  <span>Continue with Google Admin Account</span>
+                </button>
+              </>
+            )}
           </div>
         ) : (
           <form onSubmit={handleMfaVerify} className="mt-6 space-y-4">

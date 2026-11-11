@@ -11,23 +11,16 @@ import {
   Loader2,
   Lock,
   Mail,
-  Phone,
-  Smartphone,
+  Sparkles,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { CreatorStudioLogo } from "@/components/brand/CreatorStudioLogo";
-import {
-  GoogleIcon,
-  MobileNumberField,
-  normalizeE164Phone,
-} from "@/components/auth/PhoneInputRow";
+import { GoogleIcon } from "@/components/auth/PhoneInputRow";
 
-type AuthMethod = "email" | "phone";
-type PhoneMode = "password" | "otp";
+type EmailLoginMode = "magic" | "password";
 
 interface ProviderStatus {
   googleEnabled: boolean;
-  phoneEnabled: boolean;
   supabaseCallbackUrl?: string;
 }
 
@@ -38,17 +31,11 @@ function LoginForm() {
   const safeNext = rawNext.startsWith("/") && !rawNext.startsWith("//") ? rawNext : "/dashboard";
   const initialError = searchParams.get("error");
 
-  const [method, setMethod] = useState<AuthMethod>("email");
-  const [phoneMode, setPhoneMode] = useState<PhoneMode>("password");
-
+  const [mode, setMode] = useState<EmailLoginMode>("magic");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-
-  const [countryCode, setCountryCode] = useState("+91");
-  const [phoneNumber, setPhoneNumber] = useState("");
-  const [phonePassword, setPhonePassword] = useState("");
-  const [otpSent, setOtpSent] = useState(false);
-  const [otpCode, setOtpCode] = useState("");
+  const [magicSent, setMagicSent] = useState(false);
+  const [emailOtp, setEmailOtp] = useState("");
 
   const [providerStatus, setProviderStatus] = useState<ProviderStatus | null>(null);
   const [loading, setLoading] = useState(false);
@@ -81,14 +68,6 @@ function LoginForm() {
   const handleGoogleLogin = async () => {
     setError(null);
     setInfo(null);
-
-    if (providerStatus && !providerStatus.googleEnabled) {
-      setError(
-        `Google OAuth needs to be enabled in Supabase Dashboard → Authentication → Providers → Google (add your Google Client ID & Secret with Authorized Redirect URI: ${providerStatus.supabaseCallbackUrl || "https://ojzcgeckdrvxvkfphtma.supabase.co/auth/v1/callback"}).`
-      );
-      return;
-    }
-
     setGoogleLoading(true);
     try {
       const supabase = createClient();
@@ -98,9 +77,7 @@ function LoginForm() {
           redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(safeNext)}`,
         },
       });
-      if (oauthErr) {
-        setError(oauthErr.message);
-      }
+      if (oauthErr) setError(oauthErr.message);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to start Google sign-in.");
     } finally {
@@ -108,7 +85,72 @@ function LoginForm() {
     }
   };
 
-  const handleEmailSubmit = async (e: React.FormEvent) => {
+  const handleJustEmailSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setInfo(null);
+    const trimmedEmail = email.trim();
+    if (!trimmedEmail) return;
+
+    setLoading(true);
+    try {
+      const supabase = createClient();
+      const { error: otpErr } = await supabase.auth.signInWithOtp({
+        email: trimmedEmail,
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(safeNext)}`,
+          shouldCreateUser: true,
+        },
+      });
+
+      if (otpErr) {
+        const lower = otpErr.message.toLowerCase();
+        if (lower.includes("rate") || lower.includes("limit") || lower.includes("seconds")) {
+          setError(
+            `${otpErr.message} — Email sending is temporarily rate-limited; switch to "Email & Password" above to sign in immediately or try again in a minute.`
+          );
+        } else {
+          setError(otpErr.message);
+        }
+        return;
+      }
+
+      setMagicSent(true);
+      setInfo(
+        `Sign-in link sent to ${trimmedEmail}. Open your email and click the link to sign in instantly (or paste an email verification code below).`
+      );
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to send email sign-in link.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerifyEmailCode = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setInfo(null);
+    setLoading(true);
+    try {
+      const supabase = createClient();
+      const { error: verErr } = await supabase.auth.verifyOtp({
+        email: email.trim(),
+        token: emailOtp.trim(),
+        type: "email",
+      });
+      if (verErr) {
+        setError(verErr.message);
+        return;
+      }
+      await finalizeSignedInSession();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Invalid verification code.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleEmailPasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setInfo(null);
@@ -134,100 +176,6 @@ function LoginForm() {
     }
   };
 
-  const handlePhonePasswordSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-    setInfo(null);
-
-    const formattedPhone = normalizeE164Phone(countryCode, phoneNumber);
-    if (!/^\+\d{7,15}$/.test(formattedPhone)) {
-      setError("Enter a valid mobile number with country code (e.g. +919876543210).");
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const supabase = createClient();
-      const { error: signInErr } = await supabase.auth.signInWithPassword({
-        phone: formattedPhone,
-        password: phonePassword,
-      });
-
-      if (signInErr) {
-        setError(signInErr.message);
-        return;
-      }
-
-      await finalizeSignedInSession();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to sign in with mobile number.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSendOtp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-    setInfo(null);
-
-    const formattedPhone = normalizeE164Phone(countryCode, phoneNumber);
-    if (!/^\+\d{7,15}$/.test(formattedPhone)) {
-      setError("Enter a valid mobile number with country code (e.g. +919876543210).");
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const supabase = createClient();
-      const { error: otpErr } = await supabase.auth.signInWithOtp({
-        phone: formattedPhone,
-      });
-      if (otpErr) {
-        if (otpErr.message.toLowerCase().includes("provider") || otpErr.message.toLowerCase().includes("sms")) {
-          setError(
-            `${otpErr.message} — Configure an SMS provider (Twilio / Vonage / MessageBird) in Supabase Auth Settings, or switch to Mobile + Password above for instant sign-in.`
-          );
-        } else {
-          setError(otpErr.message);
-        }
-        return;
-      }
-      setOtpSent(true);
-      setInfo(`6-digit verification code sent to ${formattedPhone}.`);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Unable to send SMS code.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleVerifyOtp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-    setInfo(null);
-
-    const formattedPhone = normalizeE164Phone(countryCode, phoneNumber);
-    setLoading(true);
-    try {
-      const supabase = createClient();
-      const { error: verErr } = await supabase.auth.verifyOtp({
-        phone: formattedPhone,
-        token: otpCode.trim(),
-        type: "sms",
-      });
-      if (verErr) {
-        setError(verErr.message);
-        return;
-      }
-      await finalizeSignedInSession();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Invalid verification code.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
   return (
     <div className="mx-auto flex min-h-[calc(100vh-12rem)] max-w-md items-center px-4 py-12">
       <div className="w-full rounded-2xl border border-[var(--fcs-border)] bg-[var(--fcs-surface)] p-7 shadow-sm">
@@ -235,14 +183,14 @@ function LoginForm() {
           <CreatorStudioLogo size={38} className="shrink-0" />
           <div>
             <p className="text-[11px] font-semibold tracking-widest uppercase text-teal-700 dark:text-teal-400">
-              FRANCIS Creator Studio
+              CREATOR STUDIO
             </p>
-            <h1 className="text-xl font-bold tracking-tight">Sign in to your workspace</h1>
+            <h1 className="text-xl font-bold tracking-tight">Sign in with Email</h1>
           </div>
         </div>
         <p className="mt-2 text-xs text-[var(--fcs-ink-muted)]">
-          Sign in with Google, Email, or Mobile Number to access resumes, certificates, and vault
-          assets.
+          Enter just your email to receive an instant sign-in link, or sign in with email and
+          password.
         </p>
 
         {error && (
@@ -259,57 +207,131 @@ function LoginForm() {
           </div>
         )}
 
-        {/* Google OAuth Sign In */}
-        <button
-          type="button"
-          onClick={handleGoogleLogin}
-          disabled={googleLoading}
-          className="mt-5 flex w-full items-center justify-center gap-2.5 rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] py-2.5 text-sm font-semibold transition hover:border-teal-600/50 hover:bg-[var(--fcs-surface)] disabled:opacity-60"
-        >
-          {googleLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <GoogleIcon />}
-          <span>Continue with Google</span>
-        </button>
+        {providerStatus?.googleEnabled && (
+          <>
+            <button
+              type="button"
+              onClick={handleGoogleLogin}
+              disabled={googleLoading}
+              className="mt-5 flex w-full items-center justify-center gap-2.5 rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] py-2.5 text-sm font-semibold transition hover:border-teal-600/50 hover:bg-[var(--fcs-surface)] disabled:opacity-60"
+            >
+              {googleLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <GoogleIcon />}
+              <span>Continue with Google</span>
+            </button>
 
-        <div className="my-4 flex items-center gap-3 text-[11px] text-[var(--fcs-ink-muted)]">
-          <div className="h-px flex-1 bg-[var(--fcs-border)]" />
-          <span>or sign in with</span>
-          <div className="h-px flex-1 bg-[var(--fcs-border)]" />
-        </div>
+            <div className="my-4 flex items-center gap-3 text-[11px] text-[var(--fcs-ink-muted)]">
+              <div className="h-px flex-1 bg-[var(--fcs-border)]" />
+              <span>or use email</span>
+              <div className="h-px flex-1 bg-[var(--fcs-border)]" />
+            </div>
+          </>
+        )}
 
-        {/* Email vs Mobile Number Tabs */}
-        <div className="grid grid-cols-2 gap-1.5 rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] p-1 text-xs font-semibold">
+        {/* Just Email vs Email & Password Tabs */}
+        <div className="mt-5 grid grid-cols-2 gap-1.5 rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] p-1 text-xs font-semibold">
           <button
             type="button"
             onClick={() => {
-              setMethod("email");
+              setMode("magic");
               setError(null);
             }}
             className={`flex items-center justify-center gap-1.5 rounded-lg py-2 transition ${
-              method === "email"
+              mode === "magic"
                 ? "bg-[var(--fcs-surface)] text-[var(--fcs-ink)] shadow-sm"
                 : "text-[var(--fcs-ink-muted)] hover:text-[var(--fcs-ink)]"
             }`}
           >
-            <Mail className="h-3.5 w-3.5" /> Email
+            <Sparkles className="h-3.5 w-3.5" /> Just Email
           </button>
           <button
             type="button"
             onClick={() => {
-              setMethod("phone");
+              setMode("password");
               setError(null);
             }}
             className={`flex items-center justify-center gap-1.5 rounded-lg py-2 transition ${
-              method === "phone"
+              mode === "password"
                 ? "bg-[var(--fcs-surface)] text-[var(--fcs-ink)] shadow-sm"
                 : "text-[var(--fcs-ink-muted)] hover:text-[var(--fcs-ink)]"
             }`}
           >
-            <Smartphone className="h-3.5 w-3.5" /> Mobile Number
+            <Lock className="h-3.5 w-3.5" /> Email &amp; Password
           </button>
         </div>
 
-        {method === "email" ? (
-          <form onSubmit={handleEmailSubmit} className="mt-4 space-y-4">
+        {mode === "magic" ? (
+          <div className="mt-4 space-y-4">
+            <form onSubmit={handleJustEmailSubmit} className="space-y-4">
+              <div>
+                <label className="mb-1.5 block text-xs font-semibold" htmlFor="login-just-email">
+                  Email Address
+                </label>
+                <div className="relative">
+                  <Mail className="absolute top-2.5 left-3 h-4 w-4 text-[var(--fcs-ink-muted)]" />
+                  <input
+                    id="login-just-email"
+                    type="email"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="you@example.com"
+                    className="w-full rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] py-2 pr-3 pl-9 text-sm outline-none focus:border-teal-600"
+                  />
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="flex w-full items-center justify-center gap-2 rounded-xl bg-teal-700 py-2.5 text-sm font-semibold text-white transition hover:bg-teal-800 disabled:opacity-60"
+              >
+                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Mail className="h-4 w-4" />}
+                <span>
+                  {loading
+                    ? "Sending email link..."
+                    : magicSent
+                      ? "Resend Sign-In Email Link"
+                      : "Send Email Sign-In Link"}
+                </span>
+              </button>
+            </form>
+
+            {magicSent && (
+              <form
+                onSubmit={handleVerifyEmailCode}
+                className="space-y-3 border-t border-[var(--fcs-border)] pt-4"
+              >
+                <div>
+                  <label className="mb-1 block text-xs font-semibold" htmlFor="login-email-otp">
+                    Or Enter Email Verification Code
+                  </label>
+                  <div className="relative">
+                    <KeyRound className="absolute top-2.5 left-3 h-4 w-4 text-[var(--fcs-ink-muted)]" />
+                    <input
+                      id="login-email-otp"
+                      type="text"
+                      inputMode="numeric"
+                      required
+                      maxLength={8}
+                      value={emailOtp}
+                      onChange={(e) => setEmailOtp(e.target.value)}
+                      placeholder="12345678"
+                      className="w-full rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] py-2 pr-3 pl-9 font-mono text-sm tracking-widest outline-none focus:border-teal-600"
+                    />
+                  </div>
+                </div>
+                <button
+                  type="submit"
+                  disabled={loading || !emailOtp.trim()}
+                  className="flex w-full items-center justify-center gap-2 rounded-xl border border-teal-700/40 bg-teal-50 py-2 text-xs font-semibold text-teal-800 transition hover:bg-teal-100 disabled:opacity-60 dark:bg-teal-950/50 dark:text-teal-200"
+                >
+                  <ArrowRight className="h-3.5 w-3.5" /> Verify Code &amp; Sign In
+                </button>
+              </form>
+            )}
+          </div>
+        ) : (
+          <form onSubmit={handleEmailPasswordSubmit} className="mt-4 space-y-4">
             <div>
               <label className="mb-1.5 block text-xs font-semibold" htmlFor="login-email">
                 Email Address
@@ -364,142 +386,10 @@ function LoginForm() {
               <span>{loading ? "Signing in..." : "Sign In with Email"}</span>
             </button>
           </form>
-        ) : (
-          <div className="mt-4 space-y-4">
-            {/* Phone Password vs SMS OTP Toggle */}
-            <div className="flex gap-2 text-[11px] font-medium">
-              <button
-                type="button"
-                onClick={() => {
-                  setPhoneMode("password");
-                  setOtpSent(false);
-                  setError(null);
-                }}
-                className={`rounded-full px-3 py-1 transition ${
-                  phoneMode === "password"
-                    ? "bg-teal-700 text-white"
-                    : "border border-[var(--fcs-border)] text-[var(--fcs-ink-muted)]"
-                }`}
-              >
-                Mobile + Password
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setPhoneMode("otp");
-                  setError(null);
-                }}
-                className={`rounded-full px-3 py-1 transition ${
-                  phoneMode === "otp"
-                    ? "bg-teal-700 text-white"
-                    : "border border-[var(--fcs-border)] text-[var(--fcs-ink-muted)]"
-                }`}
-              >
-                SMS OTP Code
-              </button>
-            </div>
-
-            {phoneMode === "password" ? (
-              <form onSubmit={handlePhonePasswordSubmit} className="space-y-4">
-                <MobileNumberField
-                  id="login-phone"
-                  countryCode={countryCode}
-                  onCountryCodeChange={setCountryCode}
-                  phoneNumber={phoneNumber}
-                  onPhoneNumberChange={setPhoneNumber}
-                />
-
-                <div>
-                  <label className="mb-1.5 block text-xs font-semibold" htmlFor="login-phone-pw">
-                    Password
-                  </label>
-                  <div className="relative">
-                    <Lock className="absolute top-2.5 left-3 h-4 w-4 text-[var(--fcs-ink-muted)]" />
-                    <input
-                      id="login-phone-pw"
-                      type="password"
-                      required
-                      minLength={6}
-                      value={phonePassword}
-                      onChange={(e) => setPhonePassword(e.target.value)}
-                      placeholder="••••••••"
-                      className="w-full rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] py-2 pr-3 pl-9 text-sm outline-none focus:border-teal-600"
-                    />
-                  </div>
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-teal-700 py-2.5 text-sm font-semibold text-white transition hover:bg-teal-800 disabled:opacity-60"
-                >
-                  {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Phone className="h-4 w-4" />}
-                  <span>{loading ? "Signing in..." : "Sign In with Mobile"}</span>
-                </button>
-              </form>
-            ) : !otpSent ? (
-              <form onSubmit={handleSendOtp} className="space-y-4">
-                <MobileNumberField
-                  id="login-otp-phone"
-                  countryCode={countryCode}
-                  onCountryCodeChange={setCountryCode}
-                  phoneNumber={phoneNumber}
-                  onPhoneNumberChange={setPhoneNumber}
-                />
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-teal-700 py-2.5 text-sm font-semibold text-white transition hover:bg-teal-800 disabled:opacity-60"
-                >
-                  {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Smartphone className="h-4 w-4" />}
-                  <span>{loading ? "Sending OTP..." : "Send 6-Digit SMS OTP"}</span>
-                </button>
-              </form>
-            ) : (
-              <form onSubmit={handleVerifyOtp} className="space-y-4">
-                <div>
-                  <label className="mb-1.5 block text-xs font-semibold" htmlFor="login-otp-code">
-                    Enter 6-Digit SMS Code
-                  </label>
-                  <div className="relative">
-                    <KeyRound className="absolute top-2.5 left-3 h-4 w-4 text-[var(--fcs-ink-muted)]" />
-                    <input
-                      id="login-otp-code"
-                      type="text"
-                      inputMode="numeric"
-                      required
-                      maxLength={8}
-                      value={otpCode}
-                      onChange={(e) => setOtpCode(e.target.value)}
-                      placeholder="123456"
-                      className="w-full rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] py-2 pr-3 pl-9 font-mono text-sm tracking-widest outline-none focus:border-teal-600"
-                    />
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setOtpSent(false)}
-                    className="rounded-xl border border-[var(--fcs-border)] px-3 py-2 text-xs font-medium"
-                  >
-                    Change Number
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={loading}
-                    className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-teal-700 py-2.5 text-sm font-semibold text-white transition hover:bg-teal-800 disabled:opacity-60"
-                  >
-                    {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowRight className="h-4 w-4" />}
-                    <span>{loading ? "Verifying..." : "Verify & Sign In"}</span>
-                  </button>
-                </div>
-              </form>
-            )}
-          </div>
         )}
 
         <div className="mt-5 border-t border-[var(--fcs-border)] pt-4 text-center text-xs text-[var(--fcs-ink-muted)]">
-          New to FRANCIS Creator Studio?{" "}
+          New to Creator Studio?{" "}
           <Link
             href={`/auth/signup${safeNext !== "/dashboard" ? `?next=${encodeURIComponent(safeNext)}` : ""}`}
             className="font-semibold text-teal-700 hover:underline dark:text-teal-400"

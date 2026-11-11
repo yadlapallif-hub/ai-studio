@@ -19,6 +19,7 @@ interface CertificateCanvasProps {
   orientation: "landscape" | "portrait";
   elements: CertificateCanvasElement[];
   style: CertificateStyleConfig;
+  isVerified?: boolean;
   selectedElementId?: string | null;
   interactive?: boolean;
   onSelectElement?: (id: string | null) => void;
@@ -110,7 +111,7 @@ export const CertificateCanvas = React.forwardRef<HTMLDivElement, CertificateCan
       const origin =
         typeof window !== "undefined"
           ? window.location.origin
-          : process.env.NEXT_PUBLIC_SITE_URL || "https://franciscreatorstudio.org";
+          : process.env.NEXT_PUBLIC_SITE_URL || "https://francis-creator-studio.vercel.app";
       const verifyUrl = `${origin}/verify/${encodeURIComponent(props.certificateCode)}`;
       QRCode.toDataURL(verifyUrl, {
         width: 140,
@@ -388,6 +389,11 @@ export const CertificateCanvas = React.forwardRef<HTMLDivElement, CertificateCan
                     Scan to Verify
                   </p>
                 </div>
+              )}
+              {props.isVerified && (
+                <span className="mt-1.5 inline-flex items-center gap-1 rounded-full border border-emerald-500/40 bg-emerald-50 px-2 py-0.5 text-[9px] font-bold tracking-wider uppercase text-emerald-800">
+                  ✓ Verified Credential
+                </span>
               )}
             </div>
           </div>

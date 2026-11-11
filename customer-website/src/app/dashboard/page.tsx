@@ -31,7 +31,7 @@ export default async function DashboardPage() {
       .limit(12),
     supabase
       .from("fcs_certificates")
-      .select("id, title, recipient_name, certificate_code, template_slug, download_count, updated_at")
+      .select("id, title, recipient_name, certificate_code, template_slug, download_count, updated_at, fcs_certificate_verifications(verification_status)")
       .eq("user_id", user.id)
       .order("updated_at", { ascending: false })
       .limit(12),

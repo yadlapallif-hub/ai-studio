@@ -172,7 +172,7 @@ export default async function HomePage() {
               <div className="mt-3 flex items-center justify-between rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface)] px-3.5 py-2.5">
                 <div className="flex items-center gap-2 text-xs">
                   <Sparkles className="h-4 w-4 text-teal-600" />
-                  <span className="font-medium">FRANCIS Intelligence</span>
+                  <span className="font-medium">Creator AI</span>
                 </div>
                 <Link
                   href="/assistant"
@@ -242,10 +242,10 @@ export default async function HomePage() {
           <SlideReveal delay={140}>
             <div className="h-full rounded-2xl border border-[var(--fcs-border)] bg-[var(--fcs-surface)] p-6">
             <Compass className="h-6 w-6 text-teal-700 dark:text-teal-400" />
-            <h3 className="mt-4 text-base font-bold">FRANCIS Intelligence</h3>
+            <h3 className="mt-4 text-base font-bold">Creator AI</h3>
             <p className="mt-2 text-xs leading-relaxed text-[var(--fcs-ink-muted)]">
-              Transparent resume quality scoring, job description keyword comparison, career
-              roadmaps, and certificate layout reviews — never applying changes without approval.
+              Transparent resume quality scoring, website &amp; certificate building guidance, job
+              description comparison, and layout reviews — never applying changes without approval.
             </p>
             <Link
               href="/assistant"
@@ -388,7 +388,7 @@ export default async function HomePage() {
             {
               step: "02",
               title: "Edit & Enhance with AI",
-              desc: "Customize typography, reorder sections, remove photo backgrounds, and run FRANCIS Intelligence audits.",
+              desc: "Customize typography, reorder sections, remove photo backgrounds, and run Creator AI audits.",
               icon: Sparkles,
             },
             {

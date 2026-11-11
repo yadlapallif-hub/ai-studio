@@ -18,9 +18,9 @@ import { getPublicPlatformData } from "@/lib/platform";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "FRANCIS CREATOR STUDIO — Free & Open-Source AI Resume & Certificate Platform",
+  title: "CREATOR STUDIO — Free & Open-Source AI Resume & Certificate Platform",
   description:
-    "Create Your Future. Design Your Identity. Free, open-source AI Resume Builder, Certificate Studio with QR Verification, and Document Vault. Created & Developed by FRANCIS.",
+    "Create Your Future. Design Your Identity. Free, open-source AI Resume Builder, Certificate Studio with QR Verification, and Document Vault. Built by Francis.",
 };
 
 export default async function RootLayout({
