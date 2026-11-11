@@ -682,14 +682,19 @@ export function CertificateStudio(props: CertificateStudioProps) {
                   className="w-full rounded-lg border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] px-3 py-2"
                 />
               </div>
-              {props.approvedIssuers.length > 0 && (
+              {props.approvedIssuers.length > 0 ? (
                 <div>
                   <label className="mb-1 block font-semibold">
                     Link Approved Authorized Issuer (Optional)
                   </label>
                   <select
                     value={selectedIssuerId}
-                    onChange={(e) => setSelectedIssuerId(e.target.value)}
+                    onChange={(e) => {
+                      const nextId = e.target.value;
+                      setSelectedIssuerId(nextId);
+                      const matched = props.approvedIssuers.find((i) => i.id === nextId);
+                      if (matched) setOrganizationName(matched.organization_name);
+                    }}
                     className="w-full rounded-lg border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] px-3 py-2"
                   >
                     <option value="">Personal / Self-Created Draft</option>
@@ -700,6 +705,13 @@ export function CertificateStudio(props: CertificateStudioProps) {
                     ))}
                   </select>
                 </div>
+              ) : (
+                <p className="text-[11px] text-[var(--fcs-ink-muted)]">
+                  Want official Verified QR status?{" "}
+                  <Link href="/verify" className="font-semibold text-teal-700 hover:underline dark:text-teal-400">
+                    Register your organization →
+                  </Link>
+                </p>
               )}
               <div>
                 <label className="mb-1 block font-semibold">Description / Citation</label>
@@ -848,11 +860,15 @@ export function CertificateStudio(props: CertificateStudioProps) {
                     }
                     className="w-full rounded-lg border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] px-2 py-1.5"
                   >
-                    <option value="double-gold">Double Classic</option>
+                    <option value="double-gold">Double Gold Classic</option>
                     <option value="architectural">Architectural</option>
                     <option value="filigree">Filigree</option>
                     <option value="modern-frame">Modern Frame</option>
+                    <option value="prestige-navy">Prestige Navy</option>
+                    <option value="editorial-warm">Editorial Warm</option>
                     <option value="clean-grid">Clean Grid</option>
+                    <option value="board-crest">Board Crest</option>
+                    <option value="academic-crest">Academic Crest</option>
                     <option value="none">Borderless</option>
                   </select>
                 </div>

@@ -18,11 +18,11 @@ export default async function AdminMessagesPage() {
       .select("*")
       .order("updated_at", { ascending: false })
       .limit(100),
-    service.from("fcs_profiles").select("id, email"),
+    service.from("fcs_profiles").select("id, email, phone"),
     service.from("fcs_support_attachments").select("id, ticket_id, file_name, storage_path"),
   ]);
 
-  const emailMap = new Map((profiles ?? []).map((p) => [p.id, p.email]));
+  const emailMap = new Map((profiles ?? []).map((p) => [p.id, p.email || p.phone || "Customer"]));
   const enrichedTickets = (tickets ?? []).map((t) => ({
     ...t,
     customerEmail: emailMap.get(t.user_id) || "Customer",

@@ -4,6 +4,7 @@ import { createServerSupabase, createServiceSupabase } from "./supabase/server";
 export interface AdminContext {
   userId: string;
   email: string;
+  phone: string;
   fullName: string;
   roles: AppRole[];
   isSuperAdmin: boolean;
@@ -23,7 +24,7 @@ export async function getAdminContext(
   const [{ data: profile }, { data: roleRows }] = await Promise.all([
     service
       .from("fcs_profiles")
-      .select("full_name, email, status")
+      .select("full_name, email, phone, status")
       .eq("id", user.id)
       .maybeSingle(),
     service.from("fcs_user_roles").select("role").eq("user_id", user.id),
@@ -42,7 +43,8 @@ export async function getAdminContext(
 
   return {
     userId: user.id,
-    email: profile?.email || user.email || "",
+    email: profile?.email || user.email || profile?.phone || user.phone || "Admin",
+    phone: profile?.phone || user.phone || "",
     fullName: profile?.full_name || "Admin",
     roles,
     isSuperAdmin: roles.includes("super_admin"),

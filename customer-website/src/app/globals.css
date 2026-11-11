@@ -55,6 +55,108 @@ body {
   background: rgba(100, 116, 139, 0.55);
 }
 
+/* Intro logo reveal keyframes */
+@keyframes fcsLogoPop {
+  0% {
+    opacity: 0;
+    transform: scale(0.84) translateY(8px);
+  }
+  65% {
+    opacity: 1;
+    transform: scale(1.03) translateY(0);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes fcsStrokeDraw {
+  0% {
+    stroke-dasharray: 90;
+    stroke-dashoffset: 90;
+    opacity: 0.3;
+  }
+  100% {
+    stroke-dasharray: 90;
+    stroke-dashoffset: 0;
+    opacity: 1;
+  }
+}
+
+@keyframes fcsRingPulse {
+  0% {
+    opacity: 0;
+    transform: scale(0.85);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scale(1.06);
+  }
+  100% {
+    opacity: 0.25;
+    transform: scale(1.16);
+  }
+}
+
+@keyframes fcsFadeUp {
+  0% {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fcsExpandLine {
+  0% {
+    opacity: 0;
+    transform: scaleX(0.15);
+  }
+  100% {
+    opacity: 1;
+    transform: scaleX(1);
+  }
+}
+
+.fcs-intro-emblem {
+  animation: fcsLogoPop 680ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.fcs-logo-draw {
+  animation: fcsStrokeDraw 720ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.fcs-logo-draw-delay {
+  animation: fcsStrokeDraw 760ms cubic-bezier(0.22, 1, 0.36, 1) 180ms both;
+}
+
+.fcs-logo-seal {
+  animation: fcsLogoPop 550ms cubic-bezier(0.22, 1, 0.36, 1) 340ms both;
+}
+
+.fcs-intro-ring {
+  animation: fcsRingPulse 1200ms ease-out 180ms both;
+}
+
+.fcs-intro-title {
+  animation: fcsFadeUp 600ms cubic-bezier(0.22, 1, 0.36, 1) 280ms both;
+}
+
+.fcs-intro-rule {
+  animation: fcsExpandLine 600ms cubic-bezier(0.22, 1, 0.36, 1) 420ms both;
+}
+
+.fcs-intro-subtitle {
+  animation: fcsFadeUp 600ms cubic-bezier(0.22, 1, 0.36, 1) 520ms both;
+}
+
+.fcs-intro-bottom {
+  animation: fcsFadeUp 680ms cubic-bezier(0.22, 1, 0.36, 1) 620ms both;
+}
+
 /* Print-ready A4 styling */
 @media print {
   @page {

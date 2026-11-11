@@ -26,7 +26,7 @@ export default async function AdminAiPage() {
         .select("id, user_id, title, context_page, updated_at")
         .order("updated_at", { ascending: false })
         .limit(25),
-      service.from("fcs_profiles").select("id, email, ai_recommendations_enabled"),
+      service.from("fcs_profiles").select("id, email, phone, ai_recommendations_enabled"),
     ]);
 
   const profileMap = new Map((profiles ?? []).map((p) => [p.id, p]));
@@ -36,7 +36,8 @@ export default async function AdminAiPage() {
       id: c.id,
       title: c.title,
       context_page: c.context_page,
-      userEmail: profileMap.get(c.user_id)?.email || "User",
+      userEmail:
+        profileMap.get(c.user_id)?.email || profileMap.get(c.user_id)?.phone || "User",
       updated_at: c.updated_at,
     }));
 

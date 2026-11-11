@@ -12,6 +12,7 @@ import { ThemeProvider } from "@/components/layout/ThemeProvider";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { FloatingAiAssistant } from "@/components/ai/FloatingAiAssistant";
+import { IntroSplash } from "@/components/brand/IntroSplash";
 import { getPublicPlatformData } from "@/lib/platform";
 
 export const dynamic = "force-dynamic";
@@ -33,6 +34,7 @@ export default async function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className="min-h-screen font-sans antialiased">
         <ThemeProvider>
+          <IntroSplash />
           <div className="flex min-h-screen flex-col">
             <Navbar
               platformName={platform.branding.platformName}

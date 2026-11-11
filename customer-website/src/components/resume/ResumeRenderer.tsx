@@ -1,12 +1,19 @@
 "use client";
 
 import React from "react";
-import type { ResumeData, ResumeSectionKey, ResumeStyleConfig } from "@francis/shared";
+import {
+  getResumeTemplateLayout,
+  type ResumeData,
+  type ResumeLayoutConfig,
+  type ResumeSectionKey,
+  type ResumeStyleConfig,
+} from "@francis/shared";
 
 interface ResumeRendererProps {
   data: ResumeData;
   style: ResumeStyleConfig;
   templateSlug: string;
+  layoutConfig?: Partial<ResumeLayoutConfig>;
 }
 
 const FONT_MAP: Record<string, string> = {
@@ -35,9 +42,15 @@ const SECTION_LABELS: Record<ResumeSectionKey, string> = {
 };
 
 export const ResumeRenderer = React.forwardRef<HTMLDivElement, ResumeRendererProps>(
-  function ResumeRenderer({ data, style, templateSlug }, ref) {
-    const accent = style.accentColor || "#0F766E";
-    const fontCss = FONT_MAP[style.fontFamily] || FONT_MAP["Plus Jakarta Sans"];
+  function ResumeRenderer({ data, style, templateSlug, layoutConfig }, ref) {
+    const resolvedLayout: ResumeLayoutConfig = {
+      ...getResumeTemplateLayout(templateSlug),
+      ...layoutConfig,
+    };
+
+    const accent = style.accentColor || resolvedLayout.accent || "#0F766E";
+    const fontCss =
+      FONT_MAP[style.fontFamily] || FONT_MAP[resolvedLayout.fontFamily] || FONT_MAP["Plus Jakarta Sans"];
     const baseTextSize =
       style.fontSize === "compact"
         ? "11px"
@@ -51,13 +64,10 @@ export const ResumeRenderer = React.forwardRef<HTMLDivElement, ResumeRendererPro
           ? "1.62"
           : "1.48";
 
-    const isTwoColumn =
-      templateSlug === "modern-studio" ||
-      templateSlug === "minimal-swiss" ||
-      templateSlug === "creative-folio";
-
-    const isCenteredHeader = templateSlug === "academic-cv";
-    const isCreative = templateSlug === "creative-folio";
+    const isTwoColumn = resolvedLayout.columns === 2;
+    const sidebarRight = resolvedLayout.sidebarPosition === "right";
+    const headerAlign = resolvedLayout.headerAlign || "left";
+    const headingStyle = resolvedLayout.headingStyle || "uppercase-rule";
 
     const visibleSections = (style.sectionOrder || []).filter(
       (key) => !(style.hiddenSections || []).includes(key)
@@ -101,44 +111,75 @@ export const ResumeRenderer = React.forwardRef<HTMLDivElement, ResumeRendererPro
     };
 
     const renderSectionTitle = (label: string) => {
-      if (templateSlug === "technical-spec") {
-        return (
-          <h2
-            className="mb-2 border-b pb-1 font-mono text-[11px] font-bold tracking-wider uppercase"
-            style={{ borderColor: accent, color: accent }}
-          >
-            {label}
-          </h2>
-        );
+      switch (headingStyle) {
+        case "mono-tag":
+          return (
+            <h2
+              className="mb-2 border-b pb-1 font-mono text-[11px] font-bold tracking-wider uppercase"
+              style={{ borderColor: accent, color: accent }}
+            >
+              {`// ${label}`}
+            </h2>
+          );
+        case "serif-underline":
+          return (
+            <h2
+              className="mb-2 border-b border-slate-300 pb-1 font-serif text-[13px] font-bold tracking-wide uppercase"
+              style={{ color: accent }}
+            >
+              {label}
+            </h2>
+          );
+        case "classic-centered":
+          return (
+            <div className="mb-2.5 text-center">
+              <h2
+                className="font-serif text-[12px] font-bold tracking-[0.16em] uppercase"
+                style={{ color: accent }}
+              >
+                {label}
+              </h2>
+              <div
+                className="mx-auto mt-1 h-px w-16 opacity-60"
+                style={{ backgroundColor: accent }}
+              />
+            </div>
+          );
+        case "accent-bar":
+          return (
+            <h2
+              className="mb-2 border-l-4 pl-2.5 text-[11.5px] font-bold tracking-wider uppercase"
+              style={{ borderColor: accent, color: accent }}
+            >
+              {label}
+            </h2>
+          );
+        case "minimal-label":
+          return (
+            <h2 className="mb-2 text-[10px] font-semibold tracking-[0.22em] text-slate-500 uppercase">
+              {label}
+            </h2>
+          );
+        case "pill-badge":
+          return (
+            <h2
+              className="mb-2 inline-block rounded px-2 py-0.5 text-[10.5px] font-bold tracking-wider text-white uppercase"
+              style={{ backgroundColor: accent }}
+            >
+              {label}
+            </h2>
+          );
+        case "uppercase-rule":
+        default:
+          return (
+            <h2
+              className="mb-2 border-b border-slate-200 pb-1 text-[11px] font-bold tracking-widest uppercase"
+              style={{ color: accent }}
+            >
+              {label}
+            </h2>
+          );
       }
-      if (templateSlug === "executive-serif" || templateSlug === "academic-cv") {
-        return (
-          <h2
-            className="mb-2 border-b border-slate-300 pb-1 font-serif text-[13px] font-bold tracking-wide uppercase"
-            style={{ color: accent }}
-          >
-            {label}
-          </h2>
-        );
-      }
-      if (isCreative) {
-        return (
-          <h2
-            className="mb-2 inline-block rounded px-2 py-0.5 text-[10.5px] font-bold tracking-wider text-white uppercase"
-            style={{ backgroundColor: accent }}
-          >
-            {label}
-          </h2>
-        );
-      }
-      return (
-        <h2
-          className="mb-2 border-b border-slate-200 pb-1 text-[11px] font-bold tracking-widest uppercase"
-          style={{ color: accent }}
-        >
-          {label}
-        </h2>
-      );
     };
 
     const renderSectionBody = (key: ResumeSectionKey) => {
@@ -337,6 +378,7 @@ export const ResumeRenderer = React.forwardRef<HTMLDivElement, ResumeRendererPro
     const p = data.personalInfo;
     const photo = data.profilePhoto;
     const showPhoto = Boolean(style.showPhoto && photo?.url);
+    const effectiveShape = photo.shape || resolvedLayout.photoShape || "circle";
 
     const contactItems = [
       p.email,
@@ -351,7 +393,7 @@ export const ResumeRenderer = React.forwardRef<HTMLDivElement, ResumeRendererPro
       showPhoto ? (
         <div
           className={`shrink-0 overflow-hidden border border-slate-200 bg-slate-100 ${
-            photo.shape === "circle" ? "rounded-full" : "rounded-lg"
+            effectiveShape === "circle" ? "rounded-full" : "rounded-lg"
           }`}
           style={{ width: 84, height: 84 }}
         >
@@ -368,6 +410,31 @@ export const ResumeRenderer = React.forwardRef<HTMLDivElement, ResumeRendererPro
         </div>
       ) : null;
 
+    const sidebarColumn = (
+      <aside
+        className={`col-span-4 rounded-xl p-4 ${
+          sidebarRight ? "border-l border-slate-200 pl-5" : "border-r border-slate-200 pr-5"
+        }`}
+        style={
+          resolvedLayout.sidebarTint
+            ? { backgroundColor: resolvedLayout.sidebarTint }
+            : undefined
+        }
+      >
+        {visibleSections
+          .filter((k) => sidebarKeys.has(k))
+          .map((k) => renderSectionBody(k))}
+      </aside>
+    );
+
+    const mainColumn = (
+      <div className="col-span-8">
+        {visibleSections
+          .filter((k) => !sidebarKeys.has(k))
+          .map((k) => renderSectionBody(k))}
+      </div>
+    );
+
     return (
       <div
         ref={ref}
@@ -375,51 +442,106 @@ export const ResumeRenderer = React.forwardRef<HTMLDivElement, ResumeRendererPro
         style={{ fontFamily: fontCss, fontSize: baseTextSize, lineHeight }}
       >
         {/* HEADER */}
-        <header
-          className={`mb-6 border-b-2 pb-4 ${
-            isCenteredHeader
-              ? "text-center"
-              : photo.position === "left"
-                ? "flex flex-row-reverse items-center justify-between gap-6"
-                : photo.position === "top"
-                  ? "flex flex-col items-center gap-3 text-center"
-                  : "flex items-center justify-between gap-6"
-          }`}
-          style={{ borderColor: accent }}
-        >
-          <div className="min-w-0 flex-1">
-            <h1 className="text-2xl font-bold tracking-tight text-slate-950">
-              {p.fullName || "Your Full Name"}
-            </h1>
-            {p.headline && (
-              <p className="mt-0.5 text-sm font-semibold" style={{ color: accent }}>
-                {p.headline}
-              </p>
-            )}
+        {headerAlign === "band" ? (
+          <header
+            className="mb-6 -mx-10 -mt-10 flex items-center justify-between gap-6 px-10 py-7 text-white"
+            style={{ backgroundColor: accent }}
+          >
+            <div className="min-w-0 flex-1">
+              <h1 className="text-2xl font-bold tracking-tight text-white">
+                {p.fullName || "Your Full Name"}
+              </h1>
+              {p.headline && (
+                <p className="mt-0.5 text-sm font-medium text-white/90">{p.headline}</p>
+              )}
+              {contactItems.length > 0 && (
+                <p className="mt-2 flex flex-wrap gap-x-3 gap-y-0.5 text-[10.5px] text-white/85">
+                  {contactItems.map((item, idx) => (
+                    <span key={idx}>{item}</span>
+                  ))}
+                </p>
+              )}
+            </div>
+            {renderPhotoElement()}
+          </header>
+        ) : headerAlign === "split" ? (
+          <header
+            className="mb-6 flex items-start justify-between gap-6 border-b-2 pb-4"
+            style={{ borderColor: accent }}
+          >
+            <div className="flex items-center gap-4">
+              {renderPhotoElement()}
+              <div>
+                <h1 className="text-2xl font-bold tracking-tight text-slate-950">
+                  {p.fullName || "Your Full Name"}
+                </h1>
+                {p.headline && (
+                  <p className="mt-0.5 text-sm font-semibold" style={{ color: accent }}>
+                    {p.headline}
+                  </p>
+                )}
+              </div>
+            </div>
             {contactItems.length > 0 && (
-              <p className="mt-2 flex flex-wrap gap-x-3 gap-y-0.5 text-[10.5px] text-slate-600">
+              <div className="text-right text-[10.5px] leading-snug text-slate-600">
                 {contactItems.map((item, idx) => (
-                  <span key={idx}>{item}</span>
+                  <p key={idx}>{item}</p>
                 ))}
-              </p>
+              </div>
             )}
-          </div>
-          {renderPhotoElement()}
-        </header>
+          </header>
+        ) : (
+          <header
+            className={`mb-6 border-b-2 pb-4 ${
+              headerAlign === "center"
+                ? "flex flex-col items-center gap-3 text-center"
+                : photo.position === "left"
+                  ? "flex flex-row-reverse items-center justify-between gap-6"
+                  : photo.position === "top"
+                    ? "flex flex-col items-center gap-3 text-center"
+                    : "flex items-center justify-between gap-6"
+            }`}
+            style={{ borderColor: accent }}
+          >
+            <div className="min-w-0 flex-1">
+              <h1 className="text-2xl font-bold tracking-tight text-slate-950">
+                {p.fullName || "Your Full Name"}
+              </h1>
+              {p.headline && (
+                <p className="mt-0.5 text-sm font-semibold" style={{ color: accent }}>
+                  {p.headline}
+                </p>
+              )}
+              {contactItems.length > 0 && (
+                <p
+                  className={`mt-2 flex flex-wrap gap-x-3 gap-y-0.5 text-[10.5px] text-slate-600 ${
+                    headerAlign === "center" ? "justify-center" : ""
+                  }`}
+                >
+                  {contactItems.map((item, idx) => (
+                    <span key={idx}>{item}</span>
+                  ))}
+                </p>
+              )}
+            </div>
+            {renderPhotoElement()}
+          </header>
+        )}
 
         {/* BODY */}
         {isTwoColumn ? (
           <div className="grid grid-cols-12 gap-7">
-            <aside className="col-span-4 border-r border-slate-200 pr-5">
-              {visibleSections
-                .filter((k) => sidebarKeys.has(k))
-                .map((k) => renderSectionBody(k))}
-            </aside>
-            <div className="col-span-8">
-              {visibleSections
-                .filter((k) => !sidebarKeys.has(k))
-                .map((k) => renderSectionBody(k))}
-            </div>
+            {sidebarRight ? (
+              <>
+                {mainColumn}
+                {sidebarColumn}
+              </>
+            ) : (
+              <>
+                {sidebarColumn}
+                {mainColumn}
+              </>
+            )}
           </div>
         ) : (
           <div>{visibleSections.map((k) => renderSectionBody(k))}</div>

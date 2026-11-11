@@ -7,6 +7,7 @@ import {
   analyzeResumeQuality,
   createEmptyResumeData,
   createSampleStarterResumeData,
+  getResumeTemplateLayout,
   type ResumeData,
   type ResumeQualityReport,
   type ResumeSectionKey,
@@ -48,6 +49,7 @@ interface TemplateOption {
   category: string;
   is_ats_friendly: boolean;
   description: string;
+  layout_config?: Record<string, unknown>;
 }
 
 interface ResumeStudioProps {
@@ -456,9 +458,19 @@ export function ResumeStudio(props: ResumeStudioProps) {
             />
             <select
               value={templateSlug}
-              onChange={(e) => setTemplateSlug(e.target.value)}
+              onChange={(e) => {
+                const nextSlug = e.target.value;
+                setTemplateSlug(nextSlug);
+                const layout = getResumeTemplateLayout(nextSlug);
+                setStyle((prev) => ({
+                  ...prev,
+                  fontFamily: layout.fontFamily || prev.fontFamily,
+                  accentColor: layout.accent || prev.accentColor,
+                  showPhoto: layout.photoSupported,
+                }));
+              }}
               aria-label="Select resume template"
-              className="rounded-lg border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] px-3 py-1.5 text-xs font-medium outline-none focus:border-teal-600"
+              className="max-w-[230px] rounded-lg border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] px-3 py-1.5 text-xs font-medium outline-none focus:border-teal-600"
             >
               {props.templates.map((t) => (
                 <option key={t.slug} value={t.slug}>

@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
-import { Award, FileText } from "lucide-react";
+import React, { useMemo, useState } from "react";
+import { Award, FileText, Search } from "lucide-react";
 
 interface TemplateRow {
   id: string;
@@ -21,6 +21,39 @@ export function TemplatesClient({
 }) {
   const [resumes, setResumes] = useState(initialResumeTemplates);
   const [certs, setCerts] = useState(initialCertTemplates);
+  const [search, setSearch] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("all");
+
+  const categories = useMemo(() => {
+    const set = new Set<string>();
+    for (const r of resumes) set.add(r.category);
+    for (const c of certs) set.add(c.category);
+    return ["all", ...Array.from(set).sort()];
+  }, [resumes, certs]);
+
+  const filteredResumes = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return resumes.filter(
+      (tpl) =>
+        (categoryFilter === "all" || tpl.category === categoryFilter) &&
+        (!q ||
+          tpl.name.toLowerCase().includes(q) ||
+          tpl.slug.toLowerCase().includes(q) ||
+          tpl.category.toLowerCase().includes(q))
+    );
+  }, [resumes, search, categoryFilter]);
+
+  const filteredCerts = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return certs.filter(
+      (tpl) =>
+        (categoryFilter === "all" || tpl.category === categoryFilter) &&
+        (!q ||
+          tpl.name.toLowerCase().includes(q) ||
+          tpl.slug.toLowerCase().includes(q) ||
+          tpl.category.toLowerCase().includes(q))
+    );
+  }, [certs, search, categoryFilter]);
 
   const toggleActive = async (
     table: "fcs_resume_templates" | "fcs_certificate_templates",
@@ -40,71 +73,97 @@ export function TemplatesClient({
   };
 
   return (
-    <div className="grid gap-6 lg:grid-cols-2">
-      <div className="rounded-2xl border border-[var(--adm-border)] bg-[var(--adm-surface)] p-5">
-        <h2 className="flex items-center gap-2 text-sm font-bold">
-          <FileText className="h-4 w-4 text-teal-600" />
-          Resume Templates ({resumes.length})
-        </h2>
-        <ul className="mt-4 space-y-2.5 text-xs">
-          {resumes.map((tpl) => (
-            <li
-              key={tpl.id}
-              className="flex items-center justify-between gap-3 rounded-xl border border-[var(--adm-border)] bg-[var(--adm-surface-muted)] p-3"
-            >
-              <div>
-                <p className="font-bold">{tpl.name}</p>
-                <p className="text-[11px] text-[var(--adm-ink-muted)]">
-                  {tpl.category} • {tpl.slug}
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => void toggleActive("fcs_resume_templates", tpl)}
-                className={`rounded-lg px-3 py-1 font-semibold ${
-                  tpl.is_active
-                    ? "bg-emerald-100 text-emerald-800"
-                    : "bg-slate-200 text-slate-700"
-                }`}
-              >
-                {tpl.is_active ? "Published" : "Hidden"}
-              </button>
-            </li>
+    <div className="space-y-4">
+      <div className="flex flex-wrap gap-3 rounded-2xl border border-[var(--adm-border)] bg-[var(--adm-surface)] p-4 text-xs">
+        <div className="relative flex-1 min-w-[220px]">
+          <Search className="pointer-events-none absolute top-2.5 left-3 h-4 w-4 text-[var(--adm-ink-muted)]" />
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search 100 resume & 100 certificate templates..."
+            className="w-full rounded-xl border border-[var(--adm-border)] bg-[var(--adm-surface-muted)] py-2 pr-3 pl-9"
+          />
+        </div>
+        <select
+          value={categoryFilter}
+          onChange={(e) => setCategoryFilter(e.target.value)}
+          className="rounded-xl border border-[var(--adm-border)] bg-[var(--adm-surface-muted)] px-3 py-2"
+        >
+          {categories.map((c) => (
+            <option key={c} value={c}>
+              {c === "all" ? "All Categories" : c.replace(/_/g, " ")}
+            </option>
           ))}
-        </ul>
+        </select>
       </div>
 
-      <div className="rounded-2xl border border-[var(--adm-border)] bg-[var(--adm-surface)] p-5">
-        <h2 className="flex items-center gap-2 text-sm font-bold">
-          <Award className="h-4 w-4 text-amber-600" />
-          Certificate Templates ({certs.length})
-        </h2>
-        <ul className="mt-4 space-y-2.5 text-xs">
-          {certs.map((tpl) => (
-            <li
-              key={tpl.id}
-              className="flex items-center justify-between gap-3 rounded-xl border border-[var(--adm-border)] bg-[var(--adm-surface-muted)] p-3"
-            >
-              <div>
-                <p className="font-bold">{tpl.name}</p>
-                <p className="text-[11px] text-[var(--adm-ink-muted)]">
-                  {tpl.category} • {tpl.slug}
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => void toggleActive("fcs_certificate_templates", tpl)}
-                className={`rounded-lg px-3 py-1 font-semibold ${
-                  tpl.is_active
-                    ? "bg-emerald-100 text-emerald-800"
-                    : "bg-slate-200 text-slate-700"
-                }`}
+      <div className="grid gap-6 lg:grid-cols-2">
+        <div className="rounded-2xl border border-[var(--adm-border)] bg-[var(--adm-surface)] p-5">
+          <h2 className="flex items-center gap-2 text-sm font-bold">
+            <FileText className="h-4 w-4 text-teal-600" />
+            Resume Templates ({filteredResumes.length} / {resumes.length})
+          </h2>
+          <ul className="mt-4 max-h-[640px] space-y-2.5 overflow-y-auto pr-1 text-xs">
+            {filteredResumes.map((tpl) => (
+              <li
+                key={tpl.id}
+                className="flex items-center justify-between gap-3 rounded-xl border border-[var(--adm-border)] bg-[var(--adm-surface-muted)] p-3"
               >
-                {tpl.is_active ? "Published" : "Hidden"}
-              </button>
-            </li>
-          ))}
-        </ul>
+                <div className="min-w-0">
+                  <p className="truncate font-bold">{tpl.name}</p>
+                  <p className="truncate text-[11px] text-[var(--adm-ink-muted)]">
+                    {tpl.category} • {tpl.slug}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => void toggleActive("fcs_resume_templates", tpl)}
+                  className={`shrink-0 rounded-lg px-3 py-1 font-semibold ${
+                    tpl.is_active
+                      ? "bg-emerald-100 text-emerald-800"
+                      : "bg-slate-200 text-slate-700"
+                  }`}
+                >
+                  {tpl.is_active ? "Published" : "Hidden"}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <div className="rounded-2xl border border-[var(--adm-border)] bg-[var(--adm-surface)] p-5">
+          <h2 className="flex items-center gap-2 text-sm font-bold">
+            <Award className="h-4 w-4 text-amber-600" />
+            Certificate Templates ({filteredCerts.length} / {certs.length})
+          </h2>
+          <ul className="mt-4 max-h-[640px] space-y-2.5 overflow-y-auto pr-1 text-xs">
+            {filteredCerts.map((tpl) => (
+              <li
+                key={tpl.id}
+                className="flex items-center justify-between gap-3 rounded-xl border border-[var(--adm-border)] bg-[var(--adm-surface-muted)] p-3"
+              >
+                <div className="min-w-0">
+                  <p className="truncate font-bold">{tpl.name}</p>
+                  <p className="truncate text-[11px] text-[var(--adm-ink-muted)]">
+                    {tpl.category} • {tpl.slug}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => void toggleActive("fcs_certificate_templates", tpl)}
+                  className={`shrink-0 rounded-lg px-3 py-1 font-semibold ${
+                    tpl.is_active
+                      ? "bg-emerald-100 text-emerald-800"
+                      : "bg-slate-200 text-slate-700"
+                  }`}
+                >
+                  {tpl.is_active ? "Published" : "Hidden"}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
       </div>
     </div>
   );

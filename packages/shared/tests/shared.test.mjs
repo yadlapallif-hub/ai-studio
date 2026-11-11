@@ -114,3 +114,17 @@ test("Zod schemas reject invalid inputs and accept valid records", () => {
     false
   );
 });
+
+test("template catalogs provide 100 unique resume templates and 100 unique certificate templates", () => {
+  assert.equal(shared.RESUME_TEMPLATE_CATALOG.length, 100);
+  assert.equal(shared.CERTIFICATE_TEMPLATE_CATALOG.length, 100);
+
+  const resumeSlugs = new Set(shared.RESUME_TEMPLATE_CATALOG.map((t) => t.slug));
+  const certSlugs = new Set(shared.CERTIFICATE_TEMPLATE_CATALOG.map((t) => t.slug));
+  assert.equal(resumeSlugs.size, 100);
+  assert.equal(certSlugs.size, 100);
+
+  assert.equal(shared.RESUME_TEMPLATE_CATALOG[0].slug, "ats-clean");
+  assert.equal(shared.CERTIFICATE_TEMPLATE_CATALOG[0].slug, "course-completion");
+});
+

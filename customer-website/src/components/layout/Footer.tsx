@@ -1,5 +1,6 @@
 import React from "react";
 import Link from "next/link";
+import { CreatorStudioLogo } from "../brand/CreatorStudioLogo";
 
 export function Footer({
   footerContent,
@@ -19,8 +20,11 @@ export function Footer({
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6">
         <div className="grid gap-8 md:grid-cols-4">
           <div className="md:col-span-2">
-            <p className="text-sm font-bold tracking-wide uppercase">FRANCIS CREATOR STUDIO</p>
-            <p className="mt-1 text-xs font-medium text-teal-700 dark:text-teal-400">
+            <div className="flex items-center gap-2.5">
+              <CreatorStudioLogo size={28} className="shrink-0" />
+              <p className="text-sm font-bold tracking-wide uppercase">FRANCIS CREATOR STUDIO</p>
+            </div>
+            <p className="mt-1.5 text-xs font-medium text-teal-700 dark:text-teal-400">
               Create Your Future. Design Your Identity.
             </p>
             <p className="mt-3 max-w-md text-xs leading-relaxed text-[var(--fcs-ink-muted)]">

@@ -1,22 +1,48 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Building2, CheckCircle2, Search, ShieldCheck } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
+import { Building2, CheckCircle2, Globe, Loader2, Search, ShieldCheck } from "lucide-react";
+
+interface ApprovedIssuerRow {
+  id: string;
+  organization_name: string;
+  organization_slug: string;
+  website: string | null;
+  verification_status: string;
+  approved_at: string | null;
+  created_at: string;
+}
 
 export default function VerifyLookupPage() {
   const router = useRouter();
   const [code, setCode] = useState("");
-  const [showIssuerForm, setShowIssuerForm] = useState(false);
+  const [showIssuerForm, setShowIssuerForm] = useState(true);
+  const [showOptionalDetails, setShowOptionalDetails] = useState(false);
 
   const [orgName, setOrgName] = useState("");
-  const [orgDomain, setOrgDomain] = useState("");
   const [orgEmail, setOrgEmail] = useState("");
+  const [orgDomain, setOrgDomain] = useState("");
   const [orgWebsite, setOrgWebsite] = useState("");
   const [issuerMsg, setIssuerMsg] = useState<string | null>(null);
   const [issuerErr, setIssuerErr] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [approvedIssuers, setApprovedIssuers] = useState<ApprovedIssuerRow[]>([]);
+
+  const loadIssuers = async () => {
+    try {
+      const res = await fetch("/api/issuers/apply");
+      if (!res.ok) return;
+      const json = (await res.json()) as { issuers?: ApprovedIssuerRow[] };
+      setApprovedIssuers(json.issuers ?? []);
+    } catch {
+      // ignore offline preview fallback
+    }
+  };
+
+  useEffect(() => {
+    void loadIssuers();
+  }, []);
 
   const handleLookup = (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,40 +57,36 @@ export default function VerifyLookupPage() {
     setIssuerErr(null);
     setSubmitting(true);
     try {
-      const supabase = createClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) {
-        setIssuerErr("Sign in first to submit an Authorized Issuer application.");
-        return;
-      }
-      const slug =
-        orgName
-          .trim()
-          .toLowerCase()
-          .replace(/[^a-z0-9]+/g, "-")
-          .replace(/^-|-$/g, "") || `issuer-${Date.now()}`;
-      const { error } = await supabase.from("fcs_authorized_issuers").insert({
-        user_id: user.id,
-        organization_name: orgName.trim(),
-        organization_slug: `${slug}-${Date.now().toString().slice(-4)}`,
-        contact_email: orgEmail.trim(),
-        website: orgWebsite.trim() || null,
-        notes: orgDomain.trim() ? `Primary domain: ${orgDomain.trim()}` : null,
-        verification_status: "pending",
+      const res = await fetch("/api/issuers/apply", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          organizationName: orgName.trim(),
+          contactEmail: orgEmail.trim(),
+          website: orgWebsite.trim() || null,
+          domain: orgDomain.trim() || null,
+        }),
       });
-      if (error) {
-        setIssuerErr(error.message);
+      const json = (await res.json()) as {
+        ok?: boolean;
+        error?: string;
+        issuer?: ApprovedIssuerRow;
+      };
+      if (!res.ok || !json.ok) {
+        setIssuerErr(json.error || "Unable to register organization.");
         return;
       }
+
       setIssuerMsg(
-        "Issuer application submitted for administrator verification. Once approved, certificates linked to your issuer account can carry Verified status."
+        `"${json.issuer?.organization_name || orgName.trim()}" is now registered and approved as an Authorized Issuer. Certificates linked to this organization can display Verified status.`
       );
       setOrgName("");
-      setOrgDomain("");
       setOrgEmail("");
+      setOrgDomain("");
       setOrgWebsite("");
+      await loadIssuers();
+    } catch (err) {
+      setIssuerErr(err instanceof Error ? err.message : "Failed submitting application.");
     } finally {
       setSubmitting(false);
     }
@@ -109,20 +131,21 @@ export default function VerifyLookupPage() {
           <p className="mt-1 leading-relaxed">
             FRANCIS CREATOR STUDIO never marks a self-created draft or decorative sample stamp as
             officially verified. A credential displays <strong>Officially Verified</strong> only
-            after verification under an administrator-approved Authorized Issuer.
+            when issued under a registered Authorized Issuer organization.
           </p>
         </div>
       </div>
 
-      {/* Authorized Issuer Application */}
+      {/* Authorized Issuer Registration (Open for all organizations with Name & Email) */}
       <div className="mt-8 rounded-2xl border border-[var(--fcs-border)] bg-[var(--fcs-surface)] p-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <Building2 className="h-5 w-5 text-teal-600" />
             <div>
-              <h2 className="text-sm font-bold">Represent an Organization or Institution?</h2>
+              <h2 className="text-sm font-bold">Register Your Organization as Authorized Issuer</h2>
               <p className="text-xs text-[var(--fcs-ink-muted)]">
-                Apply for Authorized Issuer approval to verify credentials issued by your organization.
+                Currently open to all organizations — register instantly using just your
+                organization name and email.
               </p>
             </div>
           </div>
@@ -131,12 +154,15 @@ export default function VerifyLookupPage() {
             onClick={() => setShowIssuerForm((s) => !s)}
             className="rounded-lg border border-[var(--fcs-border)] px-3.5 py-2 text-xs font-semibold hover:bg-[var(--fcs-surface-muted)]"
           >
-            {showIssuerForm ? "Hide Application" : "Apply as Authorized Issuer"}
+            {showIssuerForm ? "Hide Form" : "Register Organization"}
           </button>
         </div>
 
         {showIssuerForm && (
-          <form onSubmit={handleIssuerApply} className="mt-5 grid gap-3 border-t border-[var(--fcs-border)] pt-5 text-xs sm:grid-cols-2">
+          <form
+            onSubmit={handleIssuerApply}
+            className="mt-5 grid gap-3 border-t border-[var(--fcs-border)] pt-5 text-xs sm:grid-cols-2"
+          >
             {issuerMsg && (
               <div className="sm:col-span-2 flex items-center gap-2 rounded-xl border border-teal-500/30 bg-teal-50 p-3 text-teal-800 dark:bg-teal-950/40 dark:text-teal-300">
                 <CheckCircle2 className="h-4 w-4 shrink-0" />
@@ -148,46 +174,107 @@ export default function VerifyLookupPage() {
                 {issuerErr}
               </div>
             )}
-            <input
-              type="text"
-              required
-              value={orgName}
-              onChange={(e) => setOrgName(e.target.value)}
-              placeholder="Official Organization Name *"
-              className="rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] px-3 py-2.5"
-            />
-            <input
-              type="email"
-              required
-              value={orgEmail}
-              onChange={(e) => setOrgEmail(e.target.value)}
-              placeholder="Official Organization Contact Email *"
-              className="rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] px-3 py-2.5"
-            />
-            <input
-              type="text"
-              value={orgDomain}
-              onChange={(e) => setOrgDomain(e.target.value)}
-              placeholder="Primary Domain (e.g. university.edu)"
-              className="rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] px-3 py-2.5"
-            />
-            <input
-              type="url"
-              value={orgWebsite}
-              onChange={(e) => setOrgWebsite(e.target.value)}
-              placeholder="Official Website URL (https://...)"
-              className="rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] px-3 py-2.5"
-            />
+            <div>
+              <label className="mb-1 block font-semibold">Organization Name *</label>
+              <input
+                type="text"
+                required
+                minLength={2}
+                value={orgName}
+                onChange={(e) => setOrgName(e.target.value)}
+                placeholder="e.g. Nexora Academy"
+                className="w-full rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] px-3 py-2.5"
+              />
+            </div>
+            <div>
+              <label className="mb-1 block font-semibold">Organization Email *</label>
+              <input
+                type="email"
+                required
+                value={orgEmail}
+                onChange={(e) => setOrgEmail(e.target.value)}
+                placeholder="e.g. hello@organization.com"
+                className="w-full rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] px-3 py-2.5"
+              />
+            </div>
+
             <div className="sm:col-span-2">
+              <button
+                type="button"
+                onClick={() => setShowOptionalDetails((s) => !s)}
+                className="text-[11px] font-medium text-teal-700 hover:underline dark:text-teal-400"
+              >
+                {showOptionalDetails
+                  ? "− Hide optional website & domain"
+                  : "+ Optional: Add website or domain"}
+              </button>
+            </div>
+
+            {showOptionalDetails && (
+              <>
+                <input
+                  type="text"
+                  value={orgDomain}
+                  onChange={(e) => setOrgDomain(e.target.value)}
+                  placeholder="Primary Domain (optional, e.g. nexora.com)"
+                  className="rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] px-3 py-2.5"
+                />
+                <input
+                  type="text"
+                  value={orgWebsite}
+                  onChange={(e) => setOrgWebsite(e.target.value)}
+                  placeholder="Website (optional, e.g. https://nexora.com)"
+                  className="rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] px-3 py-2.5"
+                />
+              </>
+            )}
+
+            <div className="sm:col-span-2 pt-1">
               <button
                 type="submit"
                 disabled={submitting}
-                className="rounded-xl bg-teal-700 px-5 py-2.5 font-semibold text-white hover:bg-teal-800 disabled:opacity-60"
+                className="inline-flex items-center gap-2 rounded-xl bg-teal-700 px-5 py-2.5 font-semibold text-white hover:bg-teal-800 disabled:opacity-60"
               >
-                {submitting ? "Submitting..." : "Submit Issuer Application"}
+                {submitting && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                <span>
+                  {submitting ? "Registering..." : "Register Authorized Organization"}
+                </span>
               </button>
             </div>
           </form>
+        )}
+
+        {approvedIssuers.length > 0 && (
+          <div className="mt-6 border-t border-[var(--fcs-border)] pt-5">
+            <p className="text-[11px] font-bold tracking-wider uppercase text-[var(--fcs-ink-muted)]">
+              Active Approved Organizations ({approvedIssuers.length})
+            </p>
+            <div className="mt-3 grid gap-2 sm:grid-cols-2">
+              {approvedIssuers.slice(0, 12).map((iss) => (
+                <div
+                  key={iss.id}
+                  className="flex items-center justify-between rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] px-3 py-2 text-xs"
+                >
+                  <div className="min-w-0">
+                    <p className="truncate font-semibold">{iss.organization_name}</p>
+                    {iss.website && (
+                      <a
+                        href={iss.website}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-1 truncate text-[10px] text-teal-700 hover:underline dark:text-teal-400"
+                      >
+                        <Globe className="h-2.5 w-2.5" /> {iss.website.replace(/^https?:\/\//, "")}
+                      </a>
+                    )}
+                  </div>
+                  <span className="ml-2 shrink-0 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300">
+                    Approved
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
         )}
       </div>
     </div>

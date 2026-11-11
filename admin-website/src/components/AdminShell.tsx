@@ -20,6 +20,7 @@ import {
   Users,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { CreatorStudioLogo } from "./brand/CreatorStudioLogo";
 
 interface AdminShellProps {
   adminName: string;
@@ -75,9 +76,7 @@ export function AdminShell({ adminName, adminEmail, roles, children }: AdminShel
       <aside className="hidden w-64 shrink-0 flex-col border-r border-[var(--adm-border)] bg-[var(--adm-surface)] lg:flex">
         <div className="border-b border-[var(--adm-border)] px-5 py-4">
           <div className="flex items-center gap-2.5">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-teal-700 text-xs font-bold text-white">
-              F
-            </div>
+            <CreatorStudioLogo size={34} className="shrink-0" />
             <div>
               <p className="text-xs font-bold tracking-wide uppercase">FRANCIS ADMIN</p>
               <p className="text-[10px] text-[var(--adm-ink-muted)]">Operations & Governance</p>

@@ -24,6 +24,7 @@ export default async function AdminUsersPage() {
   const rows = (profiles ?? []).map((p) => ({
     id: p.id,
     email: p.email,
+    phone: p.phone,
     full_name: p.full_name,
     headline: p.headline,
     status: p.status,

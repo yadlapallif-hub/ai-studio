@@ -5,7 +5,8 @@ import { Ban, CheckCircle2, Search, Shield, Trash2 } from "lucide-react";
 
 interface UserRow {
   id: string;
-  email: string;
+  email: string | null;
+  phone?: string | null;
   full_name: string | null;
   headline: string | null;
   status: string;
@@ -39,7 +40,8 @@ export function UsersClient({
       .filter(
         (u) =>
           !q ||
-          u.email.toLowerCase().includes(q) ||
+          (u.email || "").toLowerCase().includes(q) ||
+          (u.phone || "").toLowerCase().includes(q) ||
           (u.full_name || "").toLowerCase().includes(q)
       );
   }, [users, search, statusFilter]);
@@ -57,7 +59,7 @@ export function UsersClient({
       return;
     }
     setUsers((prev) => prev.map((u) => (u.id === user.id ? { ...u, status: nextStatus } : u)));
-    setFeedback(`User ${user.email} is now ${nextStatus}.`);
+    setFeedback(`User ${user.email || user.phone || user.id} is now ${nextStatus}.`);
   };
 
   const saveRoles = async (userId: string) => {
@@ -77,7 +79,8 @@ export function UsersClient({
   };
 
   const deleteUser = async (user: UserRow) => {
-    if (!window.confirm(`Permanently delete user ${user.email}?`)) return;
+    const label = user.email || user.phone || user.id;
+    if (!window.confirm(`Permanently delete user ${label}?`)) return;
     const res = await fetch("/api/admin/users", {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
@@ -89,7 +92,7 @@ export function UsersClient({
       return;
     }
     setUsers((prev) => prev.filter((u) => u.id !== user.id));
-    setFeedback(`Deleted ${user.email}.`);
+    setFeedback(`Deleted ${label}.`);
   };
 
   return (
@@ -107,7 +110,7 @@ export function UsersClient({
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search by email or name..."
+            placeholder="Search by email, phone, or name..."
             className="w-full rounded-xl border border-[var(--adm-border)] bg-[var(--adm-surface-muted)] py-2 pr-3 pl-9"
           />
         </div>
@@ -138,7 +141,9 @@ export function UsersClient({
               <tr key={u.id} className="border-b border-[var(--adm-border)]/60">
                 <td className="p-3">
                   <p className="font-bold">{u.full_name || "Unnamed User"}</p>
-                  <p className="text-[11px] text-[var(--adm-ink-muted)]">{u.email}</p>
+                  <p className="text-[11px] text-[var(--adm-ink-muted)]">
+                    {u.email || u.phone || "No email/phone"}
+                  </p>
                 </td>
                 <td className="p-3">
                   {editingRolesFor === u.id ? (

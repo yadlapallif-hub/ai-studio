@@ -34,17 +34,22 @@ export async function POST(request: NextRequest) {
   let status: "pending_approval" | "verified" = "pending_approval";
   let approvedIssuerId: string | null = null;
 
-  // Auto-verify ONLY if the authenticated user holds an explicitly approved Authorized Issuer account
+  // Auto-verify when linked to an approved Authorized Issuer owned by user, matching user's email, or registered openly
   if (body.issuerId) {
     const { data: issuer } = await adminDb
       .from("fcs_authorized_issuers")
-      .select("id, user_id, verification_status")
+      .select("id, user_id, contact_email, verification_status")
       .eq("id", body.issuerId)
-      .eq("user_id", user.id)
       .eq("verification_status", "approved")
       .maybeSingle();
 
-    if (issuer) {
+    const canUseIssuer =
+      issuer &&
+      (issuer.user_id === user.id ||
+        issuer.user_id === null ||
+        (user.email && issuer.contact_email.toLowerCase() === user.email.toLowerCase()));
+
+    if (canUseIssuer) {
       status = "verified";
       approvedIssuerId = issuer.id;
     }

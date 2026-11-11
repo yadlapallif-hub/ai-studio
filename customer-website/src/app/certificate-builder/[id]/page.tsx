@@ -1,6 +1,7 @@
 import React from "react";
 import { notFound } from "next/navigation";
 import {
+  CERTIFICATE_TEMPLATE_CATALOG,
   createDefaultCertificateElements,
   createDefaultCertificateStyle,
   generateCertificateCode,
@@ -32,13 +33,28 @@ export default async function CertificateEditorPage({
     user
       ? supabase
           .from("fcs_authorized_issuers")
-          .select("id, organization_name")
-          .eq("user_id", user.id)
+          .select("id, organization_name, user_id, contact_email")
           .eq("verification_status", "approved")
+          .or(
+            user.email
+              ? `user_id.eq.${user.id},user_id.is.null,contact_email.eq.${user.email.toLowerCase()}`
+              : `user_id.eq.${user.id},user_id.is.null`
+          )
       : Promise.resolve({ data: [] }),
   ]);
 
-  const tplList = (templates ?? []) as Array<{
+  const tplList = (
+    templates && templates.length > 0
+      ? templates
+      : CERTIFICATE_TEMPLATE_CATALOG.map((t) => ({
+          id: t.slug,
+          slug: t.slug,
+          name: t.name,
+          category: t.category,
+          orientation: t.orientation,
+          layout_config: t.layoutConfig as unknown as Record<string, unknown>,
+        }))
+  ) as Array<{
     id: string;
     slug: string;
     name: string;

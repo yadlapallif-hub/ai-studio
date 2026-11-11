@@ -41,7 +41,7 @@ export default function SettingsPage() {
           setFullName(String(p.full_name || ""));
           setHeadline(String(p.headline || ""));
           setBio(String(p.bio || ""));
-          setPhone(String(p.phone || ""));
+          setPhone(String(p.phone || user.phone || ""));
           setLocation(String(p.location || ""));
           setWebsite(String(p.website || ""));
           setGithubUrl(String(p.github_url || ""));
@@ -173,7 +173,7 @@ export default function SettingsPage() {
             <input
               type="email"
               disabled
-              value={email}
+              value={email || "Mobile-only account (no email linked)"}
               className="w-full rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] px-3 py-2 text-xs opacity-70"
             />
           </div>

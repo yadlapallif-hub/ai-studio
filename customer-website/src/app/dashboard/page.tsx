@@ -67,7 +67,9 @@ export default async function DashboardPage() {
   const userName = String(
     (profile as { full_name?: string } | null)?.full_name ||
       user.user_metadata?.full_name ||
+      user.user_metadata?.name ||
       user.email ||
+      user.phone ||
       "Creator"
   );
 

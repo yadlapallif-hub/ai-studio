@@ -36,6 +36,24 @@ const FONT_MAP: Record<string, string> = {
   "DM Sans": "'DM Sans', system-ui, sans-serif",
 };
 
+function isDarkHex(hex?: string): boolean {
+  if (!hex || !hex.startsWith("#")) return false;
+  const clean = hex.slice(1);
+  const full =
+    clean.length === 3
+      ? clean
+          .split("")
+          .map((c) => c + c)
+          .join("")
+      : clean;
+  if (full.length !== 6) return false;
+  const r = parseInt(full.slice(0, 2), 16);
+  const g = parseInt(full.slice(2, 4), 16);
+  const b = parseInt(full.slice(4, 6), 16);
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  return luminance < 0.45;
+}
+
 function getInkFilter(inkStyle?: CertificateCanvasElement["inkStyle"]): React.CSSProperties {
   if (inkStyle === "blue_ink") {
     return { filter: "sepia(1) hue-rotate(190deg) saturate(4) brightness(0.85)" };
@@ -98,15 +116,34 @@ export const CertificateCanvas = React.forwardRef<HTMLDivElement, CertificateCan
     const { style } = props;
     const displayFont = FONT_MAP[style.fontDisplay] || FONT_MAP["Cormorant Garamond"];
     const bodyFont = FONT_MAP[style.fontBody] || FONT_MAP["Plus Jakarta Sans"];
+    const darkBg = isDarkHex(style.backgroundColor);
 
+    const bodyTextColor = darkBg ? "#E2E8F0" : "#334155";
+    const mutedTextColor = darkBg ? "#94A3B8" : "#64748B";
+    const strongTextColor = darkBg ? "#F8FAFC" : "#0F172A";
+
+    const borderKey = (style.borderStyle || "double-gold") as string;
     const borderFrameClass =
-      !style.showBorder || style.borderStyle === "none"
+      !style.showBorder || borderKey === "none"
         ? ""
-        : style.borderStyle === "double-gold" || style.borderStyle === "prestige-navy"
+        : borderKey === "double-gold" ||
+            borderKey === "prestige-navy" ||
+            borderKey === "board-crest"
           ? "border-[6px] border-double"
-          : style.borderStyle === "clean-grid" || style.borderStyle === "modern-frame"
+          : borderKey === "clean-grid" || borderKey === "modern-frame"
             ? "border-2"
-            : "border-[4px]";
+            : borderKey === "editorial-warm"
+              ? "border-[5px]"
+              : "border-[4px]";
+
+    const showCrestHeader =
+      style.showBorder && (borderKey === "academic-crest" || borderKey === "board-crest");
+    const showCornerBlocks =
+      style.showBorder &&
+      (borderKey === "architectural" || borderKey === "modern-frame");
+    const showFiligreeRings =
+      style.showBorder &&
+      (borderKey === "filigree" || borderKey === "double-gold" || borderKey === "prestige-navy");
 
     return (
       <div
@@ -121,6 +158,11 @@ export const CertificateCanvas = React.forwardRef<HTMLDivElement, CertificateCan
           backgroundColor: style.backgroundColor || "#FFFDF7",
           color: style.primaryColor || "#0F4C5C",
           fontFamily: bodyFont,
+          backgroundImage:
+            borderKey === "clean-grid"
+              ? `linear-gradient(to right, ${style.accentColor || "#0F766E"}12 1px, transparent 1px), linear-gradient(to bottom, ${style.accentColor || "#0F766E"}12 1px, transparent 1px)`
+              : undefined,
+          backgroundSize: borderKey === "clean-grid" ? "28px 28px" : undefined,
         }}
       >
         {/* Architectural / Decorative Outer Frame */}
@@ -130,12 +172,15 @@ export const CertificateCanvas = React.forwardRef<HTMLDivElement, CertificateCan
         >
           <div
             className="absolute inset-2 border"
-            style={{ borderColor: `${style.accentColor || "#C59B27"}55` }}
+            style={{
+              borderColor: `${style.accentColor || "#C59B27"}55`,
+              borderStyle: borderKey === "editorial-warm" ? "dashed" : "solid",
+            }}
           />
         </div>
 
-        {/* Filigree / Corner Ornaments when enabled */}
-        {style.showBorder && style.borderStyle !== "none" && (
+        {/* Corner Ornaments */}
+        {style.showBorder && borderKey !== "none" && (
           <>
             <div
               className="pointer-events-none absolute top-8 left-8 h-8 w-8 border-t-4 border-l-4"
@@ -156,6 +201,48 @@ export const CertificateCanvas = React.forwardRef<HTMLDivElement, CertificateCan
           </>
         )}
 
+        {showCornerBlocks && (
+          <>
+            <div
+              className="pointer-events-none absolute top-6 left-6 h-3 w-3"
+              style={{ backgroundColor: style.accentColor }}
+            />
+            <div
+              className="pointer-events-none absolute top-6 right-6 h-3 w-3"
+              style={{ backgroundColor: style.accentColor }}
+            />
+            <div
+              className="pointer-events-none absolute bottom-6 left-6 h-3 w-3"
+              style={{ backgroundColor: style.accentColor }}
+            />
+            <div
+              className="pointer-events-none absolute right-6 bottom-6 h-3 w-3"
+              style={{ backgroundColor: style.accentColor }}
+            />
+          </>
+        )}
+
+        {showFiligreeRings && (
+          <>
+            <div
+              className="pointer-events-none absolute top-9 left-9 h-4 w-4 rounded-full border-2"
+              style={{ borderColor: style.accentColor }}
+            />
+            <div
+              className="pointer-events-none absolute top-9 right-9 h-4 w-4 rounded-full border-2"
+              style={{ borderColor: style.accentColor }}
+            />
+            <div
+              className="pointer-events-none absolute bottom-9 left-9 h-4 w-4 rounded-full border-2"
+              style={{ borderColor: style.accentColor }}
+            />
+            <div
+              className="pointer-events-none absolute right-9 bottom-9 h-4 w-4 rounded-full border-2"
+              style={{ borderColor: style.accentColor }}
+            />
+          </>
+        )}
+
         {/* Core Certificate Typography */}
         <div
           className={`relative z-10 flex h-full flex-col items-center justify-between text-center ${
@@ -163,6 +250,24 @@ export const CertificateCanvas = React.forwardRef<HTMLDivElement, CertificateCan
           }`}
         >
           <div className="space-y-2">
+            {showCrestHeader && (
+              <div className="mb-1 flex justify-center">
+                <svg width="34" height="34" viewBox="0 0 36 36" fill="none" aria-hidden="true">
+                  <circle
+                    cx="18"
+                    cy="18"
+                    r="15"
+                    stroke={style.accentColor || "#C59B27"}
+                    strokeWidth="1.8"
+                  />
+                  <path
+                    d="M18 8L20.8 14.2L27.5 14.9L22.4 19.3L24 26L18 22.3L12 26L13.6 19.3L8.5 14.9L15.2 14.2L18 8Z"
+                    fill={style.accentColor || "#C59B27"}
+                    fillOpacity="0.85"
+                  />
+                </svg>
+              </div>
+            )}
             <p
               className="text-xs font-bold tracking-[0.28em] uppercase"
               style={{ color: style.accentColor }}
@@ -182,7 +287,10 @@ export const CertificateCanvas = React.forwardRef<HTMLDivElement, CertificateCan
           </div>
 
           <div className="max-w-3xl space-y-4">
-            <p className="text-sm tracking-widest uppercase text-slate-600">
+            <p
+              className="text-sm tracking-widest uppercase"
+              style={{ color: mutedTextColor }}
+            >
               This credential is proudly presented to
             </p>
             <p
@@ -195,14 +303,17 @@ export const CertificateCanvas = React.forwardRef<HTMLDivElement, CertificateCan
             >
               {props.recipientName || "Recipient Name"}
             </p>
-            <p className="pt-2 text-base text-slate-700">
+            <p className="pt-2 text-base" style={{ color: bodyTextColor }}>
               in recognition of successfully completing{" "}
               <strong className="font-bold" style={{ color: style.primaryColor }}>
                 {props.courseOrAchievement || "Course or Achievement"}
               </strong>
             </p>
             {props.description && (
-              <p className="mx-auto max-w-2xl text-sm leading-relaxed text-slate-600">
+              <p
+                className="mx-auto max-w-2xl text-sm leading-relaxed"
+                style={{ color: bodyTextColor }}
+              >
                 {props.description}
               </p>
             )}
@@ -211,24 +322,34 @@ export const CertificateCanvas = React.forwardRef<HTMLDivElement, CertificateCan
           {/* Footer Signatory, Dates & QR Block */}
           <div className="grid w-full grid-cols-3 items-end gap-8 pt-4">
             <div className="text-left">
-              <p className="text-xs font-semibold tracking-wider uppercase text-slate-500">
+              <p
+                className="text-xs font-semibold tracking-wider uppercase"
+                style={{ color: mutedTextColor }}
+              >
                 Issue Date
               </p>
-              <p className="mt-1 text-sm font-bold text-slate-800">{props.issueDate || "—"}</p>
+              <p className="mt-1 text-sm font-bold" style={{ color: strongTextColor }}>
+                {props.issueDate || "—"}
+              </p>
               {props.expiryDate && (
-                <p className="mt-0.5 text-[11px] text-slate-500">Expires: {props.expiryDate}</p>
+                <p className="mt-0.5 text-[11px]" style={{ color: mutedTextColor }}>
+                  Expires: {props.expiryDate}
+                </p>
               )}
-              <p className="mt-2 font-mono text-[11px] text-slate-500">
+              <p className="mt-2 font-mono text-[11px]" style={{ color: mutedTextColor }}>
                 ID: {props.certificateCode}
               </p>
             </div>
 
             <div className="flex flex-col items-center">
-              <div className="mb-2 h-10 w-44 border-b border-slate-400" />
-              <p className="text-sm font-bold text-slate-900">
+              <div
+                className="mb-2 h-10 w-44 border-b"
+                style={{ borderColor: `${mutedTextColor}88` }}
+              />
+              <p className="text-sm font-bold" style={{ color: strongTextColor }}>
                 {props.signatoryName || "Authorized Signatory"}
               </p>
-              <p className="text-xs text-slate-600">
+              <p className="text-xs" style={{ color: mutedTextColor }}>
                 {props.signatoryDesignation || "Program Director"}
               </p>
             </div>

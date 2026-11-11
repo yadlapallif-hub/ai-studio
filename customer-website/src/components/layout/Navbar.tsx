@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useTheme } from "./ThemeProvider";
+import { CreatorStudioLogo } from "../brand/CreatorStudioLogo";
 
 interface AnnouncementItem {
   id: string;
@@ -60,7 +61,12 @@ export function Navbar({
   const pathname = usePathname();
   const router = useRouter();
   const { theme, toggleTheme } = useTheme();
-  const [user, setUser] = useState<{ id: string; email?: string; full_name?: string } | null>(null);
+  const [user, setUser] = useState<{
+    id: string;
+    email?: string | null;
+    phone?: string | null;
+    full_name?: string | null;
+  } | null>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
@@ -85,14 +91,21 @@ export function Navbar({
 
       const { data: profile } = await supabase
         .from("fcs_profiles")
-        .select("full_name")
+        .select("full_name, phone")
         .eq("id", authUser.id)
         .maybeSingle();
 
       setUser({
         id: authUser.id,
-        email: authUser.email,
-        full_name: profile?.full_name || authUser.user_metadata?.full_name || authUser.email,
+        email: authUser.email ?? null,
+        phone: profile?.phone || authUser.phone || null,
+        full_name:
+          profile?.full_name ||
+          authUser.user_metadata?.full_name ||
+          authUser.user_metadata?.name ||
+          authUser.email ||
+          authUser.phone ||
+          "Creator",
       });
 
       const { data: notifs } = await supabase
@@ -249,23 +262,7 @@ export function Navbar({
             href="/"
             className="flex items-center gap-2.5 text-sm font-bold tracking-tight text-[var(--fcs-ink)]"
           >
-            <svg
-              width="30"
-              height="30"
-              viewBox="0 0 32 32"
-              fill="none"
-              aria-hidden="true"
-              className="shrink-0"
-            >
-              <rect width="32" height="32" rx="8" fill="#0F766E" />
-              <path
-                d="M9 10H23M9 16H19M9 22H14M20 18L23 21L20 24"
-                stroke="#FFFFFF"
-                strokeWidth="2.2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
+            <CreatorStudioLogo size={34} className="shrink-0" />
             <div className="leading-tight">
               <span className="block text-[13px] font-bold tracking-wide uppercase">
                 {platformName}
@@ -415,10 +412,10 @@ export function Navbar({
                 className="flex items-center gap-2 rounded-lg border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] px-2.5 py-1.5 text-xs font-semibold text-[var(--fcs-ink)] transition hover:border-teal-600/40"
               >
                 <span className="flex h-5 w-5 items-center justify-center rounded-full bg-teal-700 text-[10px] font-bold text-white">
-                  {(user.full_name || user.email || "U").slice(0, 1).toUpperCase()}
+                  {(user.full_name || user.email || user.phone || "U").slice(0, 1).toUpperCase()}
                 </span>
                 <span className="hidden max-w-28 truncate sm:inline">
-                  {user.full_name || user.email}
+                  {user.full_name || user.email || user.phone || "Account"}
                 </span>
               </button>
 
@@ -426,7 +423,9 @@ export function Navbar({
                 <div className="absolute right-0 mt-2 w-56 rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface)] p-1.5 shadow-xl">
                   <div className="border-b border-[var(--fcs-border)] px-3 py-2">
                     <p className="truncate text-xs font-semibold">{user.full_name}</p>
-                    <p className="truncate text-[11px] text-[var(--fcs-ink-muted)]">{user.email}</p>
+                    <p className="truncate text-[11px] text-[var(--fcs-ink-muted)]">
+                      {user.email || user.phone || "Signed-in Creator"}
+                    </p>
                   </div>
                   <Link
                     href="/dashboard"

@@ -1,7 +1,12 @@
 import React from "react";
 import Link from "next/link";
-import { FileText, Plus, Sparkles } from "lucide-react";
+import { RESUME_TEMPLATE_CATALOG } from "@francis/shared";
+import { FileText, Plus } from "lucide-react";
 import { getAuthenticatedContext } from "@/lib/supabase/server";
+import {
+  ResumeTemplateGallery,
+  type ResumeTemplateCardItem,
+} from "@/components/resume/ResumeTemplateGallery";
 
 export const dynamic = "force-dynamic";
 
@@ -23,6 +28,19 @@ export default async function ResumeBuilderGalleryPage() {
       : Promise.resolve({ data: [] }),
   ]);
 
+  const templateCards: ResumeTemplateCardItem[] =
+    templates && templates.length > 0
+      ? (templates as ResumeTemplateCardItem[])
+      : RESUME_TEMPLATE_CATALOG.map((t) => ({
+          id: t.slug,
+          slug: t.slug,
+          name: t.name,
+          category: t.category,
+          description: t.description,
+          is_ats_friendly: t.isAtsFriendly,
+          layout_config: t.layoutConfig as unknown as Record<string, unknown>,
+        }));
+
   return (
     <div className="mx-auto max-w-7xl space-y-10 px-4 py-10 sm:px-6">
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
@@ -31,7 +49,7 @@ export default async function ResumeBuilderGalleryPage() {
             AI Resume Studio
           </p>
           <h1 className="mt-1 text-3xl font-bold tracking-tight">
-            Choose a template or resume your work
+            {templateCards.length} Resume Templates — Free Forever
           </h1>
           <p className="mt-1 text-sm text-[var(--fcs-ink-muted)]">
             Every template is 100% free with ATS optimization, drag-and-drop section ordering,
@@ -74,40 +92,7 @@ export default async function ResumeBuilderGalleryPage() {
         </section>
       )}
 
-      <section>
-        <h2 className="text-base font-bold">Resume Templates</h2>
-        <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {(templates ?? []).map((tpl) => (
-            <div
-              key={tpl.id}
-              className="flex flex-col justify-between rounded-2xl border border-[var(--fcs-border)] bg-[var(--fcs-surface)] p-5"
-            >
-              <div>
-                <div className="flex items-center justify-between">
-                  <span className="rounded bg-[var(--fcs-surface-muted)] px-2 py-0.5 text-[10px] font-semibold tracking-wider uppercase">
-                    {tpl.category}
-                  </span>
-                  {tpl.is_ats_friendly && (
-                    <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-teal-700 dark:text-teal-400">
-                      <Sparkles className="h-3 w-3" /> ATS-Friendly
-                    </span>
-                  )}
-                </div>
-                <h3 className="mt-3 text-base font-bold">{tpl.name}</h3>
-                <p className="mt-1.5 text-xs leading-relaxed text-[var(--fcs-ink-muted)]">
-                  {tpl.description}
-                </p>
-              </div>
-              <Link
-                href={`/resume-builder/new?template=${tpl.slug}`}
-                className="mt-5 inline-flex items-center justify-center rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] py-2 text-xs font-semibold transition hover:border-teal-600/50 hover:text-teal-700 dark:hover:text-teal-300"
-              >
-                Use This Template →
-              </Link>
-            </div>
-          ))}
-        </div>
-      </section>
+      <ResumeTemplateGallery templates={templateCards} />
     </div>
   );
 }

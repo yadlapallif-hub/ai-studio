@@ -82,7 +82,7 @@ export default async function AdminOverviewPage() {
     service.from("fcs_certificates").select("created_at").limit(200),
   ]);
 
-  if (!admin.email) redirect("/login");
+  if (!admin.userId) redirect("/login");
 
   // Compute last 7 days real activity bars
   const days = Array.from({ length: 7 }, (_, i) => {

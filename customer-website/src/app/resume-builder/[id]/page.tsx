@@ -1,6 +1,7 @@
 import React from "react";
 import { notFound } from "next/navigation";
 import {
+  RESUME_TEMPLATE_CATALOG,
   createDefaultResumeStyle,
   createSampleStarterResumeData,
   type ResumeData,
@@ -28,7 +29,18 @@ export default async function ResumeEditorPage({
     .eq("is_active", true)
     .order("sort_order", { ascending: true });
 
-  const tplList = templates ?? [];
+  const tplList =
+    templates && templates.length > 0
+      ? templates
+      : RESUME_TEMPLATE_CATALOG.map((t) => ({
+          id: t.slug,
+          slug: t.slug,
+          name: t.name,
+          category: t.category,
+          is_ats_friendly: t.isAtsFriendly,
+          description: t.description,
+          layout_config: t.layoutConfig as unknown as Record<string, unknown>,
+        }));
 
   if (id === "new") {
     const selectedSlug =

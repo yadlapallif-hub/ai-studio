@@ -202,7 +202,7 @@ export default async function HomePage() {
             <FileText className="h-6 w-6 text-teal-700 dark:text-teal-400" />
             <h3 className="mt-4 text-base font-bold">AI Resume Builder</h3>
             <p className="mt-2 text-xs leading-relaxed text-[var(--fcs-ink-muted)]">
-              14 structured sections, drag-and-drop reordering, ATS-clean & modern templates, real
+              100 distinct resume layouts, 14 structured sections, drag-and-drop ordering, real
               background removal photo studio, and print-ready A4 PDF/PNG export.
             </p>
             <Link
@@ -217,8 +217,8 @@ export default async function HomePage() {
             <Award className="h-6 w-6 text-amber-600" />
             <h3 className="mt-4 text-base font-bold">AI Certificate Studio</h3>
             <p className="mt-2 text-xs leading-relaxed text-[var(--fcs-ink-muted)]">
-              9 template categories, A4 portrait & landscape canvas, stamp/seal/signature layering,
-              gold & ink styling, unique certificate IDs, and QR verification.
+              100 certificate designs across 9 categories, A4 portrait & landscape canvas,
+              stamp/seal/signature layering, unique certificate IDs, and QR verification.
             </p>
             <Link
               href="/certificate-builder"
@@ -361,7 +361,7 @@ export default async function HomePage() {
             {
               step: "01",
               title: "Choose a Studio & Template",
-              desc: "Explore ATS-ready resume templates or 9 certificate categories immediately without creating an account.",
+              desc: "Explore 100 ATS-ready resume templates or 100 certificate designs across 9 categories immediately without creating an account.",
               icon: Wand2,
             },
             {
