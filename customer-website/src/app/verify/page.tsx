@@ -1,8 +1,19 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Building2, CheckCircle2, Globe, Loader2, Search, ShieldCheck } from "lucide-react";
+import {
+  Award,
+  Building2,
+  CheckCircle2,
+  Clock,
+  Globe,
+  Loader2,
+  Search,
+  ShieldAlert,
+  ShieldCheck,
+} from "lucide-react";
 
 interface ApprovedIssuerRow {
   id: string;
@@ -12,6 +23,11 @@ interface ApprovedIssuerRow {
   verification_status: string;
   approved_at: string | null;
   created_at: string;
+}
+
+interface MyApplicationRow extends ApprovedIssuerRow {
+  contact_email: string;
+  notes: string | null;
 }
 
 export default function VerifyLookupPage() {
@@ -28,13 +44,18 @@ export default function VerifyLookupPage() {
   const [issuerErr, setIssuerErr] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [approvedIssuers, setApprovedIssuers] = useState<ApprovedIssuerRow[]>([]);
+  const [myApplications, setMyApplications] = useState<MyApplicationRow[]>([]);
 
   const loadIssuers = async () => {
     try {
       const res = await fetch("/api/issuers/apply");
       if (!res.ok) return;
-      const json = (await res.json()) as { issuers?: ApprovedIssuerRow[] };
+      const json = (await res.json()) as {
+        issuers?: ApprovedIssuerRow[];
+        myApplications?: MyApplicationRow[];
+      };
       setApprovedIssuers(json.issuers ?? []);
+      setMyApplications(json.myApplications ?? []);
     } catch {
       // ignore offline preview fallback
     }
@@ -69,17 +90,24 @@ export default function VerifyLookupPage() {
       });
       const json = (await res.json()) as {
         ok?: boolean;
+        pendingApproval?: boolean;
         error?: string;
-        issuer?: ApprovedIssuerRow;
+        issuer?: MyApplicationRow;
       };
       if (!res.ok || !json.ok) {
-        setIssuerErr(json.error || "Unable to register organization.");
+        setIssuerErr(json.error || "Unable to submit organization application.");
         return;
       }
 
       setIssuerMsg(
-        `"${json.issuer?.organization_name || orgName.trim()}" is now registered and approved as an Authorized Issuer. Certificates linked to this organization can display Verified status.`
+        `Application submitted for "${json.issuer?.organization_name || orgName.trim()}" — pending Administrator approval. Once an Admin approves your organization, Verified Certificate issuance and organizational seals will unlock in Certificate Studio.`
       );
+      if (json.issuer) {
+        setMyApplications((prev) => [
+          json.issuer!,
+          ...prev.filter((item) => item.id !== json.issuer!.id),
+        ]);
+      }
       setOrgName("");
       setOrgEmail("");
       setOrgDomain("");
@@ -90,6 +118,28 @@ export default function VerifyLookupPage() {
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const renderStatusBadge = (status: string) => {
+    if (status === "approved") {
+      return (
+        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-0.5 text-[10px] font-bold text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">
+          <CheckCircle2 className="h-3 w-3" /> Approved by Admin
+        </span>
+      );
+    }
+    if (status === "pending") {
+      return (
+        <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-0.5 text-[10px] font-bold text-amber-800 dark:bg-amber-950/60 dark:text-amber-300">
+          <Clock className="h-3 w-3" /> Pending Admin Approval
+        </span>
+      );
+    }
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2.5 py-0.5 text-[10px] font-bold uppercase text-red-700 dark:bg-red-950/60 dark:text-red-300">
+        <ShieldAlert className="h-3 w-3" /> {status}
+      </span>
+    );
   };
 
   return (
@@ -131,21 +181,21 @@ export default function VerifyLookupPage() {
           <p className="mt-1 leading-relaxed">
             FRANCIS CREATOR STUDIO never marks a self-created draft or decorative sample stamp as
             officially verified. A credential displays <strong>Officially Verified</strong> only
-            when issued under a registered Authorized Issuer organization.
+            when issued under an Authorized Organization explicitly approved by an Administrator.
           </p>
         </div>
       </div>
 
-      {/* Authorized Issuer Registration (Open for all organizations with Name & Email) */}
+      {/* Authorized Organization Application (Requires Admin Approval) */}
       <div className="mt-8 rounded-2xl border border-[var(--fcs-border)] bg-[var(--fcs-surface)] p-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <Building2 className="h-5 w-5 text-teal-600" />
             <div>
-              <h2 className="text-sm font-bold">Register Your Organization as Authorized Issuer</h2>
+              <h2 className="text-sm font-bold">Apply for Authorized Organization Access</h2>
               <p className="text-xs text-[var(--fcs-ink-muted)]">
-                Currently open to all organizations — register instantly using just your
-                organization name and email.
+                Submit your organization name and email for Administrator review. Approved
+                organizations unlock Verified QR issuance and official organizational seal uploads.
               </p>
             </div>
           </div>
@@ -154,7 +204,7 @@ export default function VerifyLookupPage() {
             onClick={() => setShowIssuerForm((s) => !s)}
             className="rounded-lg border border-[var(--fcs-border)] px-3.5 py-2 text-xs font-semibold hover:bg-[var(--fcs-surface-muted)]"
           >
-            {showIssuerForm ? "Hide Form" : "Register Organization"}
+            {showIssuerForm ? "Hide Form" : "Apply as Organization"}
           </button>
         </div>
 
@@ -164,8 +214,8 @@ export default function VerifyLookupPage() {
             className="mt-5 grid gap-3 border-t border-[var(--fcs-border)] pt-5 text-xs sm:grid-cols-2"
           >
             {issuerMsg && (
-              <div className="sm:col-span-2 flex items-center gap-2 rounded-xl border border-teal-500/30 bg-teal-50 p-3 text-teal-800 dark:bg-teal-950/40 dark:text-teal-300">
-                <CheckCircle2 className="h-4 w-4 shrink-0" />
+              <div className="sm:col-span-2 flex items-start gap-2 rounded-xl border border-amber-500/30 bg-amber-50 p-3 text-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
+                <Clock className="mt-0.5 h-4 w-4 shrink-0" />
                 <span>{issuerMsg}</span>
               </div>
             )}
@@ -237,17 +287,53 @@ export default function VerifyLookupPage() {
               >
                 {submitting && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
                 <span>
-                  {submitting ? "Registering..." : "Register Authorized Organization"}
+                  {submitting ? "Submitting..." : "Submit for Admin Approval"}
                 </span>
               </button>
             </div>
           </form>
         )}
 
+        {/* Signed-in Applicant's Organizations & Approval Status */}
+        {myApplications.length > 0 && (
+          <div className="mt-6 border-t border-[var(--fcs-border)] pt-5">
+            <p className="text-[11px] font-bold tracking-wider uppercase text-[var(--fcs-ink-muted)]">
+              Your Organization Applications ({myApplications.length})
+            </p>
+            <div className="mt-3 space-y-2.5">
+              {myApplications.map((app) => (
+                <div
+                  key={app.id}
+                  className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] px-4 py-3 text-xs"
+                >
+                  <div className="min-w-0">
+                    <p className="font-bold">{app.organization_name}</p>
+                    <p className="text-[11px] text-[var(--fcs-ink-muted)]">
+                      {app.contact_email}
+                      {app.notes ? ` • ${app.notes}` : ""}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {renderStatusBadge(app.verification_status)}
+                    {app.verification_status === "approved" && (
+                      <Link
+                        href="/certificate-builder/new"
+                        className="inline-flex items-center gap-1 rounded-lg bg-teal-700 px-2.5 py-1 text-[11px] font-semibold text-white hover:bg-teal-800"
+                      >
+                        <Award className="h-3 w-3" /> Open Studio
+                      </Link>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {approvedIssuers.length > 0 && (
           <div className="mt-6 border-t border-[var(--fcs-border)] pt-5">
             <p className="text-[11px] font-bold tracking-wider uppercase text-[var(--fcs-ink-muted)]">
-              Active Approved Organizations ({approvedIssuers.length})
+              Admin-Approved Authorized Organizations ({approvedIssuers.length})
             </p>
             <div className="mt-3 grid gap-2 sm:grid-cols-2">
               {approvedIssuers.slice(0, 12).map((iss) => (

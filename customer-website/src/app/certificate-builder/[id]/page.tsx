@@ -8,7 +8,7 @@ import {
   type CertificateCanvasElement,
   type CertificateStyleConfig,
 } from "@francis/shared";
-import { getAuthenticatedContext } from "@/lib/supabase/server";
+import { createServiceSupabase, getAuthenticatedContext } from "@/lib/supabase/server";
 import { CertificateStudio } from "@/components/certificate/CertificateStudio";
 
 export const dynamic = "force-dynamic";
@@ -23,25 +23,41 @@ export default async function CertificateEditorPage({
   const { id } = await params;
   const { template } = await searchParams;
   const { supabase, user } = await getAuthenticatedContext();
+  const service = user ? createServiceSupabase() : null;
 
-  const [{ data: templates }, { data: approvedIssuers }] = await Promise.all([
+  const [{ data: templates }, { data: myIssuers }] = await Promise.all([
     supabase
       .from("fcs_certificate_templates")
       .select("id, slug, name, category, orientation, layout_config")
       .eq("is_active", true)
       .order("sort_order", { ascending: true }),
-    user
-      ? supabase
+    user && service
+      ? service
           .from("fcs_authorized_issuers")
-          .select("id, organization_name, user_id, contact_email")
-          .eq("verification_status", "approved")
+          .select("id, organization_name, contact_email, verification_status, notes, approved_at")
           .or(
             user.email
-              ? `user_id.eq.${user.id},user_id.is.null,contact_email.eq.${user.email.toLowerCase()}`
-              : `user_id.eq.${user.id},user_id.is.null`
+              ? `user_id.eq.${user.id},and(user_id.is.null,contact_email.eq.${user.email.toLowerCase()})`
+              : `user_id.eq.${user.id}`
           )
+          .order("created_at", { ascending: false })
       : Promise.resolve({ data: [] }),
   ]);
+
+  const orgApplications = (myIssuers ?? []) as Array<{
+    id: string;
+    organization_name: string;
+    contact_email: string;
+    verification_status: string;
+    notes: string | null;
+    approved_at: string | null;
+  }>;
+  const approvedIssuers = orgApplications
+    .filter((item) => item.verification_status === "approved")
+    .map((item) => ({
+      id: item.id,
+      organization_name: item.organization_name,
+    }));
 
   const tplList = (
     templates && templates.length > 0
@@ -71,6 +87,7 @@ export default async function CertificateEditorPage({
     return (
       <CertificateStudio
         initialCertId={null}
+        initialIssuerId=""
         initialCertificateCode={generateCertificateCode()}
         initialTemplateSlug={matched?.slug || "course-completion"}
         initialTitle={cfg.titleDefault || "Certificate of Completion"}
@@ -95,7 +112,8 @@ export default async function CertificateEditorPage({
         })}
         initialVerificationStatus="unverified_draft"
         templates={tplList}
-        approvedIssuers={approvedIssuers ?? []}
+        approvedIssuers={approvedIssuers}
+        organizationApplications={orgApplications}
         isAuthenticated={Boolean(user)}
       />
     );
@@ -122,9 +140,15 @@ export default async function CertificateEditorPage({
     .eq("certificate_id", cert.id)
     .maybeSingle();
 
+  const validSavedIssuerId =
+    cert.issuer_id && approvedIssuers.some((iss) => iss.id === cert.issuer_id)
+      ? cert.issuer_id
+      : "";
+
   return (
     <CertificateStudio
       initialCertId={cert.id}
+      initialIssuerId={validSavedIssuerId}
       initialCertificateCode={cert.certificate_code}
       initialTemplateSlug={cert.template_slug}
       initialTitle={cert.title}
@@ -144,7 +168,8 @@ export default async function CertificateEditorPage({
       }}
       initialVerificationStatus={verRow?.verification_status || "unverified_draft"}
       templates={tplList}
-      approvedIssuers={approvedIssuers ?? []}
+      approvedIssuers={approvedIssuers}
+      organizationApplications={orgApplications}
       isAuthenticated={true}
     />
   );

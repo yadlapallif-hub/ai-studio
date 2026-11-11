@@ -16,10 +16,12 @@ import {
   ArrowUp,
   Camera,
   CheckCircle2,
+  Clock,
   Download,
   FileDown,
   ImagePlus,
   Loader2,
+  Lock,
   Printer,
   QrCode,
   Save,
@@ -50,6 +52,7 @@ interface CertTemplateOption {
 
 interface CertificateStudioProps {
   initialCertId: string | null;
+  initialIssuerId?: string;
   initialCertificateCode: string;
   initialTemplateSlug: string;
   initialTitle: string;
@@ -67,6 +70,12 @@ interface CertificateStudioProps {
   initialVerificationStatus: string;
   templates: CertTemplateOption[];
   approvedIssuers: Array<{ id: string; organization_name: string }>;
+  organizationApplications?: Array<{
+    id: string;
+    organization_name: string;
+    verification_status: string;
+    notes: string | null;
+  }>;
   isAuthenticated: boolean;
 }
 
@@ -94,7 +103,15 @@ export function CertificateStudio(props: CertificateStudioProps) {
   const [elements, setElements] = useState<CertificateCanvasElement[]>(props.initialElements);
   const [style, setStyle] = useState<CertificateStyleConfig>(props.initialStyle);
   const [verificationStatus, setVerificationStatus] = useState(props.initialVerificationStatus);
-  const [selectedIssuerId, setSelectedIssuerId] = useState<string>("");
+  const [selectedIssuerId, setSelectedIssuerId] = useState<string>(props.initialIssuerId || "");
+  const hasApprovedIssuer = props.approvedIssuers.length > 0;
+  const pendingApplications = (props.organizationApplications ?? []).filter(
+    (app) => app.verification_status === "pending"
+  );
+  const blockedApplications = (props.organizationApplications ?? []).filter(
+    (app) =>
+      app.verification_status !== "approved" && app.verification_status !== "pending"
+  );
 
   const [activeTab, setActiveTab] = useState<"details" | "design" | "stamps" | "ai">("details");
   const [selectedElementId, setSelectedElementId] = useState<string | null>(
@@ -190,7 +207,10 @@ export function CertificateStudio(props: CertificateStudioProps) {
         .filter((e) => e.type === "stamp" || e.type === "seal" || e.type === "decorative_badge")
         .every((e) => e.isSampleDecorative);
 
-      const authorizationType = selectedIssuerId
+      const approvedIssuer =
+        props.approvedIssuers.find((i) => i.id === selectedIssuerId) ?? null;
+
+      const authorizationType = approvedIssuer
         ? "authorized_issuer"
         : hasOnlySampleStamps
           ? "sample_preview"
@@ -199,7 +219,7 @@ export function CertificateStudio(props: CertificateStudioProps) {
       const payload = {
         user_id: user.id,
         template_slug: templateSlug,
-        issuer_id: selectedIssuerId || null,
+        issuer_id: approvedIssuer ? approvedIssuer.id : null,
         certificate_code: certificateCode,
         title: title.trim() || "Certificate",
         recipient_name: recipientName.trim() || "Recipient",
@@ -247,7 +267,7 @@ export function CertificateStudio(props: CertificateStudioProps) {
           {
             certificate_id: savedCertId,
             certificate_code: certificateCode,
-            issuer_id: selectedIssuerId || null,
+            issuer_id: approvedIssuer ? approvedIssuer.id : null,
             recipient_name: payload.recipient_name,
             certificate_title: payload.title,
             course_or_achievement: payload.course_or_achievement,
@@ -255,7 +275,9 @@ export function CertificateStudio(props: CertificateStudioProps) {
             issue_date: payload.issue_date,
             expiry_date: payload.expiry_date,
             verification_status:
-              verificationStatus === "verified" ? "verified" : "unverified_draft",
+              verificationStatus === "verified" && approvedIssuer
+                ? "verified"
+                : "unverified_draft",
           },
           { onConflict: "certificate_id" }
         );
@@ -275,6 +297,12 @@ export function CertificateStudio(props: CertificateStudioProps) {
       setErrorMsg("Save the certificate to your account first before requesting verification.");
       return;
     }
+    if (!selectedIssuerId) {
+      setErrorMsg(
+        "Admin-approved Authorized Organization required: select your approved organization in Details, or apply/check Admin approval at /verify."
+      );
+      return;
+    }
     setSubmittingVerify(true);
     setErrorMsg(null);
     try {
@@ -283,7 +311,7 @@ export function CertificateStudio(props: CertificateStudioProps) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           certificateId: certId,
-          issuerId: selectedIssuerId || null,
+          issuerId: selectedIssuerId,
         }),
       });
       const json = (await res.json()) as {
@@ -294,12 +322,8 @@ export function CertificateStudio(props: CertificateStudioProps) {
         setErrorMsg(json.error || "Unable to submit verification.");
         return;
       }
-      setVerificationStatus(json.verificationStatus || "pending_approval");
-      setStatusMsg(
-        json.verificationStatus === "verified"
-          ? "Officially verified under your Approved Authorized Issuer account."
-          : "Submitted for official verification review by an administrator."
-      );
+      setVerificationStatus(json.verificationStatus || "verified");
+      setStatusMsg("Officially verified under your Admin-Approved Authorized Organization.");
     } finally {
       setSubmittingVerify(false);
     }
@@ -316,6 +340,13 @@ export function CertificateStudio(props: CertificateStudioProps) {
     }
     if (file.size > 10 * 1024 * 1024) {
       setErrorMsg("File must be under 10 MB.");
+      return;
+    }
+
+    if ((type === "stamp" || type === "seal") && !hasApprovedIssuer) {
+      setErrorMsg(
+        "Genuine organizational stamps and gold seals require an Admin-Approved Authorized Organization. Apply or await Admin approval at /verify."
+      );
       return;
     }
 
@@ -567,14 +598,25 @@ export function CertificateStudio(props: CertificateStudioProps) {
                 type="button"
                 onClick={handleSubmitForVerification}
                 disabled={submittingVerify || verificationStatus === "verified"}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-teal-600/40 bg-teal-50 px-3 py-1.5 text-xs font-semibold text-teal-800 dark:bg-teal-950/50 dark:text-teal-300"
+                title={
+                  selectedIssuerId
+                    ? "Issue officially verified QR credential under your Admin-approved organization"
+                    : "Requires an Admin-Approved Authorized Organization selected in Details"
+                }
+                className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold ${
+                  verificationStatus === "verified"
+                    ? "border-emerald-600/40 bg-emerald-50 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300"
+                    : selectedIssuerId
+                      ? "border-teal-600/40 bg-teal-50 text-teal-800 hover:bg-teal-100 dark:bg-teal-950/50 dark:text-teal-300"
+                      : "border-amber-500/40 bg-amber-50 text-amber-800 dark:bg-amber-950/40 dark:text-amber-200"
+                }`}
               >
                 <ShieldCheck className="h-3.5 w-3.5" />
                 {verificationStatus === "verified"
                   ? "Officially Verified"
-                  : verificationStatus === "pending_approval"
-                    ? "Pending Review"
-                    : "Request Official Verification"}
+                  : selectedIssuerId
+                    ? "Issue Verified Credential"
+                    : "Verified Issuer Required"}
               </button>
             )}
             <button
@@ -682,36 +724,94 @@ export function CertificateStudio(props: CertificateStudioProps) {
                   className="w-full rounded-lg border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] px-3 py-2"
                 />
               </div>
-              {props.approvedIssuers.length > 0 ? (
-                <div>
-                  <label className="mb-1 block font-semibold">
-                    Link Approved Authorized Issuer (Optional)
-                  </label>
-                  <select
-                    value={selectedIssuerId}
-                    onChange={(e) => {
-                      const nextId = e.target.value;
-                      setSelectedIssuerId(nextId);
-                      const matched = props.approvedIssuers.find((i) => i.id === nextId);
-                      if (matched) setOrganizationName(matched.organization_name);
-                    }}
-                    className="w-full rounded-lg border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] px-3 py-2"
+              {hasApprovedIssuer ? (
+                <div className="space-y-2">
+                  <div>
+                    <label className="mb-1 block font-semibold">
+                      Admin-Approved Authorized Organization (Optional)
+                    </label>
+                    <select
+                      value={selectedIssuerId}
+                      onChange={(e) => {
+                        const nextId = e.target.value;
+                        setSelectedIssuerId(nextId);
+                        const matched = props.approvedIssuers.find((i) => i.id === nextId);
+                        if (matched) setOrganizationName(matched.organization_name);
+                      }}
+                      className="w-full rounded-lg border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] px-3 py-2"
+                    >
+                      <option value="">Personal / Self-Created Draft</option>
+                      {props.approvedIssuers.map((iss) => (
+                        <option key={iss.id} value={iss.id}>
+                          {iss.organization_name} (Approved by Admin)
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  {pendingApplications.length > 0 && (
+                    <div className="flex items-start gap-2 rounded-lg border border-amber-500/30 bg-amber-50 p-2.5 text-[11px] text-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
+                      <Clock className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                      <span>
+                        Pending Admin Approval:{" "}
+                        <strong>
+                          {pendingApplications.map((a) => a.organization_name).join(", ")}
+                        </strong>
+                        . Access unlocks once approved by an Admin.
+                      </span>
+                    </div>
+                  )}
+                </div>
+              ) : pendingApplications.length > 0 ? (
+                <div className="rounded-xl border border-amber-500/30 bg-amber-50 p-3 text-[11px] text-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
+                  <p className="flex items-center gap-1.5 font-bold">
+                    <Clock className="h-3.5 w-3.5 shrink-0" />
+                    Pending Admin Approval
+                  </p>
+                  <p className="mt-1">
+                    <strong>
+                      {pendingApplications.map((a) => a.organization_name).join(", ")}
+                    </strong>{" "}
+                    is waiting for Administrator approval. Authorized organization access and
+                    Verified QR issuance will unlock once approved by an Admin.
+                  </p>
+                  <Link
+                    href="/verify"
+                    className="mt-1.5 inline-block font-semibold text-amber-800 underline dark:text-amber-300"
                   >
-                    <option value="">Personal / Self-Created Draft</option>
-                    {props.approvedIssuers.map((iss) => (
-                      <option key={iss.id} value={iss.id}>
-                        {iss.organization_name} (Approved Issuer)
-                      </option>
-                    ))}
-                  </select>
+                    View application status →
+                  </Link>
+                </div>
+              ) : blockedApplications.length > 0 ? (
+                <div className="rounded-xl border border-red-500/30 bg-red-50 p-3 text-[11px] text-red-800 dark:bg-red-950/40 dark:text-red-200">
+                  <p className="font-bold">Organization Access Restricted</p>
+                  <p className="mt-1">
+                    Your organization ({blockedApplications[0].organization_name}) is currently{" "}
+                    <strong className="uppercase">
+                      {blockedApplications[0].verification_status}
+                    </strong>
+                    . Admin approval is required to issue Verified certificates.
+                  </p>
+                  <Link href="/verify" className="mt-1.5 inline-block font-semibold underline">
+                    Review status at /verify →
+                  </Link>
                 </div>
               ) : (
-                <p className="text-[11px] text-[var(--fcs-ink-muted)]">
-                  Want official Verified QR status?{" "}
-                  <Link href="/verify" className="font-semibold text-teal-700 hover:underline dark:text-teal-400">
-                    Register your organization →
-                  </Link>
-                </p>
+                <div className="rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] p-3 text-[11px] text-[var(--fcs-ink-muted)]">
+                  <p className="flex items-center gap-1.5 font-semibold text-[var(--fcs-ink)]">
+                    <Lock className="h-3.5 w-3.5 text-teal-600" />
+                    Admin Approval Required for Authorized Issuers
+                  </p>
+                  <p className="mt-1">
+                    Apply with your organization name and email. Once approved by an Admin, you can
+                    issue Officially Verified QR certificates.{" "}
+                    <Link
+                      href="/verify"
+                      className="font-semibold text-teal-700 hover:underline dark:text-teal-400"
+                    >
+                      Apply as Authorized Organization →
+                    </Link>
+                  </p>
+                </div>
               )}
               <div>
                 <label className="mb-1 block font-semibold">Description / Citation</label>
@@ -1106,6 +1206,24 @@ export function CertificateStudio(props: CertificateStudioProps) {
 
               <div className="space-y-3 border-t border-[var(--fcs-border)] pt-3">
                 <p className="font-bold">Upload Genuine Organizational Stamp, Seal or Signature</p>
+
+                {!hasApprovedIssuer && (
+                  <div className="rounded-xl border border-amber-500/30 bg-amber-50 p-3 text-[11px] text-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
+                    <p className="flex items-center gap-1.5 font-bold">
+                      <Lock className="h-3.5 w-3.5 shrink-0" />
+                      Admin-Approved Organization Required
+                    </p>
+                    <p className="mt-1">
+                      Uploading genuine organizational ink stamps and gold seals is restricted to
+                      Authorized Organizations approved by an Administrator. Use Decorative Sample
+                      Stamps above for preview drafts, or{" "}
+                      <Link href="/verify" className="font-semibold underline">
+                        apply / check approval status →
+                      </Link>
+                    </p>
+                  </div>
+                )}
+
                 <label className="flex items-start gap-2 rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] p-2.5 text-[11px]">
                   <input
                     type="checkbox"
@@ -1120,11 +1238,18 @@ export function CertificateStudio(props: CertificateStudioProps) {
                 </label>
 
                 <div className="grid grid-cols-2 gap-2">
-                  <label className="flex cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] py-2 font-semibold hover:border-teal-600/50">
+                  <label
+                    className={`flex items-center justify-center gap-1.5 rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] py-2 font-semibold ${
+                      hasApprovedIssuer
+                        ? "cursor-pointer hover:border-teal-600/50"
+                        : "cursor-not-allowed opacity-50"
+                    }`}
+                  >
                     <Stamp className="h-3.5 w-3.5 text-blue-600" />
                     Blue Ink Stamp
                     <input
                       type="file"
+                      disabled={!hasApprovedIssuer}
                       accept="image/png,image/webp,image/svg+xml"
                       className="hidden"
                       onChange={(e) => {
@@ -1133,11 +1258,18 @@ export function CertificateStudio(props: CertificateStudioProps) {
                       }}
                     />
                   </label>
-                  <label className="flex cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] py-2 font-semibold hover:border-teal-600/50">
+                  <label
+                    className={`flex items-center justify-center gap-1.5 rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] py-2 font-semibold ${
+                      hasApprovedIssuer
+                        ? "cursor-pointer hover:border-teal-600/50"
+                        : "cursor-not-allowed opacity-50"
+                    }`}
+                  >
                     <Stamp className="h-3.5 w-3.5 text-red-600" />
                     Red Ink Stamp
                     <input
                       type="file"
+                      disabled={!hasApprovedIssuer}
                       accept="image/png,image/webp,image/svg+xml"
                       className="hidden"
                       onChange={(e) => {
@@ -1146,11 +1278,18 @@ export function CertificateStudio(props: CertificateStudioProps) {
                       }}
                     />
                   </label>
-                  <label className="flex cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] py-2 font-semibold hover:border-teal-600/50">
+                  <label
+                    className={`flex items-center justify-center gap-1.5 rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] py-2 font-semibold ${
+                      hasApprovedIssuer
+                        ? "cursor-pointer hover:border-teal-600/50"
+                        : "cursor-not-allowed opacity-50"
+                    }`}
+                  >
                     <Upload className="h-3.5 w-3.5 text-amber-600" />
                     Gold Seal PNG
                     <input
                       type="file"
+                      disabled={!hasApprovedIssuer}
                       accept="image/png,image/webp,image/svg+xml"
                       className="hidden"
                       onChange={(e) => {

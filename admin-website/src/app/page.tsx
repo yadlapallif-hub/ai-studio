@@ -106,6 +106,23 @@ export default async function AdminOverviewPage() {
           </p>
         </div>
 
+        {(pendingIssuerCount ?? 0) > 0 && (
+          <Link
+            href="/verifications"
+            className="flex items-center justify-between gap-3 rounded-2xl border border-amber-500/40 bg-amber-50 px-5 py-3.5 text-xs text-amber-900 transition hover:bg-amber-100 dark:bg-amber-950/40 dark:text-amber-200"
+          >
+            <div className="flex items-center gap-2 font-semibold">
+              <ShieldAlert className="h-4 w-4 shrink-0" />
+              <span>
+                {pendingIssuerCount} Authorized Organization{" "}
+                {pendingIssuerCount === 1 ? "application awaits" : "applications await"} your
+                approval before they can access Verified issuance.
+              </span>
+            </div>
+            <span className="shrink-0 font-bold underline">Review Now →</span>
+          </Link>
+        )}
+
         {/* KPI Grid */}
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {[

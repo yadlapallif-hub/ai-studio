@@ -7,7 +7,7 @@ const VerificationPatchSchema = z.discriminatedUnion("target", [
   z.object({
     target: z.literal("issuer"),
     id: z.string().uuid(),
-    verificationStatus: z.enum(["approved", "pending", "revoked", "rejected"]),
+    verificationStatus: z.enum(["approved", "pending", "rejected", "suspended", "revoked"]),
     notes: z.string().max(1000).optional(),
   }),
   z.object({
@@ -33,30 +33,50 @@ export async function PATCH(request: Request) {
   const payload = parsed.data;
 
   if (payload.target === "issuer") {
+    const updateFields: Record<string, unknown> = {
+      verification_status: payload.verificationStatus,
+      approved_by: payload.verificationStatus === "approved" ? admin.userId : null,
+      approved_at: payload.verificationStatus === "approved" ? new Date().toISOString() : null,
+    };
+    if (payload.notes !== undefined) {
+      updateFields.notes = payload.notes.trim() || null;
+    }
+
     const { data: issuer, error } = await service
       .from("fcs_authorized_issuers")
-      .update({
-        verification_status: payload.verificationStatus,
-        notes: payload.notes ?? null,
-        approved_by: payload.verificationStatus === "approved" ? admin.userId : null,
-        approved_at: payload.verificationStatus === "approved" ? new Date().toISOString() : null,
-      })
+      .update(updateFields)
       .eq("id", payload.id)
-      .select("user_id, organization_name")
+      .select("id, user_id, organization_name, contact_email, verification_status, notes, approved_at")
       .single();
 
     if (error || !issuer) {
       return NextResponse.json({ error: error?.message || "Issuer update failed" }, { status: 500 });
     }
 
-    if (issuer.user_id) {
+    let notifyUserId: string | null = issuer.user_id;
+    if (!notifyUserId && issuer.contact_email) {
+      const { data: matchedProfile } = await service
+        .from("fcs_profiles")
+        .select("id")
+        .eq("email", issuer.contact_email.toLowerCase())
+        .maybeSingle();
+      notifyUserId = matchedProfile?.id ?? null;
+    }
+
+    if (notifyUserId) {
       await service.from("fcs_notifications").insert({
-        user_id: issuer.user_id,
+        user_id: notifyUserId,
         audience: "customer",
         type: "certificate_verification",
-        title: `Authorized Issuer ${payload.verificationStatus.toUpperCase()}`,
-        message: `Organization "${issuer.organization_name}" status is now ${payload.verificationStatus}.`,
-        link: "/verify",
+        title:
+          payload.verificationStatus === "approved"
+            ? `Authorized Organization Approved: ${issuer.organization_name}`
+            : `Organization Application ${payload.verificationStatus.toUpperCase()}`,
+        message:
+          payload.verificationStatus === "approved"
+            ? `"${issuer.organization_name}" is now approved by Admin. Verified QR issuance and official seal tools are unlocked in Certificate Studio.`
+            : `Organization "${issuer.organization_name}" status was updated to ${payload.verificationStatus}.${payload.notes ? ` Note: ${payload.notes}` : ""}`,
+        link: payload.verificationStatus === "approved" ? "/certificate-builder/new" : "/verify",
       });
     }
 
@@ -65,10 +85,13 @@ export async function PATCH(request: Request) {
       action: `admin.issuer.${payload.verificationStatus}`,
       targetType: "authorized_issuer",
       targetId: payload.id,
-      metadata: { organizationName: issuer.organization_name },
+      metadata: {
+        organizationName: issuer.organization_name,
+        notes: payload.notes ?? null,
+      },
     });
 
-    return NextResponse.json({ ok: true });
+    return NextResponse.json({ ok: true, issuer });
   }
 
   // Certificate verification record update — enforces authorized issuer requirement when verifying
@@ -99,7 +122,7 @@ export async function PATCH(request: Request) {
       .single();
     if (issuerCheck?.verification_status !== "approved") {
       return NextResponse.json(
-        { error: "Linked organization issuer is not yet approved." },
+        { error: "Linked organization issuer is not yet approved by Admin." },
         { status: 400 }
       );
     }

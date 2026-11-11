@@ -7,7 +7,10 @@ import {
   Award,
   Bookmark,
   Bot,
+  Building2,
   Check,
+  CheckCircle2,
+  Clock,
   Copy,
   FileText,
   FolderLock,
@@ -16,6 +19,7 @@ import {
   Plus,
   RefreshCw,
   Settings,
+  ShieldAlert,
   ShieldCheck,
   Sparkles,
   ThumbsDown,
@@ -59,6 +63,15 @@ interface RecRow {
   action_payload: { href?: string } | null;
 }
 
+interface OrgAppRow {
+  id: string;
+  organization_name: string;
+  contact_email: string;
+  verification_status: string;
+  notes: string | null;
+  approved_at: string | null;
+}
+
 interface Props {
   userName: string;
   aiRecommendationsEnabled: boolean;
@@ -69,6 +82,7 @@ interface Props {
   certTemplates: Array<{ id: string; slug: string; name: string; category: string }>;
   aiConversations: Array<{ id: string; title: string; context_page: string; updated_at: string }>;
   tickets: Array<{ id: string; ticket_number: string; subject: string; status: string; priority: string; updated_at: string }>;
+  orgApplications?: OrgAppRow[];
 }
 
 export function DashboardClient(props: Props) {
@@ -256,6 +270,63 @@ export function DashboardClient(props: Props) {
           <p className="mt-2 text-3xl font-bold">{openTicketsCount}</p>
         </div>
       </div>
+
+      {/* AUTHORIZED ORGANIZATION ACCESS STATUS */}
+      <section className="rounded-2xl border border-[var(--fcs-border)] bg-[var(--fcs-surface)] p-6">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5">
+            <Building2 className="h-5 w-5 text-teal-600" />
+            <div>
+              <h2 className="text-sm font-bold">Authorized Organization Access</h2>
+              <p className="text-xs text-[var(--fcs-ink-muted)]">
+                Administrator approval is required before an organization can issue Verified QR
+                certificates or upload official seals.
+              </p>
+            </div>
+          </div>
+          <Link
+            href="/verify"
+            className="rounded-lg border border-[var(--fcs-border)] px-3 py-1.5 text-xs font-semibold hover:bg-[var(--fcs-surface-muted)]"
+          >
+            {(props.orgApplications ?? []).length > 0 ? "Manage / Apply →" : "Apply as Organization →"}
+          </Link>
+        </div>
+
+        {(props.orgApplications ?? []).length > 0 && (
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            {(props.orgApplications ?? []).map((org) => (
+              <div
+                key={org.id}
+                className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] px-4 py-3 text-xs"
+              >
+                <div className="min-w-0">
+                  <p className="truncate font-bold">{org.organization_name}</p>
+                  <p className="truncate text-[11px] text-[var(--fcs-ink-muted)]">
+                    {org.contact_email}
+                    {org.notes ? ` • ${org.notes}` : ""}
+                  </p>
+                </div>
+                {org.verification_status === "approved" ? (
+                  <Link
+                    href="/certificate-builder/new"
+                    className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-1 text-[10px] font-bold text-emerald-800 hover:bg-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300"
+                  >
+                    <CheckCircle2 className="h-3 w-3" /> Approved • Open Studio
+                  </Link>
+                ) : org.verification_status === "pending" ? (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-1 text-[10px] font-bold text-amber-800 dark:bg-amber-950/60 dark:text-amber-300">
+                    <Clock className="h-3 w-3" /> Pending Admin Approval
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2.5 py-1 text-[10px] font-bold uppercase text-red-700 dark:bg-red-950/60 dark:text-red-300">
+                    <ShieldAlert className="h-3 w-3" /> {org.verification_status}
+                  </span>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
 
       {/* FRANCIS INTELLIGENCE SMART RECOMMENDATIONS */}
       <section className="rounded-2xl border border-[var(--fcs-border)] bg-[var(--fcs-surface)] p-6">
