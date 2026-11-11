@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
-import { Ban, CheckCircle2, Search, Shield, Trash2 } from "lucide-react";
+import { Ban, CheckCircle2, Copy, KeyRound, Search, Shield, Trash2 } from "lucide-react";
 import { STAFF_ROLES, formatRoleLabel, type AppRole } from "@francis/shared";
 
 interface UserRow {
@@ -35,6 +35,31 @@ export function UsersClient({
   const [editingRolesFor, setEditingRolesFor] = useState<string | null>(null);
   const [roleDraft, setRoleDraft] = useState<string[]>([]);
   const [feedback, setFeedback] = useState<string | null>(null);
+  const [generatedLink, setGeneratedLink] = useState<{ email: string; url: string } | null>(null);
+
+  const generateRecoveryLink = async (user: UserRow) => {
+    setFeedback(null);
+    setGeneratedLink(null);
+    const res = await fetch("/api/admin/users/recovery-link", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId: user.id, kind: "recovery" }),
+    });
+    const json = (await res.json()) as {
+      ok?: boolean;
+      link?: string;
+      email?: string;
+      error?: string;
+    };
+    if (!res.ok || !json.link) {
+      setFeedback(json.error || "Failed generating recovery link.");
+      return;
+    }
+    setGeneratedLink({ email: json.email || user.email || "user", url: json.link });
+    setFeedback(
+      `Generated zero-rate-limit cross-device reset link for ${json.email || user.email}.`
+    );
+  };
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -103,6 +128,27 @@ export function UsersClient({
       {feedback && (
         <div className="rounded-xl border border-teal-500/30 bg-teal-50 px-4 py-2 text-xs text-teal-800 dark:bg-teal-950/40 dark:text-teal-300">
           {feedback}
+        </div>
+      )}
+
+      {generatedLink && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-500/30 bg-amber-50 px-4 py-3 text-xs text-amber-950 dark:bg-amber-950/30 dark:text-amber-200">
+          <div className="min-w-0 flex-1">
+            <p className="font-semibold">
+              Direct Cross-Device Reset Link for {generatedLink.email} (bypasses email rate limit):
+            </p>
+            <p className="mt-1 truncate font-mono text-[11px] opacity-85">{generatedLink.url}</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              void navigator.clipboard?.writeText(generatedLink.url);
+              setFeedback(`Copied reset link for ${generatedLink.email} to clipboard.`);
+            }}
+            className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-amber-700 px-3 py-1.5 font-semibold text-white hover:bg-amber-800"
+          >
+            <Copy className="h-3.5 w-3.5" /> Copy Link
+          </button>
         </div>
       )}
 
@@ -221,6 +267,16 @@ export function UsersClient({
                     </span>
                   </td>
                   <td className="p-3 text-right space-x-1.5 whitespace-nowrap">
+                    {(isSuperAdmin || (isAdmin && !u.roles.includes("super_admin"))) && u.email && (
+                      <button
+                        type="button"
+                        onClick={() => void generateRecoveryLink(u)}
+                        title="Generate Direct Cross-Device Password Reset Link"
+                        className="inline-flex cursor-pointer items-center gap-1 rounded-lg border border-[var(--adm-border)] px-2 py-1 font-medium"
+                      >
+                        <KeyRound className="h-3 w-3 text-amber-600" /> Reset Link
+                      </button>
+                    )}
                     {isSuperAdmin && (
                       <button
                         type="button"

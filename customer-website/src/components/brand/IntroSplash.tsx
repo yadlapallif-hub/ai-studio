@@ -23,7 +23,7 @@ export function IntroSplash() {
 
     const doneTimer = window.setTimeout(() => {
       setVisible(false);
-    }, 2500);
+    }, 2550);
 
     return () => {
       window.clearTimeout(slideTimer);
@@ -38,106 +38,91 @@ export function IntroSplash() {
       role="dialog"
       aria-label="CREATOR STUDIO Welcome Intro"
       style={{
-        background:
-          "linear-gradient(155deg, #04060e 0%, #0b1024 48%, #07131c 100%)",
+        backgroundColor: "#0C0B0A",
+        backgroundImage:
+          "radial-gradient(ellipse 68% 54% at 50% 42%, rgba(200, 169, 106, 0.08), transparent 72%)",
         transition:
-          "transform 680ms cubic-bezier(0.76, 0, 0.24, 1), opacity 550ms ease",
+          "transform 720ms cubic-bezier(0.76, 0, 0.24, 1), opacity 580ms ease",
       }}
-      className={`no-print fixed inset-0 z-[100] flex flex-col items-center justify-center overflow-hidden text-white ${
+      className={`no-print fixed inset-0 z-[100] flex flex-col items-center justify-center overflow-hidden text-[#F7F3EA] ${
         slidingOut
           ? "pointer-events-none -translate-y-full opacity-95"
           : "translate-y-0 opacity-100"
       }`}
     >
-      {/* Aurora Ambient Halos & Blueprint Dot Matrix */}
+      {/* Subtle Architectural Hairline Perimeter Frame */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-0"
-        style={{
-          backgroundImage:
-            "radial-gradient(ellipse 64% 48% at 28% 28%, rgba(99, 102, 241, 0.28), transparent 62%), radial-gradient(ellipse 56% 44% at 74% 68%, rgba(6, 182, 212, 0.24), transparent 60%), radial-gradient(circle at 50% 50%, rgba(245, 158, 11, 0.08), transparent 46%), radial-gradient(rgba(148, 163, 184, 0.14) 1px, transparent 1px)",
-          backgroundSize: "100% 100%, 100% 100%, 100% 100%, 26px 26px",
-        }}
+        className="pointer-events-none absolute inset-4 border border-[#C8A96A]/18 sm:inset-7"
       />
-
-      {/* Luminous Bottom Curtain Rim */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-x-0 bottom-0 h-1 bg-gradient-to-r from-indigo-500 via-cyan-400 to-amber-400 opacity-90"
+        className="pointer-events-none absolute inset-6 border border-[#F7F3EA]/[0.05] sm:inset-9"
       />
 
-      {/* Skip Trigger */}
+      {/* Fine Champagne Brass Bottom Curtain Edge */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-x-0 bottom-0 h-[2px] bg-gradient-to-r from-transparent via-[#C8A96A]/75 to-transparent"
+      />
+
+      {/* Discreet Editorial Skip Action */}
       <button
         type="button"
         onClick={() => {
           setSlidingOut(true);
-          window.setTimeout(() => setVisible(false), 520);
+          window.setTimeout(() => setVisible(false), 540);
         }}
-        className="absolute top-5 right-5 z-20 cursor-pointer rounded-full border border-white/15 bg-white/10 px-3.5 py-1.5 text-[11px] font-semibold tracking-wide text-slate-200 backdrop-blur-md transition hover:border-cyan-400/60 hover:bg-white/15 hover:text-white"
+        className="absolute top-7 right-7 z-20 cursor-pointer border border-[#C8A96A]/30 bg-[#141210]/80 px-4 py-1.5 text-[10px] font-semibold tracking-[0.22em] text-[#DDD5C7] uppercase transition hover:border-[#C8A96A]/70 hover:text-white sm:top-10 sm:right-10"
       >
-        Skip →
+        Skip
       </button>
 
-      {/* Center Aurora Glass Studio Card */}
-      <div className="relative z-10 mx-4 w-full max-w-md px-2 text-center">
-        <div className="relative overflow-hidden rounded-[28px] border border-white/15 bg-white/[0.045] px-7 py-9 shadow-[0_28px_90px_rgba(79,70,229,0.28)] backdrop-blur-xl sm:px-10 sm:py-11">
-          {/* Precision Architectural Corner Brackets */}
-          <span
-            aria-hidden="true"
-            className="pointer-events-none absolute top-4 left-4 h-3.5 w-3.5 border-t-2 border-l-2 border-cyan-400/70"
-          />
-          <span
-            aria-hidden="true"
-            className="pointer-events-none absolute top-4 right-4 h-3.5 w-3.5 border-t-2 border-r-2 border-indigo-400/70"
-          />
-          <span
-            aria-hidden="true"
-            className="pointer-events-none absolute bottom-4 left-4 h-3.5 w-3.5 border-b-2 border-l-2 border-indigo-400/70"
-          />
-          <span
-            aria-hidden="true"
-            className="pointer-events-none absolute right-4 bottom-4 h-3.5 w-3.5 border-r-2 border-b-2 border-cyan-400/70"
-          />
+      {/* Center Editorial Monograph Plate */}
+      <div className="relative z-10 mx-4 w-full max-w-lg px-6 py-10 text-center">
+        <p className="fcs-intro-subtitle text-[10px] font-medium tracking-[0.38em] text-[#C8A96A] uppercase">
+          Editorial Edition &bull; MMXXVI
+        </p>
 
-          {/* Top Micro Label */}
-          <div className="fcs-intro-subtitle mb-5 inline-flex items-center gap-2 rounded-full border border-cyan-400/30 bg-cyan-500/10 px-3 py-1 text-[10px] font-bold tracking-[0.22em] text-cyan-200 uppercase">
-            <span className="h-1.5 w-1.5 rounded-full bg-cyan-400" />
-            <span>Open Studio • 2026</span>
-          </div>
-
-          <div className="fcs-intro-emblem relative mx-auto flex w-fit items-center justify-center">
-            <div
+        {/* Monogram Emblem in Matte Obsidian Brass Mount */}
+        <div className="fcs-intro-emblem relative mx-auto mt-7 flex w-fit items-center justify-center">
+          <div className="relative border border-[#C8A96A]/35 bg-[#12110F] p-3.5 shadow-[0_22px_60px_rgba(0,0,0,0.65)]">
+            <span
               aria-hidden="true"
-              className="fcs-intro-ring absolute -inset-4 rounded-3xl border border-indigo-400/35 bg-gradient-to-br from-indigo-500/15 to-cyan-500/15 blur-[1px]"
+              className="pointer-events-none absolute -top-1 -left-1 h-2.5 w-2.5 border-t border-l border-[#C8A96A]"
             />
-            <CreatorStudioLogo
-              size={88}
-              animated={true}
-              className="relative drop-shadow-[0_14px_38px_rgba(56,189,248,0.38)]"
+            <span
+              aria-hidden="true"
+              className="pointer-events-none absolute -top-1 -right-1 h-2.5 w-2.5 border-t border-r border-[#C8A96A]"
             />
-          </div>
-
-          <h1 className="fcs-intro-title mt-7 bg-gradient-to-r from-white via-cyan-100 to-indigo-200 bg-clip-text text-2xl font-extrabold tracking-[0.24em] text-transparent uppercase sm:text-[28px]">
-            CREATOR STUDIO
-          </h1>
-
-          <div className="fcs-intro-rule mx-auto mt-3.5 h-0.5 w-32 rounded-full bg-gradient-to-r from-indigo-400 via-cyan-400 to-amber-300" />
-
-          <p className="fcs-intro-subtitle mt-3.5 text-xs font-medium tracking-[0.14em] text-slate-200/85 uppercase sm:text-[13px]">
-            Create Your Future. Design Your Identity.
-          </p>
-
-          {/* Animated Progress Ribbon */}
-          <div className="mx-auto mt-6 h-1 w-40 overflow-hidden rounded-full bg-white/10">
-            <div className="fcs-intro-progress h-full rounded-full bg-gradient-to-r from-indigo-400 via-cyan-300 to-amber-300" />
+            <span
+              aria-hidden="true"
+              className="pointer-events-none absolute -bottom-1 -left-1 h-2.5 w-2.5 border-b border-l border-[#C8A96A]"
+            />
+            <span
+              aria-hidden="true"
+              className="pointer-events-none absolute -right-1 -bottom-1 h-2.5 w-2.5 border-r border-b border-[#C8A96A]"
+            />
+            <CreatorStudioLogo size={72} animated={true} className="relative block" />
           </div>
         </div>
+
+        {/* Classic High-Contrast Editorial Display Wordmark */}
+        <h1 className="fcs-intro-title mt-8 font-serif text-4xl font-semibold tracking-[0.18em] text-[#FAF6EE] uppercase sm:text-5xl">
+          CREATOR STUDIO
+        </h1>
+
+        <div className="fcs-intro-rule mx-auto mt-4 h-px w-24 bg-[#C8A96A]/70" />
+
+        <p className="fcs-intro-subtitle mt-4 text-xs font-medium tracking-[0.22em] text-[#BEB6A7] uppercase sm:text-[13px]">
+          Create Your Future &bull; Design Your Identity
+        </p>
       </div>
 
-      {/* Bottom Signature */}
-      <div className="fcs-intro-bottom absolute inset-x-0 bottom-7 z-10 flex flex-col items-center gap-2 sm:bottom-10">
-        <div className="h-px w-20 bg-gradient-to-r from-transparent via-cyan-300/80 to-transparent" />
-        <p className="text-xs font-semibold tracking-[0.44em] text-amber-200 uppercase sm:text-sm">
+      {/* Bottom Craft Stamp */}
+      <div className="fcs-intro-bottom absolute inset-x-0 bottom-9 z-10 flex flex-col items-center gap-2 sm:bottom-12">
+        <div className="h-px w-14 bg-[#C8A96A]/55" />
+        <p className="text-[11px] font-semibold tracking-[0.42em] text-[#C8A96A] uppercase">
           BUILT BY FRANCIS
         </p>
       </div>

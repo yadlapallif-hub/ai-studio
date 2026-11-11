@@ -125,6 +125,19 @@ export function Navbar({
 
   useEffect(() => {
     loadUserAndNotifications();
+    try {
+      const supabase = createClient();
+      const {
+        data: { subscription },
+      } = supabase.auth.onAuthStateChange(() => {
+        void loadUserAndNotifications();
+      });
+      return () => {
+        subscription.unsubscribe();
+      };
+    } catch {
+      return undefined;
+    }
   }, [loadUserAndNotifications, pathname]);
 
   useEffect(() => {

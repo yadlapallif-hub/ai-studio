@@ -29,12 +29,18 @@ function LoginForm() {
   const searchParams = useSearchParams();
   const rawNext = searchParams.get("next") || searchParams.get("redirect") || "/dashboard";
   const safeNext = rawNext.startsWith("/") && !rawNext.startsWith("//") ? rawNext : "/dashboard";
-  const initialError = searchParams.get("error");
+  const rawErr = searchParams.get("error");
+  const initialError = rawErr
+    ? rawErr.toLowerCase().includes("pkce") || rawErr.toLowerCase().includes("code verifier")
+      ? "That older link was opened on a different browser or device. Request a fresh link below (now works across all browsers and phones) or sign in with Email & Password."
+      : rawErr
+    : null;
 
   const [mode, setMode] = useState<EmailLoginMode>("magic");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [magicSent, setMagicSent] = useState(false);
+  const [rateLimited, setRateLimited] = useState(false);
   const [emailOtp, setEmailOtp] = useState("");
 
   const [providerStatus, setProviderStatus] = useState<ProviderStatus | null>(null);
@@ -54,12 +60,16 @@ function LoginForm() {
 
   const finalizeSignedInSession = async () => {
     const supabase = createClient();
-    const { data: ensured } = await supabase.rpc("fcs_ensure_profile");
-    const profile = (ensured as { profile?: { status?: string } } | null)?.profile;
-    if (profile?.status === "suspended") {
-      await supabase.auth.signOut();
-      setError("Your account has been suspended. Contact support for assistance.");
-      return;
+    try {
+      const { data: ensured } = await supabase.rpc("fcs_ensure_profile");
+      const profile = (ensured as { profile?: { status?: string } } | null)?.profile;
+      if (profile?.status === "suspended") {
+        await supabase.auth.signOut();
+        setError("Your account has been suspended. Contact support for assistance.");
+        return;
+      }
+    } catch {
+      // non-fatal
     }
     router.push(safeNext);
     router.refresh();
@@ -89,35 +99,40 @@ function LoginForm() {
     e.preventDefault();
     setError(null);
     setInfo(null);
-    const trimmedEmail = email.trim();
+    setRateLimited(false);
+    const trimmedEmail = email.trim().toLowerCase();
     if (!trimmedEmail) return;
 
     setLoading(true);
     try {
-      const supabase = createClient();
-      const { error: otpErr } = await supabase.auth.signInWithOtp({
-        email: trimmedEmail,
-        options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(safeNext)}`,
-          shouldCreateUser: true,
-        },
+      const res = await fetch("/api/auth/email-link", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          mode: "magiclink",
+          email: trimmedEmail,
+          next: safeNext,
+        }),
       });
+      const json = (await res.json()) as {
+        ok?: boolean;
+        code?: string;
+        message?: string;
+        error?: string;
+      };
 
-      if (otpErr) {
-        const lower = otpErr.message.toLowerCase();
-        if (lower.includes("rate") || lower.includes("limit") || lower.includes("seconds")) {
-          setError(
-            `${otpErr.message} — Email sending is temporarily rate-limited; switch to "Email & Password" above to sign in immediately or try again in a minute.`
-          );
-        } else {
-          setError(otpErr.message);
+      if (!res.ok || !json.ok) {
+        if (res.status === 429 || json.code === "rate_limited") {
+          setRateLimited(true);
         }
+        setError(json.error || json.message || "Unable to send email sign-in link.");
         return;
       }
 
       setMagicSent(true);
       setInfo(
-        `Sign-in link sent to ${trimmedEmail}. Open your email and click the link to sign in instantly (or paste an email verification code below).`
+        json.message ||
+          `Sign-in link sent to ${trimmedEmail}. It works across desktop and mobile browsers (or enter the verification code below).`
       );
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to send email sign-in link.");
@@ -134,7 +149,7 @@ function LoginForm() {
     try {
       const supabase = createClient();
       const { error: verErr } = await supabase.auth.verifyOtp({
-        email: email.trim(),
+        email: email.trim().toLowerCase(),
         token: emailOtp.trim(),
         type: "email",
       });
@@ -159,7 +174,7 @@ function LoginForm() {
     try {
       const supabase = createClient();
       const { error: signInErr } = await supabase.auth.signInWithPassword({
-        email: email.trim(),
+        email: email.trim().toLowerCase(),
         password,
       });
 
@@ -189,14 +204,31 @@ function LoginForm() {
           </div>
         </div>
         <p className="mt-2 text-xs text-[var(--fcs-ink-muted)]">
-          Enter just your email to receive an instant sign-in link, or sign in with email and
-          password.
+          Enter just your email for a cross-device sign-in link, or sign in instantly with email
+          and password.
         </p>
 
         {error && (
-          <div className="mt-4 flex items-start gap-2 rounded-xl border border-red-500/30 bg-red-50 p-3 text-xs text-red-800 dark:bg-red-950/40 dark:text-red-300">
-            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
-            <span>{error}</span>
+          <div className="mt-4 space-y-2 rounded-xl border border-red-500/30 bg-red-50 p-3 text-xs text-red-800 dark:bg-red-950/40 dark:text-red-300">
+            <div className="flex items-start gap-2">
+              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+              <span>{error}</span>
+            </div>
+            {rateLimited && mode === "magic" && (
+              <div className="flex flex-wrap gap-2 pl-6">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMode("password");
+                    setError(null);
+                    setRateLimited(false);
+                  }}
+                  className="cursor-pointer rounded-lg bg-red-700 px-3 py-1.5 text-[11px] font-semibold text-white hover:bg-red-800"
+                >
+                  Switch to Email &amp; Password →
+                </button>
+              </div>
+            )}
           </div>
         )}
 
@@ -227,15 +259,15 @@ function LoginForm() {
           </>
         )}
 
-        {/* Just Email vs Email & Password Tabs */}
         <div className="mt-5 grid grid-cols-2 gap-1.5 rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] p-1 text-xs font-semibold">
           <button
             type="button"
             onClick={() => {
               setMode("magic");
               setError(null);
+              setRateLimited(false);
             }}
-            className={`flex items-center justify-center gap-1.5 rounded-lg py-2 transition ${
+            className={`flex cursor-pointer items-center justify-center gap-1.5 rounded-lg py-2 transition ${
               mode === "magic"
                 ? "bg-[var(--fcs-surface)] text-[var(--fcs-ink)] shadow-sm"
                 : "text-[var(--fcs-ink-muted)] hover:text-[var(--fcs-ink)]"
@@ -248,8 +280,9 @@ function LoginForm() {
             onClick={() => {
               setMode("password");
               setError(null);
+              setRateLimited(false);
             }}
-            className={`flex items-center justify-center gap-1.5 rounded-lg py-2 transition ${
+            className={`flex cursor-pointer items-center justify-center gap-1.5 rounded-lg py-2 transition ${
               mode === "password"
                 ? "bg-[var(--fcs-surface)] text-[var(--fcs-ink)] shadow-sm"
                 : "text-[var(--fcs-ink-muted)] hover:text-[var(--fcs-ink)]"
@@ -283,7 +316,7 @@ function LoginForm() {
               <button
                 type="submit"
                 disabled={loading}
-                className="flex w-full items-center justify-center gap-2 rounded-xl bg-teal-700 py-2.5 text-sm font-semibold text-white transition hover:bg-teal-800 disabled:opacity-60"
+                className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-teal-700 py-2.5 text-sm font-semibold text-white transition hover:bg-teal-800 disabled:opacity-60"
               >
                 {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Mail className="h-4 w-4" />}
                 <span>
@@ -312,7 +345,7 @@ function LoginForm() {
                       type="text"
                       inputMode="numeric"
                       required
-                      maxLength={8}
+                      maxLength={12}
                       value={emailOtp}
                       onChange={(e) => setEmailOtp(e.target.value)}
                       placeholder="12345678"
@@ -323,7 +356,7 @@ function LoginForm() {
                 <button
                   type="submit"
                   disabled={loading || !emailOtp.trim()}
-                  className="flex w-full items-center justify-center gap-2 rounded-xl border border-teal-700/40 bg-teal-50 py-2 text-xs font-semibold text-teal-800 transition hover:bg-teal-100 disabled:opacity-60 dark:bg-teal-950/50 dark:text-teal-200"
+                  className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-teal-700/40 bg-teal-50 py-2 text-xs font-semibold text-teal-800 transition hover:bg-teal-100 disabled:opacity-60 dark:bg-teal-950/50 dark:text-teal-200"
                 >
                   <ArrowRight className="h-3.5 w-3.5" /> Verify Code &amp; Sign In
                 </button>
@@ -380,7 +413,7 @@ function LoginForm() {
             <button
               type="submit"
               disabled={loading}
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-teal-700 py-2.5 text-sm font-semibold text-white transition hover:bg-teal-800 disabled:opacity-60"
+              className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-teal-700 py-2.5 text-sm font-semibold text-white transition hover:bg-teal-800 disabled:opacity-60"
             >
               {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowRight className="h-4 w-4" />}
               <span>{loading ? "Signing in..." : "Sign In with Email"}</span>

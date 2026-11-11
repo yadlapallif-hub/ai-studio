@@ -94,21 +94,27 @@ export default function AdminLoginPage() {
     }
     setLoading(true);
     try {
-      const supabase = createClient();
-      const { error: otpErr } = await supabase.auth.signInWithOtp({
-        email: trimmedEmail,
-        options: {
-          shouldCreateUser: false,
-          emailRedirectTo: `${window.location.origin}/auth/callback?next=/`,
-        },
+      const res = await fetch("/api/admin/auth/email-link", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: trimmedEmail,
+          next: "/",
+        }),
       });
-      if (otpErr) {
-        setError(otpErr.message);
+      const json = (await res.json()) as {
+        ok?: boolean;
+        message?: string;
+        error?: string;
+      };
+      if (!res.ok || !json.ok) {
+        setError(json.error || json.message || "Unable to send staff sign-in link.");
         return;
       }
       setOtpSent(true);
       setNotice(
-        `Check ${trimmedEmail}: click the sign-in link in your inbox or enter the 8-digit code below.`
+        json.message ||
+          `Check ${trimmedEmail}: click the cross-device link in your inbox or enter the verification code below.`
       );
     } finally {
       setLoading(false);

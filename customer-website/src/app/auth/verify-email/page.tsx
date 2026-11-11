@@ -4,7 +4,6 @@ import React, { Suspense, useState } from "react";
 import { SafeNavLink } from "@/components/ui/SafeNavLink";
 import { useSearchParams } from "next/navigation";
 import { CheckCircle2, MailCheck, RefreshCw } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
 
 function VerifyEmailContent() {
   const params = useSearchParams();
@@ -21,13 +20,17 @@ function VerifyEmailContent() {
     setError(null);
     setSent(false);
     try {
-      const supabase = createClient();
-      const { error: err } = await supabase.auth.resend({
-        type: "signup",
-        email: email.trim(),
-        options: { emailRedirectTo: `${window.location.origin}/auth/callback?next=/dashboard` },
+      const res = await fetch("/api/auth/email-link", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          mode: "signup_resend",
+          email: email.trim().toLowerCase(),
+          next: "/dashboard",
+        }),
       });
-      if (err) setError(err.message);
+      const json = (await res.json()) as { ok?: boolean; error?: string; message?: string };
+      if (!res.ok || !json.ok) setError(json.error || json.message || "Failed resending email.");
       else setSent(true);
     } finally {
       setLoading(false);
@@ -44,7 +47,7 @@ function VerifyEmailContent() {
         <p className="mt-2 text-xs leading-relaxed text-[var(--fcs-ink-muted)]">
           We sent a verification link to{" "}
           <span className="font-semibold text-[var(--fcs-ink)]">{email || "your inbox"}</span>.
-          Open the link to activate your account and unlock your Document Vault.
+          Open the link on any device to activate your account and unlock your Document Vault.
         </p>
 
         {sent && (
@@ -71,7 +74,7 @@ function VerifyEmailContent() {
           <button
             type="submit"
             disabled={loading}
-            className="flex w-full items-center justify-center gap-2 rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] py-2 text-xs font-semibold hover:border-teal-600/50"
+            className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] py-2 text-xs font-semibold hover:border-teal-600/50"
           >
             <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} />
             Resend Confirmation Email

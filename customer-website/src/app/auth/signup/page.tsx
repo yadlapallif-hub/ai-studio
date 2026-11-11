@@ -17,7 +17,7 @@ import { createClient } from "@/lib/supabase/client";
 import { CreatorStudioLogo } from "@/components/brand/CreatorStudioLogo";
 import { GoogleIcon } from "@/components/auth/PhoneInputRow";
 
-type SignupMode = "magic" | "password";
+type SignupMode = "password" | "magic";
 
 interface ProviderStatus {
   googleEnabled: boolean;
@@ -29,11 +29,13 @@ function SignupForm() {
   const rawNext = searchParams.get("next") || searchParams.get("redirect") || "/dashboard";
   const safeNext = rawNext.startsWith("/") && !rawNext.startsWith("//") ? rawNext : "/dashboard";
 
-  const [mode, setMode] = useState<SignupMode>("magic");
+  // Default to instant password signup (never hits email rate limit), while keeping Just Email tab
+  const [mode, setMode] = useState<SignupMode>("password");
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [rateLimited, setRateLimited] = useState(false);
 
   const [providerStatus, setProviderStatus] = useState<ProviderStatus | null>(null);
   const [loading, setLoading] = useState(false);
@@ -74,28 +76,40 @@ function SignupForm() {
     e.preventDefault();
     setError(null);
     setInfo(null);
-    const trimmedEmail = email.trim();
+    setRateLimited(false);
+    const trimmedEmail = email.trim().toLowerCase();
     if (!trimmedEmail) return;
 
     setLoading(true);
     try {
-      const supabase = createClient();
-      const { error: otpErr } = await supabase.auth.signInWithOtp({
-        email: trimmedEmail,
-        options: {
-          data: fullName.trim() ? { full_name: fullName.trim() } : undefined,
-          emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(safeNext)}`,
-          shouldCreateUser: true,
-        },
+      const res = await fetch("/api/auth/email-link", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          mode: "magiclink",
+          email: trimmedEmail,
+          fullName: fullName.trim() || undefined,
+          next: safeNext,
+        }),
       });
+      const json = (await res.json()) as {
+        ok?: boolean;
+        code?: string;
+        message?: string;
+        error?: string;
+      };
 
-      if (otpErr) {
-        setError(otpErr.message);
+      if (!res.ok || !json.ok) {
+        if (res.status === 429 || json.code === "rate_limited") {
+          setRateLimited(true);
+        }
+        setError(json.error || json.message || "Unable to send email link.");
         return;
       }
 
       setInfo(
-        `Confirmation & sign-in link sent to ${trimmedEmail}. Open your email to activate your Creator Studio account.`
+        json.message ||
+          `Confirmation & sign-in link sent to ${trimmedEmail}. Open it on any browser or phone to activate your Creator Studio account.`
       );
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to send email link.");
@@ -108,7 +122,12 @@ function SignupForm() {
     e.preventDefault();
     setError(null);
     setInfo(null);
+    setRateLimited(false);
 
+    if (fullName.trim().length < 2) {
+      setError("Please enter your full name (at least 2 characters).");
+      return;
+    }
     if (password.length < 8) {
       setError("Password must be at least 8 characters long.");
       return;
@@ -120,30 +139,40 @@ function SignupForm() {
 
     setLoading(true);
     try {
-      const supabase = createClient();
-      const origin = window.location.origin;
-
-      const { data, error: signUpErr } = await supabase.auth.signUp({
-        email: email.trim(),
-        password,
-        options: {
-          data: { full_name: fullName.trim() },
-          emailRedirectTo: `${origin}/auth/callback?next=${encodeURIComponent(safeNext)}`,
-        },
+      const normalizedEmail = email.trim().toLowerCase();
+      const res = await fetch("/api/auth/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          fullName: fullName.trim(),
+          email: normalizedEmail,
+          password,
+        }),
       });
 
-      if (signUpErr) {
-        setError(signUpErr.message);
+      const json = (await res.json()) as { ok?: boolean; error?: string };
+      if (!res.ok || !json.ok) {
+        setError(json.error || "Unable to create account.");
         return;
       }
 
-      if (data.session) {
-        await supabase.rpc("fcs_ensure_profile");
-        router.push(safeNext);
-        router.refresh();
-      } else {
-        router.push(`/auth/verify-email?email=${encodeURIComponent(email.trim())}`);
+      const supabase = createClient();
+      const { error: signInErr } = await supabase.auth.signInWithPassword({
+        email: normalizedEmail,
+        password,
+      });
+
+      if (signInErr) {
+        setError(signInErr.message);
+        return;
       }
+
+      try {
+        await supabase.rpc("fcs_ensure_profile");
+      } catch {}
+
+      router.push(safeNext);
+      router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to create account.");
     } finally {
@@ -164,14 +193,31 @@ function SignupForm() {
           </div>
         </div>
         <p className="mt-2 text-xs text-[var(--fcs-ink-muted)]">
-          Get started with just your email or create a password to save resumes, certificates, and
-          vault assets.
+          Create your account instantly with Email &amp; Password or receive a cross-device sign-up
+          link via Just Email.
         </p>
 
         {error && (
-          <div className="mt-4 flex items-start gap-2 rounded-xl border border-red-500/30 bg-red-50 p-3 text-xs text-red-800 dark:bg-red-950/40 dark:text-red-300">
-            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
-            <span>{error}</span>
+          <div className="mt-4 space-y-2 rounded-xl border border-red-500/30 bg-red-50 p-3 text-xs text-red-800 dark:bg-red-950/40 dark:text-red-300">
+            <div className="flex items-start gap-2">
+              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+              <span>{error}</span>
+            </div>
+            {rateLimited && mode === "magic" && (
+              <div className="pl-6">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMode("password");
+                    setError(null);
+                    setRateLimited(false);
+                  }}
+                  className="cursor-pointer rounded-lg bg-red-700 px-3 py-1.5 text-[11px] font-semibold text-white hover:bg-red-800"
+                >
+                  Create Instantly with Email &amp; Password →
+                </button>
+              </div>
+            )}
           </div>
         )}
 
@@ -206,30 +252,32 @@ function SignupForm() {
           <button
             type="button"
             onClick={() => {
-              setMode("magic");
-              setError(null);
-            }}
-            className={`flex items-center justify-center gap-1.5 rounded-lg py-2 transition ${
-              mode === "magic"
-                ? "bg-[var(--fcs-surface)] text-[var(--fcs-ink)] shadow-sm"
-                : "text-[var(--fcs-ink-muted)] hover:text-[var(--fcs-ink)]"
-            }`}
-          >
-            <Sparkles className="h-3.5 w-3.5" /> Just Email
-          </button>
-          <button
-            type="button"
-            onClick={() => {
               setMode("password");
               setError(null);
+              setRateLimited(false);
             }}
-            className={`flex items-center justify-center gap-1.5 rounded-lg py-2 transition ${
+            className={`flex cursor-pointer items-center justify-center gap-1.5 rounded-lg py-2 transition ${
               mode === "password"
                 ? "bg-[var(--fcs-surface)] text-[var(--fcs-ink)] shadow-sm"
                 : "text-[var(--fcs-ink-muted)] hover:text-[var(--fcs-ink)]"
             }`}
           >
             <Lock className="h-3.5 w-3.5" /> Email &amp; Password
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setMode("magic");
+              setError(null);
+              setRateLimited(false);
+            }}
+            className={`flex cursor-pointer items-center justify-center gap-1.5 rounded-lg py-2 transition ${
+              mode === "magic"
+                ? "bg-[var(--fcs-surface)] text-[var(--fcs-ink)] shadow-sm"
+                : "text-[var(--fcs-ink-muted)] hover:text-[var(--fcs-ink)]"
+            }`}
+          >
+            <Sparkles className="h-3.5 w-3.5" /> Just Email
           </button>
         </div>
 
@@ -273,7 +321,7 @@ function SignupForm() {
             <button
               type="submit"
               disabled={loading}
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-teal-700 py-2.5 text-sm font-semibold text-white transition hover:bg-teal-800 disabled:opacity-60"
+              className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-teal-700 py-2.5 text-sm font-semibold text-white transition hover:bg-teal-800 disabled:opacity-60"
             >
               {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Mail className="h-4 w-4" />}
               <span>{loading ? "Sending link..." : "Continue with Just Email"}</span>
@@ -359,7 +407,7 @@ function SignupForm() {
             <button
               type="submit"
               disabled={loading}
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-teal-700 py-2.5 text-sm font-semibold text-white transition hover:bg-teal-800 disabled:opacity-60"
+              className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-teal-700 py-2.5 text-sm font-semibold text-white transition hover:bg-teal-800 disabled:opacity-60"
             >
               {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowRight className="h-4 w-4" />}
               <span>{loading ? "Creating account..." : "Create Free Account"}</span>

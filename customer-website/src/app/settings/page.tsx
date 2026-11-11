@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { SafeNavLink } from "@/components/ui/SafeNavLink";
 import { CheckCircle2, Loader2, Shield, Trash2, User } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useTheme } from "@/components/layout/ThemeProvider";
@@ -8,6 +9,7 @@ import { useTheme } from "@/components/layout/ThemeProvider";
 export default function SettingsPage() {
   const { setTheme } = useTheme();
   const [loading, setLoading] = useState(true);
+  const [signedIn, setSignedIn] = useState(false);
   const [saving, setSaving] = useState(false);
   const [savedMsg, setSavedMsg] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -25,6 +27,7 @@ export default function SettingsPage() {
   const [aiRecsEnabled, setAiRecsEnabled] = useState(true);
   const [emailNotifsEnabled, setEmailNotifsEnabled] = useState(true);
   const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
 
   useEffect(() => {
     (async () => {
@@ -33,7 +36,11 @@ export default function SettingsPage() {
         const {
           data: { user },
         } = await supabase.auth.getUser();
-        if (!user) return;
+        if (!user) {
+          setSignedIn(false);
+          return;
+        }
+        setSignedIn(true);
         const { data: ensured } = await supabase.rpc("fcs_ensure_profile");
         const p = (ensured as { profile?: Record<string, unknown> } | null)?.profile;
         if (p) {
@@ -106,6 +113,10 @@ export default function SettingsPage() {
       setErrorMsg("New password must be at least 8 characters.");
       return;
     }
+    if (confirmPassword && newPassword !== confirmPassword) {
+      setErrorMsg("Passwords do not match.");
+      return;
+    }
     setSaving(true);
     setErrorMsg(null);
     setSavedMsg(null);
@@ -115,6 +126,7 @@ export default function SettingsPage() {
       if (error) setErrorMsg(error.message);
       else {
         setNewPassword("");
+        setConfirmPassword("");
         setSavedMsg("Account password updated.");
       }
     } finally {
@@ -135,6 +147,24 @@ export default function SettingsPage() {
     return (
       <div className="flex items-center justify-center py-20 text-sm text-[var(--fcs-ink-muted)]">
         <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Loading account settings...
+      </div>
+    );
+  }
+
+  if (!signedIn) {
+    return (
+      <div className="mx-auto max-w-md px-4 py-16 text-center">
+        <Shield className="mx-auto h-10 w-10 text-teal-600" />
+        <h1 className="mt-4 text-2xl font-bold">Account &amp; Privacy Settings</h1>
+        <p className="mt-2 text-xs text-[var(--fcs-ink-muted)]">
+          Sign in to edit your profile details, theme preference, AI controls, and password.
+        </p>
+        <SafeNavLink
+          href="/auth/login?next=/settings"
+          className="mt-6 inline-block rounded-xl bg-teal-700 px-6 py-2.5 text-sm font-semibold text-white hover:bg-teal-800"
+        >
+          Sign In
+        </SafeNavLink>
       </div>
     );
   }
@@ -315,10 +345,19 @@ export default function SettingsPage() {
             placeholder="Enter new password (min. 8 characters)"
             className="flex-1 rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] px-3 py-2 text-xs outline-none focus:border-teal-600"
           />
+          <input
+            type="password"
+            minLength={8}
+            required
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            placeholder="Confirm new password"
+            className="flex-1 rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] px-3 py-2 text-xs outline-none focus:border-teal-600"
+          />
           <button
             type="submit"
             disabled={saving}
-            className="rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] px-4 py-2 text-xs font-semibold hover:border-teal-600/40"
+            className="cursor-pointer rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] px-4 py-2 text-xs font-semibold hover:border-teal-600/40"
           >
             Update Password
           </button>
