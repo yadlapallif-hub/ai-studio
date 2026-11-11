@@ -54,12 +54,31 @@ function isDarkHex(hex?: string): boolean {
   return luminance < 0.45;
 }
 
-function getInkFilter(inkStyle?: CertificateCanvasElement["inkStyle"]): React.CSSProperties {
+function getInkFilter(
+  inkStyle?: CertificateCanvasElement["inkStyle"],
+  src?: string
+): React.CSSProperties {
+  const isInlineSvg = Boolean(src && src.startsWith("data:image/svg+xml"));
+  if (isInlineSvg) {
+    if (inkStyle === "gold_embossed") {
+      return {
+        filter: "drop-shadow(0 2px 3px rgba(146, 64, 14, 0.28))",
+      };
+    }
+    return {};
+  }
+
   if (inkStyle === "blue_ink") {
     return { filter: "sepia(1) hue-rotate(190deg) saturate(4) brightness(0.85)" };
   }
   if (inkStyle === "red_ink") {
     return { filter: "sepia(1) hue-rotate(325deg) saturate(5) brightness(0.85)" };
+  }
+  if (inkStyle === "teal_ink") {
+    return { filter: "sepia(1) hue-rotate(135deg) saturate(3.5) brightness(0.82)" };
+  }
+  if (inkStyle === "black_ink") {
+    return { filter: "grayscale(1) contrast(1.35) brightness(0.6)" };
   }
   if (inkStyle === "gold_embossed") {
     return {
@@ -409,7 +428,7 @@ export const CertificateCanvas = React.forwardRef<HTMLDivElement, CertificateCan
                   opacity: el.opacity ?? 1,
                   zIndex: 20 + (el.zIndex ?? 1),
                   transform: `rotate(${el.rotation ?? 0}deg)`,
-                  ...getInkFilter(el.inkStyle),
+                  ...getInkFilter(el.inkStyle, el.src),
                 }}
               >
                 {el.type === "text_block" ? (

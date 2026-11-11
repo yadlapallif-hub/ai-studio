@@ -1,7 +1,7 @@
 import React from "react";
 import Link from "next/link";
 import { CERTIFICATE_TEMPLATE_CATALOG } from "@francis/shared";
-import { Award, Plus, ShieldCheck } from "lucide-react";
+import { Award, Plus, ShieldCheck, Stamp } from "lucide-react";
 import { getAuthenticatedContext } from "@/lib/supabase/server";
 import {
   CertificateTemplateGallery,
@@ -56,7 +56,13 @@ export default async function CertificateBuilderGalleryPage() {
             and export print-ready A4 PDFs or PNGs for free.
           </p>
         </div>
-        <div className="flex gap-2.5">
+        <div className="flex flex-wrap gap-2.5">
+          <Link
+            href="/stamps"
+            className="inline-flex items-center gap-2 rounded-xl border border-[var(--fcs-border)] px-4 py-2.5 text-sm font-semibold hover:bg-[var(--fcs-surface-muted)]"
+          >
+            <Stamp className="h-4 w-4 text-teal-600" /> Stamp Studio
+          </Link>
           <Link
             href="/verify"
             className="inline-flex items-center gap-2 rounded-xl border border-[var(--fcs-border)] px-4 py-2.5 text-sm font-semibold hover:bg-[var(--fcs-surface-muted)]"

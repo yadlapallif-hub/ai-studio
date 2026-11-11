@@ -22,6 +22,7 @@ import {
   ShieldAlert,
   ShieldCheck,
   Sparkles,
+  Stamp,
   ThumbsDown,
   ThumbsUp,
   Trash2,
@@ -307,12 +308,20 @@ export function DashboardClient(props: Props) {
                   </p>
                 </div>
                 {org.verification_status === "approved" ? (
-                  <Link
-                    href="/certificate-builder/new"
-                    className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-1 text-[10px] font-bold text-emerald-800 hover:bg-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300"
-                  >
-                    <CheckCircle2 className="h-3 w-3" /> Approved • Open Studio
-                  </Link>
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <Link
+                      href="/stamps"
+                      className="inline-flex items-center gap-1 rounded-full bg-teal-700 px-2.5 py-1 text-[10px] font-bold text-white hover:bg-teal-800"
+                    >
+                      <Stamp className="h-3 w-3" /> Open Stamp Studio
+                    </Link>
+                    <Link
+                      href="/certificate-builder/new?tab=stamps"
+                      className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-1 text-[10px] font-bold text-emerald-800 hover:bg-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300"
+                    >
+                      <CheckCircle2 className="h-3 w-3" /> Certificate Studio
+                    </Link>
+                  </div>
                 ) : org.verification_status === "pending" ? (
                   <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-1 text-[10px] font-bold text-amber-800 dark:bg-amber-950/60 dark:text-amber-300">
                     <Clock className="h-3 w-3" /> Pending Admin Approval

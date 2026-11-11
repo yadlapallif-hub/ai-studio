@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getAccessibleIssuersForUser } from "@/lib/issuers";
 import { createServerSupabase, createServiceSupabase } from "@/lib/supabase/server";
 
 export async function POST(request: NextRequest) {
@@ -41,21 +42,10 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const adminDb = createServiceSupabase();
-  const { data: issuer } = await adminDb
-    .from("fcs_authorized_issuers")
-    .select("id, user_id, organization_name, contact_email, verification_status")
-    .eq("id", targetIssuerId)
-    .maybeSingle();
+  const { applications } = await getAccessibleIssuersForUser(user);
+  const issuer = applications.find((item) => item.id === targetIssuerId);
 
-  const hasAccess =
-    issuer &&
-    (issuer.user_id === user.id ||
-      (issuer.user_id === null &&
-        Boolean(user.email) &&
-        issuer.contact_email.toLowerCase() === user.email!.toLowerCase()));
-
-  if (!hasAccess) {
+  if (!issuer) {
     return NextResponse.json(
       { error: "You do not have permission to issue credentials for that organization." },
       { status: 403 }
@@ -71,6 +61,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  const adminDb = createServiceSupabase();
   const nowIso = new Date().toISOString();
 
   await adminDb

@@ -9,6 +9,7 @@ import {
   generateCertificateCode,
   type CertificateCanvasElement,
   type CertificateStyleConfig,
+  type OrganizationStampRecord,
 } from "@francis/shared";
 import {
   AlertTriangle,
@@ -34,6 +35,7 @@ import {
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { CertificateCanvas } from "./CertificateCanvas";
+import { OrganizationStampStudio } from "./OrganizationStampStudio";
 import { PhotoEditorModal, type EditedPhotoResult } from "../studio/PhotoEditorModal";
 import {
   exportElementAsA4Pdf,
@@ -68,6 +70,7 @@ interface CertificateStudioProps {
   initialElements: CertificateCanvasElement[];
   initialStyle: CertificateStyleConfig;
   initialVerificationStatus: string;
+  initialTab?: "details" | "design" | "stamps" | "ai";
   templates: CertTemplateOption[];
   approvedIssuers: Array<{ id: string; organization_name: string }>;
   organizationApplications?: Array<{
@@ -76,6 +79,7 @@ interface CertificateStudioProps {
     verification_status: string;
     notes: string | null;
   }>;
+  initialOrganizationStamps?: OrganizationStampRecord[];
   isAuthenticated: boolean;
 }
 
@@ -113,11 +117,16 @@ export function CertificateStudio(props: CertificateStudioProps) {
       app.verification_status !== "approved" && app.verification_status !== "pending"
   );
 
-  const [activeTab, setActiveTab] = useState<"details" | "design" | "stamps" | "ai">("details");
+  const [activeTab, setActiveTab] = useState<"details" | "design" | "stamps" | "ai">(
+    props.initialTab || "details"
+  );
   const [selectedElementId, setSelectedElementId] = useState<string | null>(
     props.initialElements[0]?.id ?? null
   );
-  const [authorizedConfirm, setAuthorizedConfirm] = useState(false);
+  const [authorizedConfirm, setAuthorizedConfirm] = useState(hasApprovedIssuer);
+  const [orgStamps, setOrgStamps] = useState<OrganizationStampRecord[]>(
+    props.initialOrganizationStamps ?? []
+  );
   const [zoom, setZoom] = useState(orientation === "landscape" ? 0.64 : 0.72);
   const [photoModalOpen, setPhotoModalOpen] = useState(false);
 
@@ -617,6 +626,19 @@ export function CertificateStudio(props: CertificateStudioProps) {
                   : selectedIssuerId
                     ? "Issue Verified Credential"
                     : "Verified Issuer Required"}
+              </button>
+            )}
+            {hasApprovedIssuer && (
+              <button
+                type="button"
+                onClick={() => setActiveTab("stamps")}
+                className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold ${
+                  activeTab === "stamps"
+                    ? "border-teal-700 bg-teal-700 text-white"
+                    : "border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] hover:border-teal-600/40"
+                }`}
+              >
+                <Stamp className="h-3.5 w-3.5" /> Org Stamps
               </button>
             )}
             <button
@@ -1162,21 +1184,99 @@ export function CertificateStudio(props: CertificateStudioProps) {
 
           {activeTab === "stamps" && (
             <div className="space-y-4 rounded-2xl border border-[var(--fcs-border)] bg-[var(--fcs-surface)] p-4 text-xs">
-              <div className="rounded-xl border border-amber-500/30 bg-amber-50 p-3 text-[11px] text-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
-                <p className="flex items-center gap-1.5 font-bold">
-                  <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
-                  Authorization Integrity Policy
-                </p>
-                <p className="mt-1">
-                  Decorative sample stamps are marked <strong>PREVIEW ONLY</strong>. Never upload or
-                  fabricate seals or signatures belonging to organizations you are not authorized to
-                  represent.
-                </p>
-              </div>
+              {hasApprovedIssuer ? (
+                <>
+                  <OrganizationStampStudio
+                    mode="embedded"
+                    approvedIssuers={props.approvedIssuers}
+                    selectedIssuerId={selectedIssuerId}
+                    onSelectIssuerId={(nextId) => {
+                      setSelectedIssuerId(nextId);
+                      const matched = props.approvedIssuers.find((i) => i.id === nextId);
+                      if (matched) setOrganizationName(matched.organization_name);
+                    }}
+                    savedStamps={orgStamps}
+                    onSavedStampsChange={setOrgStamps}
+                    authorizedConfirm={authorizedConfirm}
+                    onAuthorizedConfirmChange={setAuthorizedConfirm}
+                    onApplyToCertificate={(item) => {
+                      const newEl: CertificateCanvasElement = {
+                        ...item,
+                        id: `org-el-${Date.now()}-${Math.random().toString(36).slice(2, 5)}`,
+                        zIndex: elements.length + 1,
+                      };
+                      setElements((prev) => [...prev, newEl]);
+                      setSelectedElementId(newEl.id);
+                      setStatusMsg(
+                        `${item.label} placed on canvas — drag or resize anytime.`
+                      );
+                    }}
+                  />
 
-              <div>
-                <p className="mb-2 font-bold">Decorative Sample Stamps (Preview Only)</p>
-                <div className="grid grid-cols-1 gap-2">
+                  <div className="flex items-center justify-between border-t border-[var(--fcs-border)] pt-3 text-[11px]">
+                    <span className="text-[var(--fcs-ink-muted)]">
+                      Want full-screen stamp design & library management?
+                    </span>
+                    <Link
+                      href="/stamps"
+                      className="font-semibold text-teal-700 hover:underline dark:text-teal-400"
+                    >
+                      Open Stamp Studio →
+                    </Link>
+                  </div>
+                </>
+              ) : (
+                <div className="space-y-3">
+                  <div className="rounded-xl border border-amber-500/30 bg-amber-50 p-3 text-[11px] text-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
+                    <p className="flex items-center gap-1.5 font-bold">
+                      <Lock className="h-3.5 w-3.5 shrink-0" />
+                      {pendingApplications.length > 0
+                        ? "Organization Stamp Access Pending Admin Approval"
+                        : "Admin-Approved Authorized Organization Required"}
+                    </p>
+                    <p className="mt-1">
+                      {pendingApplications.length > 0
+                        ? `Your request for ${pendingApplications
+                            .map((a) => a.organization_name)
+                            .join(
+                              ", "
+                            )} is awaiting Administrator approval. Official stamp creation, seal uploads, and signature tools unlock automatically once approved.`
+                        : "Creating and uploading genuine organizational ink stamps and gold seals is unlocked once your Authorized Organization request is approved by an Administrator."}{" "}
+                      <Link href="/verify" className="font-semibold underline">
+                        {pendingApplications.length > 0
+                          ? "Check approval status →"
+                          : "Apply as Authorized Organization →"}
+                      </Link>
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 opacity-50">
+                    <div className="flex items-center justify-center gap-1.5 rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] py-2 font-semibold">
+                      <Stamp className="h-3.5 w-3.5 text-blue-600" />
+                      Create Org Stamp
+                    </div>
+                    <div className="flex items-center justify-center gap-1.5 rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] py-2 font-semibold">
+                      <Upload className="h-3.5 w-3.5 text-amber-600" />
+                      Upload Gold Seal
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Decorative Sample Stamps & Personal Signature Upload */}
+              <div className="space-y-3 border-t border-[var(--fcs-border)] pt-3">
+                <div className="rounded-xl border border-amber-500/30 bg-amber-50/70 p-2.5 text-[11px] text-amber-900 dark:bg-amber-950/30 dark:text-amber-200">
+                  <p className="flex items-center gap-1.5 font-bold">
+                    <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+                    Preview Sample Stamps & Integrity Policy
+                  </p>
+                  <p className="mt-0.5">
+                    Sample stamps below are clearly marked <strong>PREVIEW ONLY</strong> for draft
+                    testing.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 gap-1.5">
                   <button
                     type="button"
                     onClick={() => addSampleDecorativeStamp("gold_seal_sample")}
@@ -1202,116 +1302,33 @@ export function CertificateStudio(props: CertificateStudioProps) {
                     <span className="text-[10px] uppercase text-red-700">Decorative</span>
                   </button>
                 </div>
-              </div>
-
-              <div className="space-y-3 border-t border-[var(--fcs-border)] pt-3">
-                <p className="font-bold">Upload Genuine Organizational Stamp, Seal or Signature</p>
 
                 {!hasApprovedIssuer && (
-                  <div className="rounded-xl border border-amber-500/30 bg-amber-50 p-3 text-[11px] text-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
-                    <p className="flex items-center gap-1.5 font-bold">
-                      <Lock className="h-3.5 w-3.5 shrink-0" />
-                      Admin-Approved Organization Required
-                    </p>
-                    <p className="mt-1">
-                      Uploading genuine organizational ink stamps and gold seals is restricted to
-                      Authorized Organizations approved by an Administrator. Use Decorative Sample
-                      Stamps above for preview drafts, or{" "}
-                      <Link href="/verify" className="font-semibold underline">
-                        apply / check approval status →
-                      </Link>
-                    </p>
+                  <div className="space-y-2 border-t border-[var(--fcs-border)] pt-2">
+                    <label className="flex items-start gap-2 rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] p-2 text-[11px]">
+                      <input
+                        type="checkbox"
+                        checked={authorizedConfirm}
+                        onChange={(e) => setAuthorizedConfirm(e.target.checked)}
+                        className="mt-0.5 accent-teal-700"
+                      />
+                      <span>I confirm I am authorized to place my personal signature image.</span>
+                    </label>
+                    <label className="flex cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] py-2 font-semibold hover:border-teal-600/50">
+                      <Upload className="h-3.5 w-3.5 text-teal-600" />
+                      Upload Personal Signature PNG
+                      <input
+                        type="file"
+                        accept="image/png,image/webp,image/svg+xml"
+                        className="hidden"
+                        onChange={(e) => {
+                          const f = e.target.files?.[0];
+                          if (f) addCanvasAssetUpload(f, "signature", "default");
+                        }}
+                      />
+                    </label>
                   </div>
                 )}
-
-                <label className="flex items-start gap-2 rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] p-2.5 text-[11px]">
-                  <input
-                    type="checkbox"
-                    checked={authorizedConfirm}
-                    onChange={(e) => setAuthorizedConfirm(e.target.checked)}
-                    className="mt-0.5 accent-teal-700"
-                  />
-                  <span>
-                    I confirm I am authorized by the issuing organization to upload and apply its
-                    official stamp, seal, or signature (transparent PNG supported).
-                  </span>
-                </label>
-
-                <div className="grid grid-cols-2 gap-2">
-                  <label
-                    className={`flex items-center justify-center gap-1.5 rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] py-2 font-semibold ${
-                      hasApprovedIssuer
-                        ? "cursor-pointer hover:border-teal-600/50"
-                        : "cursor-not-allowed opacity-50"
-                    }`}
-                  >
-                    <Stamp className="h-3.5 w-3.5 text-blue-600" />
-                    Blue Ink Stamp
-                    <input
-                      type="file"
-                      disabled={!hasApprovedIssuer}
-                      accept="image/png,image/webp,image/svg+xml"
-                      className="hidden"
-                      onChange={(e) => {
-                        const f = e.target.files?.[0];
-                        if (f) addCanvasAssetUpload(f, "stamp", "blue_ink");
-                      }}
-                    />
-                  </label>
-                  <label
-                    className={`flex items-center justify-center gap-1.5 rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] py-2 font-semibold ${
-                      hasApprovedIssuer
-                        ? "cursor-pointer hover:border-teal-600/50"
-                        : "cursor-not-allowed opacity-50"
-                    }`}
-                  >
-                    <Stamp className="h-3.5 w-3.5 text-red-600" />
-                    Red Ink Stamp
-                    <input
-                      type="file"
-                      disabled={!hasApprovedIssuer}
-                      accept="image/png,image/webp,image/svg+xml"
-                      className="hidden"
-                      onChange={(e) => {
-                        const f = e.target.files?.[0];
-                        if (f) addCanvasAssetUpload(f, "stamp", "red_ink");
-                      }}
-                    />
-                  </label>
-                  <label
-                    className={`flex items-center justify-center gap-1.5 rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] py-2 font-semibold ${
-                      hasApprovedIssuer
-                        ? "cursor-pointer hover:border-teal-600/50"
-                        : "cursor-not-allowed opacity-50"
-                    }`}
-                  >
-                    <Upload className="h-3.5 w-3.5 text-amber-600" />
-                    Gold Seal PNG
-                    <input
-                      type="file"
-                      disabled={!hasApprovedIssuer}
-                      accept="image/png,image/webp,image/svg+xml"
-                      className="hidden"
-                      onChange={(e) => {
-                        const f = e.target.files?.[0];
-                        if (f) addCanvasAssetUpload(f, "seal", "gold_embossed");
-                      }}
-                    />
-                  </label>
-                  <label className="flex cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] py-2 font-semibold hover:border-teal-600/50">
-                    <Upload className="h-3.5 w-3.5 text-teal-600" />
-                    Signature PNG
-                    <input
-                      type="file"
-                      accept="image/png,image/webp,image/svg+xml"
-                      className="hidden"
-                      onChange={(e) => {
-                        const f = e.target.files?.[0];
-                        if (f) addCanvasAssetUpload(f, "signature", "default");
-                      }}
-                    />
-                  </label>
-                </div>
               </div>
             </div>
           )}

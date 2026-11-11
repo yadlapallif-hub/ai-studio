@@ -9,6 +9,7 @@ const VerificationPatchSchema = z.discriminatedUnion("target", [
     id: z.string().uuid(),
     verificationStatus: z.enum(["approved", "pending", "rejected", "suspended", "revoked"]),
     notes: z.string().max(1000).optional(),
+    contactEmail: z.string().email().optional(),
   }),
   z.object({
     target: z.literal("certificate"),
@@ -41,6 +42,9 @@ export async function PATCH(request: Request) {
     if (payload.notes !== undefined) {
       updateFields.notes = payload.notes.trim() || null;
     }
+    if (payload.contactEmail) {
+      updateFields.contact_email = payload.contactEmail.trim().toLowerCase();
+    }
 
     const { data: issuer, error } = await service
       .from("fcs_authorized_issuers")
@@ -53,31 +57,43 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: error?.message || "Issuer update failed" }, { status: 500 });
     }
 
-    let notifyUserId: string | null = issuer.user_id;
-    if (!notifyUserId && issuer.contact_email) {
+    const notifyUserIds = new Set<string>();
+    if (issuer.user_id) notifyUserIds.add(issuer.user_id);
+
+    if (issuer.contact_email) {
       const { data: matchedProfile } = await service
         .from("fcs_profiles")
         .select("id")
         .eq("email", issuer.contact_email.toLowerCase())
         .maybeSingle();
-      notifyUserId = matchedProfile?.id ?? null;
+      if (matchedProfile?.id) {
+        notifyUserIds.add(matchedProfile.id);
+        if (!issuer.user_id) {
+          await service
+            .from("fcs_authorized_issuers")
+            .update({ user_id: matchedProfile.id })
+            .eq("id", issuer.id);
+        }
+      }
     }
 
-    if (notifyUserId) {
-      await service.from("fcs_notifications").insert({
-        user_id: notifyUserId,
-        audience: "customer",
-        type: "certificate_verification",
-        title:
-          payload.verificationStatus === "approved"
-            ? `Authorized Organization Approved: ${issuer.organization_name}`
-            : `Organization Application ${payload.verificationStatus.toUpperCase()}`,
-        message:
-          payload.verificationStatus === "approved"
-            ? `"${issuer.organization_name}" is now approved by Admin. Verified QR issuance and official seal tools are unlocked in Certificate Studio.`
-            : `Organization "${issuer.organization_name}" status was updated to ${payload.verificationStatus}.${payload.notes ? ` Note: ${payload.notes}` : ""}`,
-        link: payload.verificationStatus === "approved" ? "/certificate-builder/new" : "/verify",
-      });
+    if (notifyUserIds.size > 0) {
+      await service.from("fcs_notifications").insert(
+        Array.from(notifyUserIds).map((uid) => ({
+          user_id: uid,
+          audience: "customer",
+          type: "certificate_verification",
+          title:
+            payload.verificationStatus === "approved"
+              ? `Stamp Studio Unlocked: ${issuer.organization_name}`
+              : `Organization Application ${payload.verificationStatus.toUpperCase()}`,
+          message:
+            payload.verificationStatus === "approved"
+              ? `"${issuer.organization_name}" is now Admin-approved! Open Stamp Studio to create official stamps, seals, and signatures, or issue Verified QR certificates.`
+              : `Organization "${issuer.organization_name}" status was updated to ${payload.verificationStatus}.${payload.notes ? ` Note: ${payload.notes}` : ""}`,
+          link: payload.verificationStatus === "approved" ? "/stamps" : "/verify",
+        }))
+      );
     }
 
     await recordAdminAudit({
@@ -87,6 +103,7 @@ export async function PATCH(request: Request) {
       targetId: payload.id,
       metadata: {
         organizationName: issuer.organization_name,
+        contactEmail: issuer.contact_email,
         notes: payload.notes ?? null,
       },
     });

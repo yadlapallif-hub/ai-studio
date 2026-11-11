@@ -128,3 +128,34 @@ test("template catalogs provide 100 unique resume templates and 100 unique certi
   assert.equal(shared.CERTIFICATE_TEMPLATE_CATALOG[0].slug, "course-completion");
 });
 
+test("buildOfficialStampSvg generates valid non-sample SVG stamps for all presets and escapes XML", () => {
+  const presets = [
+    "circular_double",
+    "circular_seal",
+    "rectangular_official",
+    "square_notary",
+    "oval_registry",
+    "ribbon_badge",
+  ];
+
+  for (const preset of presets) {
+    const cfg = shared.createDefaultOfficialStampConfig("Nexora & Guild <Academy>", preset);
+    const out = shared.buildOfficialStampSvg(cfg, `test-${preset}`);
+    assert.ok(out.svgMarkup.includes("<svg"));
+    assert.ok(out.svgMarkup.includes("NEXORA &amp; GUILD &lt;ACADEMY&gt;"));
+    assert.ok(!/SAMPLE|PREVIEW ONLY/i.test(out.svgMarkup));
+    assert.ok(out.dataUrl.startsWith("data:image/svg+xml;utf8,"));
+  }
+
+  const customOut = shared.buildOfficialStampSvg(
+    {
+      ...shared.createDefaultOfficialStampConfig("Org", "circular_double"),
+      colorFinish: "custom",
+      customHex: "#6D28D9",
+      distressedInk: false,
+    },
+    "custom1"
+  );
+  assert.ok(customOut.svgMarkup.includes("#6D28D9"));
+});
+

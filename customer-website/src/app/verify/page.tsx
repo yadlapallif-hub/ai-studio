@@ -13,6 +13,7 @@ import {
   Search,
   ShieldAlert,
   ShieldCheck,
+  Stamp,
 } from "lucide-react";
 
 interface ApprovedIssuerRow {
@@ -237,7 +238,9 @@ export default function VerifyLookupPage() {
               />
             </div>
             <div>
-              <label className="mb-1 block font-semibold">Organization Email *</label>
+              <label className="mb-1 block font-semibold">
+                Organization / Account Email *
+              </label>
               <input
                 type="email"
                 required
@@ -246,6 +249,10 @@ export default function VerifyLookupPage() {
                 placeholder="e.g. hello@organization.com"
                 className="w-full rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] px-3 py-2.5"
               />
+              <p className="mt-1 text-[10px] text-[var(--fcs-ink-muted)]">
+                Once approved by an Admin, Stamp Studio & Verified issuance unlock for both your
+                signed-in account and this email.
+              </p>
             </div>
 
             <div className="sm:col-span-2">
@@ -313,15 +320,23 @@ export default function VerifyLookupPage() {
                       {app.notes ? ` • ${app.notes}` : ""}
                     </p>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     {renderStatusBadge(app.verification_status)}
                     {app.verification_status === "approved" && (
-                      <Link
-                        href="/certificate-builder/new"
-                        className="inline-flex items-center gap-1 rounded-lg bg-teal-700 px-2.5 py-1 text-[11px] font-semibold text-white hover:bg-teal-800"
-                      >
-                        <Award className="h-3 w-3" /> Open Studio
-                      </Link>
+                      <>
+                        <Link
+                          href="/stamps"
+                          className="inline-flex items-center gap-1 rounded-lg bg-teal-700 px-2.5 py-1 text-[11px] font-semibold text-white hover:bg-teal-800"
+                        >
+                          <Stamp className="h-3 w-3" /> Open Stamp Studio
+                        </Link>
+                        <Link
+                          href={`/certificate-builder/new?tab=stamps&issuer=${encodeURIComponent(app.id)}`}
+                          className="inline-flex items-center gap-1 rounded-lg border border-teal-700/40 bg-teal-50 px-2.5 py-1 text-[11px] font-semibold text-teal-900 hover:bg-teal-100"
+                        >
+                          <Award className="h-3 w-3" /> Certificate Studio
+                        </Link>
+                      </>
                     )}
                   </div>
                 </div>

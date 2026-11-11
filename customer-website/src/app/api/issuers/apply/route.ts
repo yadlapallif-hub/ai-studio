@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { getAccessibleIssuersForUser } from "@/lib/issuers";
 import { createServerSupabase, createServiceSupabase } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
@@ -34,7 +35,7 @@ export async function GET() {
     } = await supabase.auth.getUser();
 
     const adminDb = createServiceSupabase();
-    const [{ data, error }, myAppsRes] = await Promise.all([
+    const [{ data, error }, myAccess] = await Promise.all([
       adminDb
         .from("fcs_authorized_issuers")
         .select(
@@ -44,19 +45,8 @@ export async function GET() {
         .order("approved_at", { ascending: false, nullsFirst: false })
         .limit(50),
       user
-        ? adminDb
-            .from("fcs_authorized_issuers")
-            .select(
-              "id, organization_name, organization_slug, contact_email, website, verification_status, notes, approved_at, created_at"
-            )
-            .or(
-              user.email
-                ? `user_id.eq.${user.id},and(user_id.is.null,contact_email.eq.${user.email.toLowerCase()})`
-                : `user_id.eq.${user.id}`
-            )
-            .order("created_at", { ascending: false })
-            .limit(20)
-        : Promise.resolve({ data: [], error: null }),
+        ? getAccessibleIssuersForUser(user)
+        : Promise.resolve({ applications: [], approvedIssuers: [] }),
     ]);
 
     if (error) {
@@ -68,7 +58,7 @@ export async function GET() {
 
     return NextResponse.json({
       issuers: data ?? [],
-      myApplications: myAppsRes.data ?? [],
+      myApplications: myAccess.applications,
     });
   } catch (err) {
     return NextResponse.json(

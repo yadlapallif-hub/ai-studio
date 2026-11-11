@@ -16,6 +16,7 @@ import {
   Search,
   Settings,
   ShieldCheck,
+  Stamp,
   Sun,
   X,
   LayoutDashboard,
@@ -436,6 +437,14 @@ export function Navbar({
                     Dashboard
                   </Link>
                   <Link
+                    href="/stamps"
+                    onClick={() => setProfileMenuOpen(false)}
+                    className="flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium hover:bg-[var(--fcs-surface-muted)]"
+                  >
+                    <Stamp className="h-3.5 w-3.5" />
+                    Stamp Studio
+                  </Link>
+                  <Link
                     href="/vault"
                     onClick={() => setProfileMenuOpen(false)}
                     className="flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium hover:bg-[var(--fcs-surface-muted)]"
@@ -600,6 +609,13 @@ export function Navbar({
                         className="flex items-center gap-2 rounded-lg px-2.5 py-2 text-xs font-medium hover:bg-[var(--fcs-surface-muted)]"
                       >
                         <ShieldCheck className="h-3.5 w-3.5 text-teal-600" /> Verify Certificate ID
+                      </Link>
+                      <Link
+                        href="/stamps"
+                        onClick={() => setSearchOpen(false)}
+                        className="flex items-center gap-2 rounded-lg px-2.5 py-2 text-xs font-medium hover:bg-[var(--fcs-surface-muted)]"
+                      >
+                        <Stamp className="h-3.5 w-3.5 text-teal-600" /> Organization Stamp Studio
                       </Link>
                       <Link
                         href="/support"

@@ -188,12 +188,63 @@ export interface CertificateCanvasElement {
   opacity: number;
   zIndex: number;
   shape?: "circle" | "square" | "rectangle";
-  inkStyle?: "default" | "blue_ink" | "red_ink" | "gold_embossed";
+  inkStyle?: "default" | "blue_ink" | "red_ink" | "teal_ink" | "black_ink" | "gold_embossed";
   isSampleDecorative?: boolean;
   fontFamily?: string;
   fontSize?: number;
   color?: string;
   align?: "left" | "center" | "right";
+}
+
+export type StampPresetId =
+  | "circular_double"
+  | "circular_seal"
+  | "rectangular_official"
+  | "square_notary"
+  | "oval_registry"
+  | "ribbon_badge";
+
+export type StampColorFinish =
+  | "blue_ink"
+  | "red_ink"
+  | "teal_ink"
+  | "black_ink"
+  | "gold_embossed"
+  | "custom";
+
+export type StampEmblem = "shield" | "star" | "check" | "laurel" | "crest" | "none";
+
+export type StampFontStyle = "serif" | "sans" | "mono";
+
+export interface OfficialStampConfig {
+  preset: StampPresetId;
+  organizationName: string;
+  centerTitle: string;
+  bottomText: string;
+  subCode: string;
+  emblem: StampEmblem;
+  colorFinish: StampColorFinish;
+  customHex?: string;
+  fontStyle: StampFontStyle;
+  borderWeight: "thin" | "medium" | "bold";
+  distressedInk: boolean;
+  showDateLine: boolean;
+  dateText: string;
+}
+
+export interface OrganizationStampRecord {
+  id: string;
+  issuer_id: string;
+  organization_name?: string;
+  name: string;
+  stamp_kind: "stamp" | "seal" | "signature" | "emblem_stamp";
+  shape: "circle" | "rectangle" | "square" | "scalloped";
+  ink_style: "blue_ink" | "red_ink" | "teal_ink" | "black_ink" | "gold_embossed" | "custom" | "default";
+  config: Partial<OfficialStampConfig> | Record<string, unknown>;
+  svg_markup: string | null;
+  preview_url: string;
+  is_default: boolean;
+  created_at: string;
 }
 
 export interface CertificateStyleConfig {

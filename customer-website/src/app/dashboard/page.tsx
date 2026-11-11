@@ -1,6 +1,7 @@
 import React from "react";
 import { redirect } from "next/navigation";
-import { createServiceSupabase, getAuthenticatedContext } from "@/lib/supabase/server";
+import { getAccessibleIssuersForUser } from "@/lib/issuers";
+import { getAuthenticatedContext } from "@/lib/supabase/server";
 import { DashboardClient } from "@/components/dashboard/DashboardClient";
 
 export const dynamic = "force-dynamic";
@@ -12,8 +13,6 @@ export default async function DashboardPage() {
     redirect("/auth/login?next=/dashboard");
   }
 
-  const service = createServiceSupabase();
-
   const [
     { data: resumes },
     { data: certificates },
@@ -22,7 +21,7 @@ export default async function DashboardPage() {
     { data: certTemplates },
     { data: aiConversations },
     { data: tickets },
-    { data: orgApplications },
+    issuerAccess,
   ] = await Promise.all([
     supabase
       .from("fcs_resumes")
@@ -65,16 +64,7 @@ export default async function DashboardPage() {
       .eq("user_id", user.id)
       .order("updated_at", { ascending: false })
       .limit(5),
-    service
-      .from("fcs_authorized_issuers")
-      .select("id, organization_name, contact_email, verification_status, notes, approved_at")
-      .or(
-        user.email
-          ? `user_id.eq.${user.id},and(user_id.is.null,contact_email.eq.${user.email.toLowerCase()})`
-          : `user_id.eq.${user.id}`
-      )
-      .order("created_at", { ascending: false })
-      .limit(10),
+    getAccessibleIssuersForUser(user),
   ]);
 
   const userName = String(
@@ -97,7 +87,7 @@ export default async function DashboardPage() {
       certTemplates={certTemplates ?? []}
       aiConversations={aiConversations ?? []}
       tickets={tickets ?? []}
-      orgApplications={(orgApplications ?? []) as never[]}
+      orgApplications={issuerAccess.applications as never[]}
     />
   );
 }
