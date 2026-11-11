@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AlertCircle, Loader2, Lock } from "lucide-react";
+import { getDefaultAdminRouteForRoles } from "@francis/shared";
 import { createClient } from "@/lib/supabase/client";
 import { SafeNavLink } from "@/components/ui/SafeNavLink";
 
@@ -76,20 +77,26 @@ export default function AdminAuthCallbackPage() {
         } catch {}
 
         const verifyRes = await fetch("/api/admin/auth/verify-access", { cache: "no-store" });
+        const verifyJson = (await verifyRes.json().catch(() => ({}))) as {
+          error?: string;
+          roles?: string[];
+        };
         if (!verifyRes.ok) {
-          const json = (await verifyRes.json().catch(() => ({}))) as { error?: string };
           await supabase.auth.signOut();
           if (active) {
             setError(
-              json.error ||
+              verifyJson.error ||
                 "Access denied: Customer accounts cannot log into the Admin Portal. Staff role required."
             );
           }
           return;
         }
 
+        const roleHome = getDefaultAdminRouteForRoles(verifyJson.roles ?? []);
+        const dest = safeNext === "/" ? roleHome : safeNext;
+
         if (active) {
-          router.replace(safeNext);
+          router.replace(dest);
           router.refresh();
         }
       } catch (err) {

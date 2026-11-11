@@ -165,4 +165,23 @@ test("hasAdminPortalAccess admits every non-customer staff role including suppor
   assert.equal(shared.formatRoleLabel("support_agent"), "Super Agent (Customer Support)");
 });
 
+test("role hierarchy routes lower roles to their workspace and enforces role assignment boundaries", () => {
+  assert.equal(shared.getDefaultAdminRouteForRoles(["super_admin"]), "/");
+  assert.equal(shared.getDefaultAdminRouteForRoles(["admin"]), "/");
+  assert.equal(shared.getDefaultAdminRouteForRoles(["support_agent"]), "/messages");
+  assert.equal(shared.getDefaultAdminRouteForRoles(["customer", "support_agent"]), "/messages");
+  assert.equal(shared.getDefaultAdminRouteForRoles(["content_manager"]), "/templates");
+  assert.equal(shared.getDefaultAdminRouteForRoles(["customer"]), "/login");
+
+  assert.equal(shared.canActorAssignRole(["super_admin"], "super_admin"), true);
+  assert.equal(shared.canActorAssignRole(["super_admin"], "admin"), true);
+  assert.equal(shared.canActorAssignRole(["admin"], "support_agent"), true);
+  assert.equal(shared.canActorAssignRole(["admin"], "content_manager"), true);
+  assert.equal(shared.canActorAssignRole(["admin"], "customer"), true);
+  assert.equal(shared.canActorAssignRole(["admin"], "admin"), false);
+  assert.equal(shared.canActorAssignRole(["admin"], "super_admin"), false);
+  assert.equal(shared.canActorAssignRole(["support_agent"], "customer"), false);
+});
+
+
 

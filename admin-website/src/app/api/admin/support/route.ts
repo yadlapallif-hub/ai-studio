@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { getAdminContext, recordAdminAudit } from "@/lib/admin-auth";
 import { createServiceSupabase } from "@/lib/supabase/server";
@@ -14,6 +14,31 @@ const TicketActionSchema = z.object({
   replyBody: z.string().max(8000).optional(),
   isInternalNote: z.boolean().optional(),
 });
+
+export async function GET(request: NextRequest) {
+  const admin = await getAdminContext(["super_admin", "admin", "support_agent"]);
+  if (!admin) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+  }
+
+  const ticketId = request.nextUrl.searchParams.get("ticketId");
+  if (!ticketId) {
+    return NextResponse.json({ error: "Missing ticketId" }, { status: 400 });
+  }
+
+  const service = createServiceSupabase();
+  const { data: messages, error } = await service
+    .from("fcs_support_messages")
+    .select("id, ticket_id, sender_role, body, is_internal_note, created_at")
+    .eq("ticket_id", ticketId)
+    .order("created_at", { ascending: true });
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  return NextResponse.json({ messages: messages ?? [] });
+}
 
 export async function PATCH(request: Request) {
   const admin = await getAdminContext(["super_admin", "admin", "support_agent"]);
@@ -56,14 +81,20 @@ export async function PATCH(request: Request) {
     await service.from("fcs_support_tickets").update(updatePatch).eq("id", ticketId);
   }
 
+  let createdMessage: Record<string, unknown> | null = null;
   if (replyBody && replyBody.trim().length > 0) {
-    await service.from("fcs_support_messages").insert({
-      ticket_id: ticketId,
-      sender_id: admin.userId,
-      sender_role: "agent",
-      body: replyBody.trim(),
-      is_internal_note: Boolean(isInternalNote),
-    });
+    const { data: insertedMsg } = await service
+      .from("fcs_support_messages")
+      .insert({
+        ticket_id: ticketId,
+        sender_id: admin.userId,
+        sender_role: "agent",
+        body: replyBody.trim(),
+        is_internal_note: Boolean(isInternalNote),
+      })
+      .select("id, ticket_id, sender_role, body, is_internal_note, created_at")
+      .single();
+    createdMessage = insertedMsg ?? null;
   }
 
   await recordAdminAudit({
@@ -81,5 +112,5 @@ export async function PATCH(request: Request) {
     },
   });
 
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ ok: true, message: createdMessage });
 }

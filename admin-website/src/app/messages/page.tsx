@@ -126,6 +126,12 @@ export default async function AdminMessagesPage() {
           initialAttachments={attachments ?? []}
           staffAgents={staffAgents}
           currentAgentId={admin.userId}
+          canManageAccounts={admin.isSuperAdmin || admin.isAdmin}
+          canOpenVerifications={
+            admin.isSuperAdmin ||
+            admin.isAdmin ||
+            admin.roles.includes("content_manager")
+          }
         />
       </div>
     </AdminShell>

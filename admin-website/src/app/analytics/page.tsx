@@ -11,19 +11,14 @@ export default async function AdminAnalyticsPage() {
   const session = await getSignedInSessionInfo();
   if (!session) redirect("/login");
 
-  const admin = await getAdminContext([
-    "super_admin",
-    "admin",
-    "support_agent",
-    "content_manager",
-  ]);
+  const admin = await getAdminContext(["super_admin", "admin"]);
   if (!admin) {
     if (session.hasStaffAccess) {
       return (
         <AdminShell adminName={session.fullName} adminEmail={session.email} roles={session.roles}>
           <RestrictedAccessPanel
             sectionTitle="Platform Analytics"
-            allowedHint="Staff roles"
+            allowedHint="Super Admin and Admin roles"
           />
         </AdminShell>
       );

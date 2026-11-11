@@ -36,7 +36,7 @@ function LoginForm() {
       : rawErr
     : null;
 
-  const [mode, setMode] = useState<EmailLoginMode>("magic");
+  const [mode, setMode] = useState<EmailLoginMode>("password");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [magicSent, setMagicSent] = useState(false);
@@ -263,21 +263,6 @@ function LoginForm() {
           <button
             type="button"
             onClick={() => {
-              setMode("magic");
-              setError(null);
-              setRateLimited(false);
-            }}
-            className={`flex cursor-pointer items-center justify-center gap-1.5 rounded-lg py-2 transition ${
-              mode === "magic"
-                ? "bg-[var(--fcs-surface)] text-[var(--fcs-ink)] shadow-sm"
-                : "text-[var(--fcs-ink-muted)] hover:text-[var(--fcs-ink)]"
-            }`}
-          >
-            <Sparkles className="h-3.5 w-3.5" /> Just Email
-          </button>
-          <button
-            type="button"
-            onClick={() => {
               setMode("password");
               setError(null);
               setRateLimited(false);
@@ -289,6 +274,21 @@ function LoginForm() {
             }`}
           >
             <Lock className="h-3.5 w-3.5" /> Email &amp; Password
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setMode("magic");
+              setError(null);
+              setRateLimited(false);
+            }}
+            className={`flex cursor-pointer items-center justify-center gap-1.5 rounded-lg py-2 transition ${
+              mode === "magic"
+                ? "bg-[var(--fcs-surface)] text-[var(--fcs-ink)] shadow-sm"
+                : "text-[var(--fcs-ink-muted)] hover:text-[var(--fcs-ink)]"
+            }`}
+          >
+            <Sparkles className="h-3.5 w-3.5" /> Just Email Link
           </button>
         </div>
 

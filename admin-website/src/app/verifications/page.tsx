@@ -13,19 +13,14 @@ export default async function AdminVerificationsPage() {
   const session = await getSignedInSessionInfo();
   if (!session) redirect("/login");
 
-  const admin = await getAdminContext([
-    "super_admin",
-    "admin",
-    "content_manager",
-    "support_agent",
-  ]);
+  const admin = await getAdminContext(["super_admin", "admin", "content_manager"]);
   if (!admin) {
     if (session.hasStaffAccess) {
       return (
         <AdminShell adminName={session.fullName} adminEmail={session.email} roles={session.roles}>
           <RestrictedAccessPanel
             sectionTitle="Verifications & Issuers"
-            allowedHint="Super Admin, Admin, Content Manager, and Support Agent roles"
+            allowedHint="Super Admin, Admin, and Content Manager roles"
           />
         </AdminShell>
       );

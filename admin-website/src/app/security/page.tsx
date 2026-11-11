@@ -4,6 +4,7 @@ import { getAdminContext, getSignedInSessionInfo } from "@/lib/admin-auth";
 import { createServiceSupabase } from "@/lib/supabase/server";
 import { AdminShell } from "@/components/AdminShell";
 import { SecurityClient } from "@/components/SecurityClient";
+import { RestrictedAccessPanel } from "@/components/RestrictedAccessPanel";
 
 export const dynamic = "force-dynamic";
 
@@ -11,8 +12,20 @@ export default async function AdminSecurityPage() {
   const session = await getSignedInSessionInfo();
   if (!session) redirect("/login");
 
-  const admin = await getAdminContext();
-  if (!admin) redirect("/login");
+  const admin = await getAdminContext(["super_admin"]);
+  if (!admin) {
+    if (session.hasStaffAccess) {
+      return (
+        <AdminShell adminName={session.fullName} adminEmail={session.email} roles={session.roles}>
+          <RestrictedAccessPanel
+            sectionTitle="Security & Two-Factor Auth"
+            allowedHint="Super Admin role"
+          />
+        </AdminShell>
+      );
+    }
+    redirect("/login");
+  }
 
   const service = createServiceSupabase();
   const { data } = await service

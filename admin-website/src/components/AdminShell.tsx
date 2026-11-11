@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import {
+  ClipboardList,
   BarChart3,
   Bot,
   FileCheck2,
@@ -33,6 +34,7 @@ interface AdminShellProps {
 
 const NAV_ITEMS = [
   { href: "/", routeKey: "overview", label: "Overview", icon: LayoutDashboard },
+  { href: "/tasks", routeKey: "tasks", label: "Staff Tasks", icon: ClipboardList },
   { href: "/messages", routeKey: "messages", label: "Support Super Agent", icon: MessageSquare },
   { href: "/users", routeKey: "users", label: "Users & Roles", icon: Users },
   {

@@ -12,14 +12,14 @@ export default async function AdminUsersPage() {
   const session = await getSignedInSessionInfo();
   if (!session) redirect("/login");
 
-  const admin = await getAdminContext(["super_admin", "admin", "support_agent"]);
+  const admin = await getAdminContext(["super_admin", "admin"]);
   if (!admin) {
     if (session.hasStaffAccess) {
       return (
         <AdminShell adminName={session.fullName} adminEmail={session.email} roles={session.roles}>
           <RestrictedAccessPanel
             sectionTitle="Users & Role Management"
-            allowedHint="Super Admin, Admin, and Support Agent roles"
+            allowedHint="Super Admin and Admin roles"
           />
         </AdminShell>
       );
@@ -91,9 +91,9 @@ export default async function AdminUsersPage() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Users &amp; Role Management</h1>
           <p className="mt-1 text-xs text-[var(--adm-ink-muted)]">
-            Search users, inspect customer documents &amp; support history, suspend/reactivate
-            accounts, and manage staff roles (Super Admin only). All roles except Customer-only
-            accounts can sign into this Admin Portal.
+            Super Admins manage all roles; Admins assign lower-level roles (Super Agent Customer
+            Support, Content Manager, Customer) and set direct passwords. Assigned staff log into
+            this Admin Portal using their Customer Website Email &amp; Password (no OTP needed).
           </p>
         </div>
         <UsersClient

@@ -12,14 +12,14 @@ export default async function AdminAiPage() {
   const session = await getSignedInSessionInfo();
   if (!session) redirect("/login");
 
-  const admin = await getAdminContext(["super_admin", "admin"]);
+  const admin = await getAdminContext(["super_admin"]);
   if (!admin) {
     if (session.hasStaffAccess) {
       return (
         <AdminShell adminName={session.fullName} adminEmail={session.email} roles={session.roles}>
           <RestrictedAccessPanel
             sectionTitle="AI Management"
-            allowedHint="Super Admin and Admin roles"
+            allowedHint="Super Admin role"
           />
         </AdminShell>
       );

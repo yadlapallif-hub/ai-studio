@@ -4,13 +4,18 @@ import {
   Activity,
   Award,
   Bot,
+  ClipboardList,
   FileText,
   LifeBuoy,
   ShieldAlert,
   ShieldCheck,
   Users,
 } from "lucide-react";
-import { formatRoleLabel, type AppRole } from "@francis/shared";
+import {
+  formatRoleLabel,
+  getDefaultAdminRouteForRoles,
+  type AppRole,
+} from "@francis/shared";
 import { canAccessAdminRoute, getAdminContext, getSignedInSessionInfo } from "@/lib/admin-auth";
 import { createServiceSupabase } from "@/lib/supabase/server";
 import { AdminShell } from "@/components/AdminShell";
@@ -38,6 +43,10 @@ export default async function AdminOverviewPage() {
         <SignOutAndSwitchButton />
       </div>
     );
+  }
+
+  if (!canAccessAdminRoute(admin.roles, "overview")) {
+    redirect(getDefaultAdminRouteForRoles(admin.roles));
   }
 
   const service = createServiceSupabase();
@@ -165,15 +174,26 @@ export default async function AdminOverviewPage() {
               support, and AI usage.
             </p>
           </div>
-          {canAccessAdminRoute(admin.roles as AppRole[], "messages") && (
-            <SafeNavLink
-              href="/messages"
-              className="inline-flex items-center gap-2 rounded-xl bg-teal-700 px-4 py-2 text-xs font-semibold text-white hover:bg-teal-800"
-            >
-              <LifeBuoy className="h-4 w-4" />
-              Open Customer Support Desk ({openTicketCount ?? 0} Active)
-            </SafeNavLink>
-          )}
+          <div className="flex flex-wrap items-center gap-2">
+            {canAccessAdminRoute(admin.roles as AppRole[], "tasks") && (
+              <SafeNavLink
+                href="/tasks"
+                className="inline-flex items-center gap-2 rounded-xl border border-[var(--adm-border)] bg-[var(--adm-surface)] px-4 py-2 text-xs font-semibold hover:border-teal-600/50"
+              >
+                <ClipboardList className="h-4 w-4 text-teal-600" />
+                Assign Staff Tasks
+              </SafeNavLink>
+            )}
+            {canAccessAdminRoute(admin.roles as AppRole[], "messages") && (
+              <SafeNavLink
+                href="/messages"
+                className="inline-flex items-center gap-2 rounded-xl bg-teal-700 px-4 py-2 text-xs font-semibold text-white hover:bg-teal-800"
+              >
+                <LifeBuoy className="h-4 w-4" />
+                Open Customer Support Desk ({openTicketCount ?? 0} Active)
+              </SafeNavLink>
+            )}
+          </div>
         </div>
 
         {(pendingIssuerCount ?? 0) > 0 &&

@@ -61,11 +61,15 @@ export function MessagesClient({
   initialAttachments,
   staffAgents,
   currentAgentId,
+  canManageAccounts = false,
+  canOpenVerifications = false,
 }: {
   initialTickets: TicketRow[];
   initialAttachments: AttachmentRow[];
   staffAgents: StaffAgentOption[];
   currentAgentId: string;
+  canManageAccounts?: boolean;
+  canOpenVerifications?: boolean;
 }) {
   const [tickets, setTickets] = useState(initialTickets);
   const [selectedId, setSelectedId] = useState<string | null>(initialTickets[0]?.id ?? null);
@@ -81,15 +85,20 @@ export function MessagesClient({
 
   useEffect(() => {
     if (!selectedId) return;
+    let cancelled = false;
+
+    fetch(`/api/admin/support?ticketId=${encodeURIComponent(selectedId)}`, {
+      cache: "no-store",
+    })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((json: { messages?: MsgRow[] } | null) => {
+        if (!cancelled && json?.messages) {
+          setMessages(json.messages);
+        }
+      })
+      .catch(() => {});
+
     const supabase = createClient();
-
-    supabase
-      .from("fcs_support_messages")
-      .select("id, ticket_id, sender_role, body, is_internal_note, created_at")
-      .eq("ticket_id", selectedId)
-      .order("created_at", { ascending: true })
-      .then(({ data }) => setMessages((data as MsgRow[]) ?? []));
-
     const channel = supabase
       .channel(`adm-ticket-${selectedId}`)
       .on(
@@ -108,6 +117,7 @@ export function MessagesClient({
       .subscribe();
 
     return () => {
+      cancelled = true;
       void supabase.removeChannel(channel);
     };
   }, [selectedId]);
@@ -122,10 +132,20 @@ export function MessagesClient({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ticketId: selectedId, ...patch }),
       });
-      const json = (await res.json().catch(() => ({}))) as { error?: string };
+      const json = (await res.json().catch(() => ({}))) as {
+        error?: string;
+        message?: MsgRow | null;
+      };
       if (!res.ok) {
         setFeedback(json.error || "Support update failed.");
         return;
+      }
+
+      if (json.message) {
+        const created = json.message;
+        setMessages((prev) =>
+          prev.some((m) => m.id === created.id) ? prev : [...prev, created]
+        );
       }
 
       setTickets((prev) =>
@@ -363,7 +383,7 @@ export function MessagesClient({
               </div>
 
               <div className="flex flex-wrap items-center gap-2">
-                {!selectedTicket.customerIsStaff && (
+                {canManageAccounts && !selectedTicket.customerIsStaff && (
                   <button
                     type="button"
                     onClick={() => void toggleCustomerStatus()}
@@ -375,12 +395,14 @@ export function MessagesClient({
                       : "Suspend Customer"}
                   </button>
                 )}
-                <SafeNavLink
-                  href="/verifications"
-                  className="inline-flex items-center gap-1 rounded-lg border border-[var(--adm-border)] bg-[var(--adm-surface)] px-2.5 py-1 font-semibold hover:border-teal-600/50"
-                >
-                  <ShieldCheck className="h-3 w-3" /> Issuers
-                </SafeNavLink>
+                {canOpenVerifications && (
+                  <SafeNavLink
+                    href="/verifications"
+                    className="inline-flex items-center gap-1 rounded-lg border border-[var(--adm-border)] bg-[var(--adm-surface)] px-2.5 py-1 font-semibold hover:border-teal-600/50"
+                  >
+                    <ShieldCheck className="h-3 w-3" /> Issuers
+                  </SafeNavLink>
+                )}
                 {selectedTicket.status !== "resolved" && (
                   <button
                     type="button"

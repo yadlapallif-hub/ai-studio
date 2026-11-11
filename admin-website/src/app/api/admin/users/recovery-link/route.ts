@@ -31,9 +31,9 @@ export async function POST(request: Request) {
   ]);
 
   const targetRoles = (targetRoleRows ?? []).map((r) => r.role);
-  if (targetRoles.includes("super_admin") && !admin.isSuperAdmin) {
+  if ((targetRoles.includes("super_admin") || targetRoles.includes("admin")) && !admin.isSuperAdmin) {
     return NextResponse.json(
-      { error: "Only a Super Admin can generate recovery links for another Super Admin." },
+      { error: "Admins can only generate recovery links for lower-level staff and customers." },
       { status: 403 }
     );
   }

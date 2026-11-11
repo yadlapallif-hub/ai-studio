@@ -1,8 +1,13 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
-import { Ban, CheckCircle2, Copy, KeyRound, Search, Shield, Trash2 } from "lucide-react";
-import { STAFF_ROLES, formatRoleLabel, type AppRole } from "@francis/shared";
+import { Ban, CheckCircle2, Copy, KeyRound, Lock, Search, Shield, Trash2 } from "lucide-react";
+import {
+  ADMIN_ASSIGNABLE_ROLES,
+  STAFF_ROLES,
+  formatRoleLabel,
+  type AppRole,
+} from "@francis/shared";
 
 interface UserRow {
   id: string;
@@ -17,6 +22,14 @@ interface UserRow {
   certCount: number;
   ticketCount: number;
 }
+
+const ALL_ROLES: AppRole[] = [
+  "super_admin",
+  "admin",
+  "support_agent",
+  "content_manager",
+  "customer",
+];
 
 export function UsersClient({
   initialUsers,
@@ -34,8 +47,14 @@ export function UsersClient({
   const [statusFilter, setStatusFilter] = useState("all");
   const [editingRolesFor, setEditingRolesFor] = useState<string | null>(null);
   const [roleDraft, setRoleDraft] = useState<string[]>([]);
+  const [passwordTargetId, setPasswordTargetId] = useState<string | null>(null);
+  const [passwordDraft, setPasswordDraft] = useState("");
   const [feedback, setFeedback] = useState<string | null>(null);
   const [generatedLink, setGeneratedLink] = useState<{ email: string; url: string } | null>(null);
+
+  const assignableRoleOptions: AppRole[] = isSuperAdmin
+    ? ALL_ROLES
+    : ADMIN_ASSIGNABLE_ROLES;
 
   const generateRecoveryLink = async (user: UserRow) => {
     setFeedback(null);
@@ -57,7 +76,7 @@ export function UsersClient({
     }
     setGeneratedLink({ email: json.email || user.email || "user", url: json.link });
     setFeedback(
-      `Generated zero-rate-limit cross-device reset link for ${json.email || user.email}.`
+      `Generated cross-device reset link for ${json.email || user.email}.`
     );
   };
 
@@ -91,19 +110,44 @@ export function UsersClient({
   };
 
   const saveRoles = async (userId: string) => {
+    const finalRoles = roleDraft.length > 0 ? roleDraft : ["customer"];
     const res = await fetch("/api/admin/users", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId, roles: roleDraft }),
+      body: JSON.stringify({ userId, roles: finalRoles }),
     });
     const json = (await res.json()) as { error?: string };
     if (!res.ok) {
       setFeedback(json.error || "Failed updating roles.");
       return;
     }
-    setUsers((prev) => prev.map((u) => (u.id === userId ? { ...u, roles: roleDraft } : u)));
+    setUsers((prev) => prev.map((u) => (u.id === userId ? { ...u, roles: finalRoles } : u)));
     setEditingRolesFor(null);
-    setFeedback("User roles updated.");
+    setFeedback(
+      "Roles updated. That user can now sign into Admin Portal using their Customer Website Email & Password (no OTP needed)."
+    );
+  };
+
+  const savePassword = async (user: UserRow) => {
+    if (passwordDraft.length < 8) {
+      setFeedback("Password must be at least 8 characters long.");
+      return;
+    }
+    const res = await fetch("/api/admin/users", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId: user.id, newPassword: passwordDraft }),
+    });
+    const json = (await res.json()) as { error?: string };
+    if (!res.ok) {
+      setFeedback(json.error || "Failed setting password.");
+      return;
+    }
+    setPasswordTargetId(null);
+    setPasswordDraft("");
+    setFeedback(
+      `Password set for ${user.email || user.phone || user.id}. They can sign into both Customer & Admin websites immediately with Email & Password.`
+    );
   };
 
   const deleteUser = async (user: UserRow) => {
@@ -135,7 +179,7 @@ export function UsersClient({
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-500/30 bg-amber-50 px-4 py-3 text-xs text-amber-950 dark:bg-amber-950/30 dark:text-amber-200">
           <div className="min-w-0 flex-1">
             <p className="font-semibold">
-              Direct Cross-Device Reset Link for {generatedLink.email} (bypasses email rate limit):
+              Direct Cross-Device Reset Link for {generatedLink.email}:
             </p>
             <p className="mt-1 truncate font-mono text-[11px] opacity-85">{generatedLink.url}</p>
           </div>
@@ -179,7 +223,7 @@ export function UsersClient({
           <thead>
             <tr className="border-b border-[var(--adm-border)] bg-[var(--adm-surface-muted)] text-[var(--adm-ink-muted)]">
               <th className="p-3">User</th>
-              <th className="p-3">Roles &amp; Admin Access</th>
+              <th className="p-3">Roles &amp; Portal Access</th>
               <th className="p-3">Docs / Tickets</th>
               <th className="p-3">Status</th>
               <th className="p-3 text-right">Actions</th>
@@ -187,17 +231,20 @@ export function UsersClient({
           </thead>
           <tbody>
             {filtered.map((u) => {
+              const targetIsHigherOrPeerAdmin =
+                u.roles.includes("super_admin") || u.roles.includes("admin");
+              const canManageThisUser =
+                isSuperAdmin || (isAdmin && !targetIsHigherOrPeerAdmin);
+
               const targetIsStaff = u.roles.some((r) =>
                 STAFF_ROLES.includes(r as AppRole)
               );
               const canToggleStatus =
                 u.id !== currentAdminId &&
-                (isSuperAdmin ||
-                  (isAdmin && !u.roles.includes("super_admin")) ||
-                  !targetIsStaff);
+                (isSuperAdmin || (isAdmin && !targetIsHigherOrPeerAdmin) || !targetIsStaff);
 
               return (
-                <tr key={u.id} className="border-b border-[var(--adm-border)]/60">
+                <tr key={u.id} className="border-b border-[var(--adm-border)]/60 align-top">
                   <td className="p-3">
                     <p className="font-bold">{u.full_name || "Unnamed User"}</p>
                     <p className="text-[11px] text-[var(--adm-ink-muted)]">
@@ -208,32 +255,39 @@ export function UsersClient({
                     {editingRolesFor === u.id ? (
                       <div className="space-y-2">
                         <div className="flex flex-wrap gap-2">
-                          {["super_admin", "admin", "support_agent", "content_manager", "customer"].map(
-                            (role) => (
-                              <label key={role} className="inline-flex items-center gap-1">
-                                <input
-                                  type="checkbox"
-                                  checked={roleDraft.includes(role)}
-                                  onChange={(e) =>
-                                    setRoleDraft((prev) =>
-                                      e.target.checked
-                                        ? [...prev, role]
-                                        : prev.filter((r) => r !== role)
-                                    )
-                                  }
-                                />
-                                <span>{formatRoleLabel(role)}</span>
-                              </label>
-                            )
-                          )}
+                          {assignableRoleOptions.map((role) => (
+                            <label key={role} className="inline-flex items-center gap-1">
+                              <input
+                                type="checkbox"
+                                checked={roleDraft.includes(role)}
+                                onChange={(e) =>
+                                  setRoleDraft((prev) =>
+                                    e.target.checked
+                                      ? [...prev, role]
+                                      : prev.filter((r) => r !== role)
+                                  )
+                                }
+                              />
+                              <span>{formatRoleLabel(role)}</span>
+                            </label>
+                          ))}
                         </div>
-                        <button
-                          type="button"
-                          onClick={() => void saveRoles(u.id)}
-                          className="cursor-pointer rounded bg-teal-700 px-2.5 py-1 text-[11px] font-semibold text-white"
-                        >
-                          Save Roles
-                        </button>
+                        <div className="flex gap-2">
+                          <button
+                            type="button"
+                            onClick={() => void saveRoles(u.id)}
+                            className="cursor-pointer rounded bg-teal-700 px-2.5 py-1 text-[11px] font-semibold text-white"
+                          >
+                            Save Roles
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setEditingRolesFor(null)}
+                            className="cursor-pointer rounded border border-[var(--adm-border)] px-2.5 py-1 text-[11px]"
+                          >
+                            Cancel
+                          </button>
+                        </div>
                       </div>
                     ) : (
                       <div className="flex flex-wrap gap-1">
@@ -249,6 +303,36 @@ export function UsersClient({
                             {formatRoleLabel(r)}
                           </span>
                         ))}
+                      </div>
+                    )}
+
+                    {passwordTargetId === u.id && (
+                      <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
+                        <input
+                          type="password"
+                          minLength={8}
+                          value={passwordDraft}
+                          onChange={(e) => setPasswordDraft(e.target.value)}
+                          placeholder="New password (min 8 chars)"
+                          className="rounded-lg border border-[var(--adm-border)] bg-[var(--adm-surface-muted)] px-2.5 py-1 text-[11px]"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => void savePassword(u)}
+                          className="cursor-pointer rounded bg-teal-700 px-2.5 py-1 text-[11px] font-semibold text-white"
+                        >
+                          Save Password
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setPasswordTargetId(null);
+                            setPasswordDraft("");
+                          }}
+                          className="cursor-pointer rounded border border-[var(--adm-border)] px-2 py-1 text-[11px]"
+                        >
+                          Cancel
+                        </button>
                       </div>
                     )}
                   </td>
@@ -267,17 +351,7 @@ export function UsersClient({
                     </span>
                   </td>
                   <td className="p-3 text-right space-x-1.5 whitespace-nowrap">
-                    {(isSuperAdmin || (isAdmin && !u.roles.includes("super_admin"))) && u.email && (
-                      <button
-                        type="button"
-                        onClick={() => void generateRecoveryLink(u)}
-                        title="Generate Direct Cross-Device Password Reset Link"
-                        className="inline-flex cursor-pointer items-center gap-1 rounded-lg border border-[var(--adm-border)] px-2 py-1 font-medium"
-                      >
-                        <KeyRound className="h-3 w-3 text-amber-600" /> Reset Link
-                      </button>
-                    )}
-                    {isSuperAdmin && (
+                    {canManageThisUser && (
                       <button
                         type="button"
                         onClick={() => {
@@ -288,6 +362,29 @@ export function UsersClient({
                         className="inline-flex cursor-pointer items-center gap-1 rounded-lg border border-[var(--adm-border)] px-2 py-1 font-medium"
                       >
                         <Shield className="h-3 w-3" /> Roles
+                      </button>
+                    )}
+                    {canManageThisUser && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setPasswordTargetId(passwordTargetId === u.id ? null : u.id);
+                          setPasswordDraft("");
+                        }}
+                        title="Set Direct Login Password (No OTP Needed)"
+                        className="inline-flex cursor-pointer items-center gap-1 rounded-lg border border-[var(--adm-border)] px-2 py-1 font-medium"
+                      >
+                        <Lock className="h-3 w-3 text-teal-600" /> Password
+                      </button>
+                    )}
+                    {canManageThisUser && u.email && (
+                      <button
+                        type="button"
+                        onClick={() => void generateRecoveryLink(u)}
+                        title="Generate Direct Cross-Device Password Reset Link"
+                        className="inline-flex cursor-pointer items-center gap-1 rounded-lg border border-[var(--adm-border)] px-2 py-1 font-medium"
+                      >
+                        <KeyRound className="h-3 w-3 text-amber-600" /> Reset Link
                       </button>
                     )}
                     {canToggleStatus && (

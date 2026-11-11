@@ -46,12 +46,7 @@ const AdminCreateStampSchema = z.object({
 });
 
 export async function POST(request: NextRequest) {
-  const admin = await getAdminContext([
-    "super_admin",
-    "admin",
-    "content_manager",
-    "support_agent",
-  ]);
+  const admin = await getAdminContext(["super_admin", "admin", "content_manager"]);
   if (!admin) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
   }
@@ -131,12 +126,7 @@ export async function POST(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
-  const admin = await getAdminContext([
-    "super_admin",
-    "admin",
-    "content_manager",
-    "support_agent",
-  ]);
+  const admin = await getAdminContext(["super_admin", "admin", "content_manager"]);
   if (!admin) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
   }

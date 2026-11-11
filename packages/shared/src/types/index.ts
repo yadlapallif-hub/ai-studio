@@ -12,6 +12,17 @@ export const STAFF_ROLES: AppRole[] = [
   "content_manager",
 ];
 
+export const LOWER_STAFF_ROLES: AppRole[] = [
+  "support_agent",
+  "content_manager",
+];
+
+export const ADMIN_ASSIGNABLE_ROLES: AppRole[] = [
+  "support_agent",
+  "content_manager",
+  "customer",
+];
+
 export const ROLE_LABELS: Record<AppRole, string> = {
   super_admin: "Super Admin",
   admin: "Admin",
@@ -24,6 +35,28 @@ export function hasAdminPortalAccess(roles: readonly string[]): boolean {
   return roles.some(
     (role) => role !== "customer" && STAFF_ROLES.includes(role as AppRole)
   );
+}
+
+export function getDefaultAdminRouteForRoles(roles: readonly string[]): string {
+  if (roles.includes("super_admin") || roles.includes("admin")) return "/";
+  if (roles.includes("support_agent")) return "/messages";
+  if (roles.includes("content_manager")) return "/templates";
+  return "/login";
+}
+
+export function canActorAssignRole(
+  actorRoles: readonly string[],
+  targetRole: string
+): boolean {
+  if (actorRoles.includes("super_admin")) {
+    return (
+      targetRole === "customer" || STAFF_ROLES.includes(targetRole as AppRole)
+    );
+  }
+  if (actorRoles.includes("admin")) {
+    return ADMIN_ASSIGNABLE_ROLES.includes(targetRole as AppRole);
+  }
+  return false;
 }
 
 export function formatRoleLabel(role: string): string {

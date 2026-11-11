@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { STAFF_ROLES, type AppRole } from "@francis/shared";
+import { STAFF_ROLES, canActorAssignRole, type AppRole } from "@francis/shared";
 import { getAdminContext, recordAdminAudit } from "@/lib/admin-auth";
 import { createServiceSupabase } from "@/lib/supabase/server";
 
@@ -9,23 +9,27 @@ const UserPatchSchema = z.object({
   fullName: z.string().max(120).optional(),
   headline: z.string().max(180).optional(),
   status: z.enum(["active", "suspended"]).optional(),
+  newPassword: z.string().min(8, "Password must be at least 8 characters.").max(128).optional(),
   roles: z
     .array(z.enum(["super_admin", "admin", "support_agent", "content_manager", "customer"]))
     .optional(),
 });
 
 export async function PATCH(request: Request) {
-  const admin = await getAdminContext(["super_admin", "admin", "support_agent"]);
+  const admin = await getAdminContext(["super_admin", "admin"]);
   if (!admin) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
   }
 
   const parsed = UserPatchSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) {
-    return NextResponse.json({ error: "Invalid request payload" }, { status: 400 });
+    return NextResponse.json(
+      { error: parsed.error.issues[0]?.message || "Invalid request payload" },
+      { status: 400 }
+    );
   }
 
-  const { userId, fullName, headline, status, roles } = parsed.data;
+  const { userId, fullName, headline, status, newPassword, roles } = parsed.data;
   const service = createServiceSupabase();
 
   const { data: targetRoleRows } = await service
@@ -33,46 +37,64 @@ export async function PATCH(request: Request) {
     .select("role")
     .eq("user_id", userId);
   const targetRoles = (targetRoleRows ?? []).map((r) => r.role as AppRole);
-  const targetIsStaff = targetRoles.some((r) => STAFF_ROLES.includes(r));
   const targetIsSuperAdmin = targetRoles.includes("super_admin");
+  const targetIsAdmin = targetRoles.includes("admin");
+
+  if (!admin.isSuperAdmin && (targetIsSuperAdmin || targetIsAdmin)) {
+    return NextResponse.json(
+      {
+        error:
+          "Admins can only manage lower-level accounts (Super Agent, Content Manager, Customer).",
+      },
+      { status: 403 }
+    );
+  }
 
   if (roles !== undefined) {
-    if (!admin.isSuperAdmin) {
-      return NextResponse.json(
-        { error: "Only Super Admin can manage user roles." },
-        { status: 403 }
-      );
-    }
-    if (userId === admin.userId && !roles.includes("super_admin")) {
+    if (userId === admin.userId && admin.isSuperAdmin && !roles.includes("super_admin")) {
       return NextResponse.json(
         { error: "Cannot remove your own Super Admin role." },
         { status: 400 }
       );
     }
+
+    const forbiddenRoles = roles.filter((role) => !canActorAssignRole(admin.roles, role));
+    if (forbiddenRoles.length > 0) {
+      return NextResponse.json(
+        {
+          error: `Only Super Admin can assign ${forbiddenRoles.join(", ")}. Admins can assign Super Agent (Customer Support), Content Manager, and Customer roles.`,
+        },
+        { status: 403 }
+      );
+    }
+
     await service.from("fcs_user_roles").delete().eq("user_id", userId);
     const uniqueRoles = Array.from(new Set(roles.length ? roles : ["customer"]));
-    await service.from("fcs_user_roles").insert(
+    const { error: roleErr } = await service.from("fcs_user_roles").insert(
       uniqueRoles.map((role) => ({
         user_id: userId,
         role,
         assigned_by: admin.userId,
       }))
     );
+    if (roleErr) {
+      return NextResponse.json({ error: roleErr.message }, { status: 500 });
+    }
   }
 
-  if (
-    !admin.isSuperAdmin &&
-    ((admin.isAdmin && targetIsSuperAdmin) ||
-      (!admin.isAdmin && admin.isSupportAgent && targetIsStaff))
-  ) {
-    if (status !== undefined || fullName !== undefined || headline !== undefined) {
-      return NextResponse.json(
-        {
-          error:
-            "Support Agents can manage customer-only accounts; staff accounts require Admin/Super Admin.",
-        },
-        { status: 403 }
-      );
+  if (newPassword !== undefined) {
+    const { error: pwErr } = await service.auth.admin.updateUserById(userId, {
+      password: newPassword,
+      email_confirm: true,
+    });
+    if (pwErr) {
+      return NextResponse.json({ error: pwErr.message }, { status: 500 });
+    }
+  } else if (roles !== undefined && roles.some((r) => STAFF_ROLES.includes(r as AppRole))) {
+    // Ensure newly promoted staff can sign in immediately with email & password without OTP confirmation delays
+    const { data: authLookup } = await service.auth.admin.getUserById(userId);
+    if (authLookup?.user?.email && !authLookup.user.email_confirmed_at) {
+      await service.auth.admin.updateUserById(userId, { email_confirm: true });
     }
   }
 
@@ -95,11 +117,16 @@ export async function PATCH(request: Request) {
 
   await recordAdminAudit({
     actorId: admin.userId,
-    actorRole: admin.roles.find((r) => r !== "customer") || "admin",
+    actorRole: admin.roles.find((r) => STAFF_ROLES.includes(r)) || "admin",
     action: "admin.user.updated",
     targetType: "user",
     targetId: userId,
-    metadata: { status, roles, editedProfile: Object.keys(profilePatch) },
+    metadata: {
+      status,
+      roles,
+      passwordUpdated: Boolean(newPassword),
+      editedProfile: Object.keys(profilePatch),
+    },
   });
 
   return NextResponse.json({ ok: true });
