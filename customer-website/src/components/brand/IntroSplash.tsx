@@ -124,10 +124,13 @@ export function IntroSplash() {
     let lastShownPct = -1;
 
     const render = (now: number) => {
-      const elapsedMs = now - start;
+      const elapsedMs = Math.max(0, now - start);
       const elapsed = elapsedMs / 1000;
-      const progress = Math.min(1, elapsedMs / 2800);
-      const easedPct = Math.min(100, Math.round((1 - Math.pow(1 - progress, 3)) * 100));
+      const progress = Math.max(0, Math.min(1, elapsedMs / 2800));
+      const easedPct = Math.max(
+        0,
+        Math.min(100, Math.round((1 - Math.pow(1 - progress, 3)) * 100))
+      );
       if (!exitingRef.current && easedPct !== lastShownPct) {
         lastShownPct = easedPct;
         setPercent(easedPct);
