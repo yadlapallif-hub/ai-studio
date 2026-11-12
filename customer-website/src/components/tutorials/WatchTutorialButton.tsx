@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import {
   Captions,
@@ -12,6 +13,7 @@ import {
   X,
 } from "lucide-react";
 import { TUTORIAL_CATALOG, type TutorialCatalogItem } from "@francis/shared";
+import { resolveTutorialVideoUrl } from "@/lib/tutorials";
 
 interface TutorialItem {
   slug: string;
@@ -41,8 +43,8 @@ function fromCatalog(def: TutorialCatalogItem): TutorialItem {
     description_en: def.descriptionEn,
     description_te: def.descriptionTe,
     duration_seconds: def.durationSeconds,
-    video_url_en: `/api/tutorials/stream?file=${def.slug}-en.mp4`,
-    video_url_te: `/api/tutorials/stream?file=${def.slug}-te.mp4`,
+    video_url_en: resolveTutorialVideoUrl(null, `${def.slug}-en.mp4`),
+    video_url_te: resolveTutorialVideoUrl(null, `${def.slug}-te.mp4`),
     thumbnail_url: `/tutorials/${def.slug}.png`,
     subtitle_vtt_en: `/tutorials/${def.slug}-en.vtt`,
     subtitle_vtt_te: `/tutorials/${def.slug}-te.vtt`,
@@ -72,7 +74,12 @@ export function WatchTutorialButton({
   const [captionsOn, setCaptionsOn] = useState(true);
   const [videoError, setVideoError] = useState(false);
   const [dbItem, setDbItem] = useState<TutorialItem | null>(null);
+  const [mounted, setMounted] = useState(false);
   const videoRef = useRef<HTMLVideoElement | null>(null);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const fallback = useMemo(() => {
     const match = TUTORIAL_CATALOG.find(
@@ -134,8 +141,18 @@ export function WatchTutorialButton({
 
   const currentVideoSrc =
     lang === "te"
-      ? active.video_url_te || active.video_url_en || `/api/tutorials/stream?file=${active.slug}-te.mp4`
-      : active.video_url_en || `/api/tutorials/stream?file=${active.slug}-en.mp4`;
+      ? resolveTutorialVideoUrl(
+          active.video_url_te || active.video_url_en,
+          `${active.slug}-te.mp4`
+        )
+      : resolveTutorialVideoUrl(
+          active.video_url_en,
+          `${active.slug}-en.mp4`
+        );
+
+  useEffect(() => {
+    setVideoError(false);
+  }, [currentVideoSrc, open]);
 
   return (
     <>
@@ -148,19 +165,21 @@ export function WatchTutorialButton({
         <span>{label}</span>
       </button>
 
-      {open && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-xs"
-          role="dialog"
-          aria-modal="true"
-          aria-label={lang === "te" ? active.title_te : active.title_en}
-          onClick={() => setOpen(false)}
-        >
+      {open &&
+        mounted &&
+        createPortal(
           <div
-            className="w-full max-w-4xl overflow-hidden rounded-2xl border border-[var(--fcs-border)] bg-[var(--fcs-surface)] shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
+            className="fixed inset-0 z-[120] flex items-center justify-center overflow-y-auto bg-black/75 p-4 backdrop-blur-xs"
+            role="dialog"
+            aria-modal="true"
+            aria-label={lang === "te" ? active.title_te : active.title_en}
+            onClick={() => setOpen(false)}
           >
-            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--fcs-border)] px-5 py-3.5">
+            <div
+              className="my-auto flex max-h-[92vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl border border-[var(--fcs-border)] bg-[var(--fcs-surface)] shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-b border-[var(--fcs-border)] px-5 py-3.5">
               <div className="min-w-0">
                 <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wider text-teal-700 dark:text-teal-400">
                   <Video className="h-3.5 w-3.5" />
@@ -251,8 +270,9 @@ export function WatchTutorialButton({
                 playsInline
                 preload="metadata"
                 onError={() => setVideoError(true)}
+                onLoadedData={() => setVideoError(false)}
                 onCanPlay={() => setVideoError(false)}
-                className="aspect-video w-full bg-black"
+                className="aspect-video max-h-[58vh] w-full bg-black"
               >
                 {active.subtitle_vtt_en && (
                   <track
@@ -280,7 +300,7 @@ export function WatchTutorialButton({
                       ? "తెలుగు ఆడియో త్వరలో వస్తుంది — ఇంగ్లీష్ వీడియో + తెలుగు సబ్‌టైటిల్స్ చూడండి."
                       : "Clip awaiting audio synthesis batch — click All 12 Tutorials for synchronized transcript."}
                   </span>
-                  {lang === "te" && active.episode_number <= 10 && (
+                  {lang === "te" && (
                     <button
                       type="button"
                       onClick={() => {
@@ -319,8 +339,9 @@ export function WatchTutorialButton({
               </div>
             </div>
           </div>
-        </div>
-      )}
+        </div>,
+          document.body
+        )}
     </>
   );
 }

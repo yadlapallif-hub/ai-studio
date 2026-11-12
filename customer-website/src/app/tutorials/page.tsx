@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { TUTORIAL_CATALOG } from "@francis/shared";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { buildPageMetadata, SITE_URL } from "@/lib/seo";
+import { resolveTutorialVideoUrl } from "@/lib/tutorials";
 import {
   TutorialsCenterClient,
   type TutorialRecord,
@@ -30,8 +31,8 @@ function catalogFallback(): TutorialRecord[] {
     description_en: item.descriptionEn,
     description_te: item.descriptionTe,
     duration_seconds: item.durationSeconds,
-    video_url_en: `/api/tutorials/stream?file=${item.slug}-en.mp4`,
-    video_url_te: `/api/tutorials/stream?file=${item.slug}-te.mp4`,
+    video_url_en: resolveTutorialVideoUrl(null, `${item.slug}-en.mp4`),
+    video_url_te: resolveTutorialVideoUrl(null, `${item.slug}-te.mp4`),
     thumbnail_url: `/tutorials/${item.slug}.png`,
     subtitle_vtt_en: `/tutorials/${item.slug}-en.vtt`,
     subtitle_vtt_te: `/tutorials/${item.slug}-te.vtt`,
@@ -60,7 +61,11 @@ export default async function TutorialsPage({
       .order("episode_number", { ascending: true });
 
     if (!error && data && data.length > 0) {
-      tutorials = data as TutorialRecord[];
+      tutorials = (data as TutorialRecord[]).map((row) => ({
+        ...row,
+        video_url_en: resolveTutorialVideoUrl(row.video_url_en, `${row.slug}-en.mp4`),
+        video_url_te: resolveTutorialVideoUrl(row.video_url_te, `${row.slug}-te.mp4`),
+      }));
     }
   } catch {
     // use fallback cleanly
@@ -70,16 +75,22 @@ export default async function TutorialsPage({
     "@context": "https://schema.org",
     "@type": "ItemList",
     name: "Francis Creator Studio Video Tutorials",
-    itemListElement: tutorials.map((t, index) => ({
-      "@type": "VideoObject",
-      position: index + 1,
-      name: t.title_en,
-      description: t.description_en,
-      thumbnailUrl: `${SITE_URL}${t.thumbnail_url || `/tutorials/${t.slug}.png`}`,
-      contentUrl: `${SITE_URL}${t.video_url_en || `/api/tutorials/stream?file=${t.slug}-en.mp4`}`,
-      duration: `PT${t.duration_seconds}S`,
-      inLanguage: ["en", "te"],
-    })),
+    itemListElement: tutorials.map((t, index) => {
+      const rawContentUrl = t.video_url_en || `/api/tutorials/stream?file=${t.slug}-en.mp4`;
+      const fullContentUrl = /^https?:\/\//i.test(rawContentUrl)
+        ? rawContentUrl
+        : `${SITE_URL}${rawContentUrl}`;
+      return {
+        "@type": "VideoObject",
+        position: index + 1,
+        name: t.title_en,
+        description: t.description_en,
+        thumbnailUrl: `${SITE_URL}${t.thumbnail_url || `/tutorials/${t.slug}.png`}`,
+        contentUrl: fullContentUrl,
+        duration: `PT${t.duration_seconds}S`,
+        inLanguage: ["en", "te"],
+      };
+    }),
   };
 
   return (

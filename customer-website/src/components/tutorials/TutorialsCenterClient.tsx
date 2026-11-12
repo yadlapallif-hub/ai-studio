@@ -14,6 +14,7 @@ import {
   SkipForward,
 } from "lucide-react";
 import { TUTORIAL_CATEGORIES, type TutorialCategoryKey } from "@francis/shared";
+import { resolveTutorialVideoUrl } from "@/lib/tutorials";
 
 export interface TutorialRecord {
   id: string;
@@ -135,12 +136,19 @@ export function TutorialsCenterClient({
 
   const activeVideoUrl = activeTutorial
     ? lang === "te"
-      ? activeTutorial.video_url_te ||
-        activeTutorial.video_url_en ||
-        `/api/tutorials/stream?file=${activeTutorial.slug}-te.mp4`
-      : activeTutorial.video_url_en ||
-        `/api/tutorials/stream?file=${activeTutorial.slug}-en.mp4`
+      ? resolveTutorialVideoUrl(
+          activeTutorial.video_url_te || activeTutorial.video_url_en,
+          `${activeTutorial.slug}-te.mp4`
+        )
+      : resolveTutorialVideoUrl(
+          activeTutorial.video_url_en,
+          `${activeTutorial.slug}-en.mp4`
+        )
     : "";
+
+  useEffect(() => {
+    setVideoError(false);
+  }, [activeVideoUrl]);
 
   const selectEpisode = (slug: string) => {
     setActiveSlug(slug);
@@ -220,6 +228,7 @@ export function TutorialsCenterClient({
                   setVideoError(true);
                   setShowTranscript(true);
                 }}
+                onLoadedData={() => setVideoError(false)}
                 onCanPlay={() => setVideoError(false)}
                 onEnded={() => {
                   if (nextTutorial) selectEpisode(nextTutorial.slug);
@@ -255,7 +264,7 @@ export function TutorialsCenterClient({
                         : "This clip's narration audio is queued in the final studio batch — step-by-step transcript is expanded below."}
                     </p>
                   </div>
-                  {lang === "te" && activeTutorial.episode_number <= 10 && (
+                  {lang === "te" && (
                     <button
                       type="button"
                       onClick={() => {
