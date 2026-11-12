@@ -6,15 +6,20 @@ import { WatchTutorialButton } from "@/components/tutorials/WatchTutorialButton"
 import {
   ArrowRight,
   Award,
+  Bot,
   CheckCircle2,
   Code2,
   Compass,
   Download,
+  FileSpreadsheet,
   FileText,
   FolderLock,
+  Globe,
   Layers,
   LifeBuoy,
+  Mic,
   QrCode,
+  Search,
   ShieldCheck,
   Sparkles,
   Stamp,
@@ -23,37 +28,122 @@ import {
 import { getPublicPlatformData } from "@/lib/platform";
 import { SlideReveal } from "@/components/motion/SlideReveal";
 import { ReplayIntroButton } from "@/components/brand/ReplayIntroButton";
+import { HomeInteractiveDemo } from "@/components/home/HomeInteractiveDemo";
+import { TestimonialsSection } from "@/components/home/TestimonialsSection";
 
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = buildPageMetadata({
-  title: "Home — AI Resume Studio, Certificate Design & QR Verification",
+  title: "Home — Your Ideas. Your Creativity. One Intelligent Studio.",
   description:
-    "Create ATS-ready resumes across 100 templates, design certificates across 124 templates, verify QR credentials online, and learn with 12 bilingual English & Telugu video tutorials.",
+    "Create professional resumes, design certificates, build portfolios, write cover letters, manage documents in a private vault, and unlock Creator AI — all in one open-source workspace.",
   path: "/",
 });
 
 export default async function HomePage() {
   const platform = await getPublicPlatformData();
-  const { websiteContent, branding, faqs } = platform;
+  const { websiteContent, branding, faqs, stats, testimonials } = platform;
+
+  const featureCards = [
+    {
+      icon: FileText,
+      title: "AI Resume Studio",
+      badge: `${stats.resumeTemplates} Templates`,
+      description:
+        "14 structured sections, drag-and-drop ordering, multi-column layouts, 8-axis AI Resume Health Check, and instant PDF, PNG & DOCX exports.",
+      href: "/resume-builder",
+      cta: "Open Resume Studio",
+      color: "text-teal-700 dark:text-teal-400",
+    },
+    {
+      icon: Award,
+      title: "Certificate & Stamp Atelier",
+      badge: `${stats.certificateTemplates} Designs`,
+      description:
+        "Visual drag-and-drop layer editor, custom seals, auto photo cropping, 1–500 quantity or CSV/Excel bulk generation, and QR verification.",
+      href: "/certificate-builder",
+      cta: "Open Certificate Studio",
+      color: "text-amber-700 dark:text-amber-400",
+    },
+    {
+      icon: Globe,
+      title: "AI Portfolio Builder",
+      badge: "6 Themes + Export",
+      description:
+        "Generate personal portfolio sites from your resume, toggle dark/light previews, publish at a shareable URL, or export clean static source code.",
+      href: "/portfolio-builder",
+      cta: "Build Portfolio",
+      color: "text-teal-700 dark:text-teal-400",
+    },
+    {
+      icon: Wand2,
+      title: "AI Cover Letter Studio",
+      badge: "PDF & DOCX",
+      description:
+        "Import your resume or upload PDF/DOCX/TXT, paste a job description, select tone, refine with AI suggestions, and export cleanly.",
+      href: "/cover-letter",
+      cta: "Write Cover Letter",
+      color: "text-teal-700 dark:text-teal-400",
+    },
+    {
+      icon: Bot,
+      title: "Creator AI Assistant",
+      badge: "Voice + Vision",
+      description:
+        "Conversational guidance, speech input, read-aloud TTS, screenshot & document analysis, and permission-gated resume upgrades across Ollama, Gemini, Groq & OpenAI.",
+      href: "/assistant",
+      cta: "Launch Creator AI",
+      color: "text-teal-700 dark:text-teal-400",
+    },
+    {
+      icon: FolderLock,
+      title: "Private Document Vault",
+      badge: "Folders + Versions",
+      description:
+        "Organize PDF, DOCX, TXT, PNG & JPG files in custom folders with tags, inline previews, version history, and short-lived signed URLs.",
+      href: "/vault",
+      cta: "Open Vault",
+      color: "text-teal-700 dark:text-teal-400",
+    },
+    {
+      icon: Search,
+      title: "Universal Command Search",
+      badge: "Ctrl + K",
+      description:
+        "Jump instantly across resumes, certificates, portfolios, cover letters, templates, vault assets, AI chats, and recent activity using your keyboard.",
+      href: "/dashboard",
+      cta: "Open Workspace",
+      color: "text-teal-700 dark:text-teal-400",
+    },
+    {
+      icon: LifeBuoy,
+      title: "Live Support Center",
+      badge: "AI + Human Agents",
+      description:
+        "Instant AI troubleshooting with screenshot uploads, structured ticket tracking, priority escalation, and real-time staff replies.",
+      href: "/support",
+      cta: "Visit Support",
+      color: "text-teal-700 dark:text-teal-400",
+    },
+  ];
 
   return (
     <div className="bg-[var(--fcs-bg)] text-[var(--fcs-ink)]">
-      {/* HERO SECTION */}
+      {/* 1. HERO SECTION */}
       <section className="relative overflow-hidden border-b border-[var(--fcs-border)] bg-[var(--fcs-surface)]">
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute inset-0 opacity-65 dark:opacity-35"
+          className="pointer-events-none absolute inset-0 opacity-70 dark:opacity-40"
           style={{
             backgroundImage:
-              "radial-gradient(ellipse 68% 55% at 15% 15%, rgba(15, 118, 110, 0.08), transparent 65%), radial-gradient(ellipse 55% 50% at 85% 20%, rgba(180, 130, 50, 0.09), transparent 65%), linear-gradient(to right, rgba(148,163,184,0.06) 1px, transparent 1px), linear-gradient(to bottom, rgba(148,163,184,0.06) 1px, transparent 1px)",
+              "radial-gradient(ellipse 68% 55% at 15% 15%, rgba(15, 118, 110, 0.09), transparent 65%), radial-gradient(ellipse 55% 50% at 85% 20%, rgba(180, 130, 50, 0.08), transparent 65%), linear-gradient(to right, rgba(148,163,184,0.055) 1px, transparent 1px), linear-gradient(to bottom, rgba(148,163,184,0.055) 1px, transparent 1px)",
             backgroundSize: "100% 100%, 100% 100%, 44px 44px, 44px 44px",
           }}
         />
-        <div className="relative mx-auto grid max-w-7xl items-center gap-12 px-4 py-14 sm:px-6 lg:grid-cols-12 lg:py-20">
-          <div className="lg:col-span-7">
-            <SlideReveal direction="right" duration={560}>
-              <div className="flex flex-wrap items-center gap-2.5">
+        <div className="relative mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:py-20">
+          <SlideReveal direction="up" duration={520}>
+            <div className="mx-auto max-w-3xl text-center">
+              <div className="flex flex-wrap items-center justify-center gap-2.5">
                 <div className="inline-flex items-center gap-2 rounded-full border border-teal-700/25 bg-teal-50 px-3 py-1 text-xs font-semibold text-teal-800 dark:bg-teal-950/50 dark:text-teal-300">
                   <Code2 className="h-3.5 w-3.5" />
                   <span>{websiteContent.heroBadge}</span>
@@ -61,465 +151,363 @@ export default async function HomePage() {
                 <ReplayIntroButton variant="gold" label="Cinema Intro" className="rounded-full py-1" />
               </div>
 
-              <h1 className="mt-5 text-3xl font-bold tracking-tight text-[var(--fcs-ink)] sm:text-5xl sm:leading-[1.08]">
+              <h1 className="mt-6 text-3xl font-bold tracking-tight text-[var(--fcs-ink)] sm:text-5xl lg:text-[3.4rem] lg:leading-[1.08]">
                 {websiteContent.heroHeadline}
               </h1>
 
-              <p className="mt-4 max-w-2xl text-base leading-relaxed text-[var(--fcs-ink-muted)] sm:text-lg">
+              <p className="mx-auto mt-4 max-w-2xl text-base leading-relaxed text-[var(--fcs-ink-muted)] sm:text-lg">
                 {websiteContent.heroSubheadline}
               </p>
 
-              <div className="mt-7 flex flex-wrap items-center gap-3">
+              <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
+                <SafeNavLink
+                  href="/dashboard"
+                  className="fcs-btn-secondary px-5 py-2.5 text-sm font-semibold"
+                >
+                  <Layers className="h-4 w-4 text-teal-700 dark:text-teal-400" />
+                  <span>Explore Studio</span>
+                </SafeNavLink>
                 <SafeNavLink
                   href="/resume-builder/new"
-                  className="fcs-btn-primary group px-5 py-3 text-sm"
+                  className="fcs-btn-primary group px-5 py-2.5 text-sm font-semibold"
                 >
-                  <FileText className="h-4 w-4" />
-                  <span>{websiteContent.primaryCta}</span>
+                  <Sparkles className="h-4 w-4" />
+                  <span>Start Creating</span>
                   <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" />
                 </SafeNavLink>
-                <SafeNavLink
-                  href="/certificate-builder"
-                  className="fcs-btn-secondary px-5 py-3 text-sm"
+                <a
+                  href="#features"
+                  className="fcs-btn-ghost px-4 py-2.5 text-sm text-[var(--fcs-ink-muted)] hover:bg-[var(--fcs-surface-muted)] hover:text-teal-700 dark:hover:text-teal-300"
                 >
-                  <Award className="h-4 w-4 text-amber-600" />
-                  <span>{websiteContent.secondaryCta}</span>
-                </SafeNavLink>
-                <SafeNavLink
-                  href="/verify"
-                  className="fcs-btn-ghost px-3.5 py-2.5 text-sm text-[var(--fcs-ink-muted)] hover:bg-[var(--fcs-surface-muted)] hover:text-teal-700 dark:hover:text-teal-300"
-                >
-                  <QrCode className="h-4 w-4" />
-                  Verify a Certificate
-                </SafeNavLink>
+                  Discover Features
+                </a>
                 <WatchTutorialButton sectionKey="home" label="Watch Tour (EN / తెలుగు)" />
               </div>
+            </div>
+          </SlideReveal>
 
-              <div className="mt-8 grid grid-cols-2 gap-4 border-t border-[var(--fcs-border)] pt-6 sm:grid-cols-4">
-                <div>
-                  <p className="text-xs font-semibold text-[var(--fcs-ink)]">No Paywalls</p>
-                  <p className="mt-0.5 text-[11px] text-[var(--fcs-ink-muted)]">
-                    Free PDF & PNG exports
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs font-semibold text-[var(--fcs-ink)]">Authorized Issuance</p>
-                  <p className="mt-0.5 text-[11px] text-[var(--fcs-ink-muted)]">
-                    Admin-approved certificates
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs font-semibold text-[var(--fcs-ink)]">QR Verification</p>
-                  <p className="mt-0.5 text-[11px] text-[var(--fcs-ink-muted)]">
-                    Database-backed registry
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs font-semibold text-[var(--fcs-ink)]">Open AI Support</p>
-                  <p className="mt-0.5 text-[11px] text-[var(--fcs-ink-muted)]">
-                    Ollama, OpenAI, Gemini, Groq
-                  </p>
-                </div>
-              </div>
-            </SlideReveal>
-          </div>
-
-          {/* ARCHITECTURAL LIVE STUDIO SHOWCASE */}
-          <div className="lg:col-span-5">
-            <SlideReveal direction="left" delay={120} duration={640}>
-              <div className="relative rounded-2xl border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] p-4 sm:p-5">
-              <div className="mb-3 flex items-center justify-between border-b border-[var(--fcs-border)] pb-2.5">
-                <div className="flex items-center gap-2 text-xs font-semibold">
-                  <span className="h-2.5 w-2.5 rounded-full bg-teal-600" />
-                  <span>Studio Preview Workspace</span>
-                </div>
-                <span className="font-mono text-[10px] text-[var(--fcs-ink-muted)]">
-                  A4 • 300 DPI Ready
-                </span>
-              </div>
-
-              <div className="grid gap-3 sm:grid-cols-2">
-                {/* Mini Resume Sheet */}
-                <div className="rounded-xl border border-[var(--fcs-border)] bg-white p-4 text-slate-900 shadow-sm">
-                  <div className="flex items-center justify-between border-b border-slate-200 pb-2">
-                    <div>
-                      <p className="text-[11px] font-bold tracking-tight">ATS Precision CV</p>
-                      <p className="text-[9px] text-slate-500">14 Structured Sections</p>
-                    </div>
-                    <span className="rounded bg-teal-50 px-1.5 py-0.5 font-mono text-[9px] font-semibold text-teal-800">
-                      ATS Ready
-                    </span>
-                  </div>
-                  <div className="mt-3 space-y-2">
-                    <div className="h-2 w-3/4 rounded bg-slate-800" />
-                    <div className="h-1.5 w-1/2 rounded bg-teal-700/70" />
-                    <div className="pt-1.5 space-y-1">
-                      <div className="h-1.5 w-full rounded bg-slate-200" />
-                      <div className="h-1.5 w-11/12 rounded bg-slate-200" />
-                      <div className="h-1.5 w-4/5 rounded bg-slate-200" />
-                    </div>
-                    <div className="flex flex-wrap gap-1 pt-2">
-                      <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[8px] font-medium text-slate-700">
-                        TypeScript
-                      </span>
-                      <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[8px] font-medium text-slate-700">
-                        PostgreSQL
-                      </span>
-                      <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[8px] font-medium text-slate-700">
-                        Next.js
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Mini Certificate Sheet */}
-                <div className="rounded-xl border-2 border-amber-700/35 bg-[#FFFDF7] p-4 text-slate-900 shadow-sm">
-                  <div className="border border-amber-700/30 p-2.5 text-center">
-                    <p className="font-serif text-[10px] font-semibold tracking-widest uppercase text-amber-800">
-                      Certificate
-                    </p>
-                    <p className="mt-1 font-serif text-xs font-bold text-slate-900">
-                      Excellence & Completion
-                    </p>
-                    <div className="mx-auto my-2 h-px w-12 bg-amber-700/40" />
-                    <p className="text-[9px] text-slate-600">
-                      QR Verified • Custom Seal Studio
-                    </p>
-                    <div className="mt-3 flex items-center justify-between pt-1">
-                      <span className="font-mono text-[8px] text-slate-500">FCS-2026</span>
-                      <QrCode className="h-4 w-4 text-slate-800" />
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-3 flex items-center justify-between rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface)] px-3.5 py-2.5">
-                <div className="flex items-center gap-2 text-xs">
-                  <Sparkles className="h-4 w-4 text-teal-600" />
-                  <span className="font-medium">Creator AI</span>
-                </div>
-                <SafeNavLink
-                  href="/assistant"
-                  className="text-xs font-semibold text-teal-700 hover:underline dark:text-teal-400"
-                >
-                  Open Studio →
-                </SafeNavLink>
-              </div>
-              </div>
+          {/* 2. INTERACTIVE PRODUCT DEMONSTRATION */}
+          <div id="interactive-demo" className="mt-10 sm:mt-12">
+            <SlideReveal direction="up" delay={100} duration={560}>
+              <HomeInteractiveDemo />
             </SlideReveal>
           </div>
         </div>
       </section>
 
-      {/* PLATFORM OVERVIEW */}
-      <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6">
+      {/* 3. REAL-DATA PLATFORM STATISTICS */}
+      <section className="border-b border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)]/60">
+        <div className="mx-auto grid max-w-7xl grid-cols-2 gap-4 px-4 py-8 sm:grid-cols-4 sm:px-6 lg:grid-cols-6">
+          <div className="rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface)] p-4">
+            <p className="font-mono text-2xl font-bold text-teal-700 dark:text-teal-400">
+              {stats.resumeTemplates}
+            </p>
+            <p className="mt-1 text-xs font-medium text-[var(--fcs-ink-muted)]">
+              ATS Resume Templates
+            </p>
+          </div>
+          <div className="rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface)] p-4">
+            <p className="font-mono text-2xl font-bold text-amber-700 dark:text-amber-400">
+              {stats.certificateTemplates}
+            </p>
+            <p className="mt-1 text-xs font-medium text-[var(--fcs-ink-muted)]">
+              Certificate Templates ({stats.categories} Categories)
+            </p>
+          </div>
+          <div className="rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface)] p-4">
+            <p className="font-mono text-2xl font-bold">{stats.tutorials}</p>
+            <p className="mt-1 text-xs font-medium text-[var(--fcs-ink-muted)]">
+              Bilingual Video Tutorials
+            </p>
+          </div>
+          <div className="rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface)] p-4">
+            <p className="font-mono text-2xl font-bold">{stats.totalResumesCreated}</p>
+            <p className="mt-1 text-xs font-medium text-[var(--fcs-ink-muted)]">
+              Cloud Resumes Saved
+            </p>
+          </div>
+          <div className="rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface)] p-4">
+            <p className="font-mono text-2xl font-bold">{stats.totalCertificatesIssued}</p>
+            <p className="mt-1 text-xs font-medium text-[var(--fcs-ink-muted)]">
+              Verified Certificates
+            </p>
+          </div>
+          <div className="rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface)] p-4">
+            <p className="font-mono text-2xl font-bold text-emerald-700 dark:text-emerald-400">
+              {stats.verifiedIssuersCount}
+            </p>
+            <p className="mt-1 text-xs font-medium text-[var(--fcs-ink-muted)]">
+              Approved Organizations
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* 4. FEATURE SHOWCASE */}
+      <section id="features" className="mx-auto max-w-7xl px-4 py-16 sm:px-6">
         <SlideReveal direction="up">
           <div className="max-w-2xl">
             <p className="text-xs font-semibold tracking-widest uppercase text-teal-700 dark:text-teal-400">
-              Platform Architecture
+              Intelligent Creative Ecosystem
             </p>
             <h2 className="mt-2 text-2xl font-bold tracking-tight sm:text-3xl">
-              Every core studio built as real document engineering software
+              Eight integrated studios, zero paywalls
             </h2>
             <p className="mt-2 text-sm leading-relaxed text-[var(--fcs-ink-muted)]">
-              {branding.tagline} Designed with clean typography, honest AI recommendations, private
-              cloud storage, and verifiable credentials.
+              {branding.tagline} Designed with calm minimalism, honest AI assistance, and real
+              cloud persistence across desktop and mobile.
             </p>
           </div>
         </SlideReveal>
 
-        <div className="mt-10 grid gap-5 md:grid-cols-2 lg:grid-cols-4">
-          <SlideReveal delay={0}>
-            <div className="fcs-card-interactive h-full rounded-2xl border border-[var(--fcs-border)] bg-[var(--fcs-surface)] p-6">
-            <FileText className="h-6 w-6 text-teal-700 dark:text-teal-400" />
-            <h3 className="mt-4 text-base font-bold">AI Resume Builder</h3>
-            <p className="mt-2 text-xs leading-relaxed text-[var(--fcs-ink-muted)]">
-              100 distinct resume layouts, 14 structured sections, drag-and-drop ordering, real
-              background removal photo studio, and print-ready A4 PDF/PNG export.
-            </p>
-            <SafeNavLink
-              href="/resume-builder"
-              className="group mt-4 inline-flex items-center gap-1 text-xs font-semibold text-teal-700 hover:underline dark:text-teal-400"
-            >
-              Open Resume Builder <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
-            </SafeNavLink>
-            </div>
-          </SlideReveal>
-
-          <SlideReveal delay={70}>
-            <div className="fcs-card-interactive h-full rounded-2xl border border-[var(--fcs-border)] bg-[var(--fcs-surface)] p-6">
-            <Award className="h-6 w-6 text-amber-600" />
-            <h3 className="mt-4 text-base font-bold">Authorized Certificate Studio</h3>
-            <p className="mt-2 text-xs leading-relaxed text-[var(--fcs-ink-muted)]">
-              124 certificate designs across 14 categories, with sample drafts open for preview
-              and verified issuance exclusively unlocked for Admin-approved Authorized
-              Organizations.
-            </p>
-            <SafeNavLink
-              href="/certificate-builder"
-              className="group mt-4 inline-flex items-center gap-1 text-xs font-semibold text-teal-700 hover:underline dark:text-teal-400"
-            >
-              View Certificate Studio <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
-            </SafeNavLink>
-            </div>
-          </SlideReveal>
-
-          <SlideReveal delay={140}>
-            <div className="fcs-card-interactive h-full rounded-2xl border border-[var(--fcs-border)] bg-[var(--fcs-surface)] p-6">
-            <Compass className="h-6 w-6 text-teal-700 dark:text-teal-400" />
-            <h3 className="mt-4 text-base font-bold">Creator AI</h3>
-            <p className="mt-2 text-xs leading-relaxed text-[var(--fcs-ink-muted)]">
-              Transparent resume quality scoring, website &amp; certificate building guidance, job
-              description comparison, and layout reviews — never applying changes without approval.
-            </p>
-            <SafeNavLink
-              href="/assistant"
-              className="group mt-4 inline-flex items-center gap-1 text-xs font-semibold text-teal-700 hover:underline dark:text-teal-400"
-            >
-              Explore Intelligence <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
-            </SafeNavLink>
-            </div>
-          </SlideReveal>
-
-          <SlideReveal delay={210}>
-            <div className="fcs-card-interactive h-full rounded-2xl border border-[var(--fcs-border)] bg-[var(--fcs-surface)] p-6">
-            <LifeBuoy className="h-6 w-6 text-teal-700 dark:text-teal-400" />
-            <h3 className="mt-4 text-base font-bold">Live Customer Support</h3>
-            <p className="mt-2 text-xs leading-relaxed text-[var(--fcs-ink-muted)]">
-              Real-time support chat, screenshot attachments, structured ticket tracking, and instant
-              escalation from AI troubleshooting to human support agents.
-            </p>
-            <SafeNavLink
-              href="/support"
-              className="group mt-4 inline-flex items-center gap-1 text-xs font-semibold text-teal-700 hover:underline dark:text-teal-400"
-            >
-              Visit Support Center <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
-            </SafeNavLink>
-            </div>
-          </SlideReveal>
+        <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {featureCards.map((card, idx) => (
+            <SlideReveal key={card.href + card.title} delay={idx * 40}>
+              <div className="fcs-card-interactive flex h-full flex-col justify-between rounded-2xl border border-[var(--fcs-border)] bg-[var(--fcs-surface)] p-5">
+                <div>
+                  <div className="flex items-center justify-between gap-2">
+                    <card.icon className={`h-5 w-5 ${card.color}`} />
+                    <span className="rounded-md bg-[var(--fcs-surface-muted)] px-2 py-0.5 font-mono text-[10px] font-semibold text-[var(--fcs-ink-muted)]">
+                      {card.badge}
+                    </span>
+                  </div>
+                  <h3 className="mt-3.5 text-sm font-bold">{card.title}</h3>
+                  <p className="mt-1.5 text-xs leading-relaxed text-[var(--fcs-ink-muted)]">
+                    {card.description}
+                  </p>
+                </div>
+                <SafeNavLink
+                  href={card.href}
+                  className="group mt-4 inline-flex items-center gap-1 text-xs font-semibold text-teal-700 hover:underline dark:text-teal-400"
+                >
+                  {card.cta}{" "}
+                  <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
+                </SafeNavLink>
+              </div>
+            </SlideReveal>
+          ))}
         </div>
       </section>
 
-      {/* DEEP DIVE: RESUME + CERTIFICATE BUILDERS */}
-      <section className="overflow-hidden border-y border-[var(--fcs-border)] bg-[var(--fcs-surface)]">
-        <div className="mx-auto grid max-w-7xl gap-8 px-4 py-16 sm:px-6 lg:grid-cols-2">
-          <SlideReveal direction="right">
-          <div className="h-full rounded-2xl border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] p-7">
-            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-teal-700 dark:text-teal-400">
-              <Layers className="h-4 w-4" />
-              <span>Resume Studio Highlights</span>
-            </div>
-            <h3 className="mt-3 text-xl font-bold">
-              Built for both Applicant Tracking Systems and human clarity
-            </h3>
-            <ul className="mt-5 space-y-2.5 text-sm text-[var(--fcs-ink-muted)]">
+      {/* 5 & 6. RESUME & CERTIFICATE STUDIO PREVIEWS */}
+      <section className="border-y border-[var(--fcs-border)] bg-[var(--fcs-surface)] py-16">
+        <div className="mx-auto grid max-w-7xl gap-8 px-4 sm:px-6 lg:grid-cols-2">
+          <div className="rounded-2xl border border-[var(--fcs-border)] bg-[var(--fcs-bg)] p-6 sm:p-7">
+            <p className="text-xs font-semibold tracking-widest uppercase text-teal-700 dark:text-teal-400">
+              Resume Studio Preview
+            </p>
+            <h2 className="mt-2 text-2xl font-bold tracking-tight">
+              ATS structure, 14 sections, DOCX &amp; PDF exports
+            </h2>
+            <ul className="mt-4 space-y-2.5 text-sm text-[var(--fcs-ink-muted)]">
               <li className="flex items-start gap-2.5">
                 <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-teal-600" />
                 <span>
-                  All 14 sections: Summary, Career Objective, Work Experience, Internships, Projects,
-                  Education, Technical & Soft Skills, Certifications, Languages, Achievements, References.
+                  100 ATS-ready layouts with custom fonts, colors, 1- or 2-column switches, and
+                  drag-and-drop section reordering.
                 </span>
               </li>
               <li className="flex items-start gap-2.5">
                 <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-teal-600" />
                 <span>
-                  Realistic Profile Photo Editor: Crop/Zoom, Rotate, Brightness/Contrast, Circle or
-                  Square frame, plus real ML & server background removal without altering identity.
+                  <strong>AI Resume Health Check</strong> scores 8 dimensions (Structure, Summary,
+                  Skills, Experience, Education, Grammar, ATS, Job Relevance) with one-click approved
+                  updates.
                 </span>
               </li>
               <li className="flex items-start gap-2.5">
                 <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-teal-600" />
                 <span>
-                  One-click AI improvements: Generate summaries, polish bullets, fix grammar, or
-                  compare against a pasted job description.
+                  Save multiple named resume versions and export print-ready A4 PDF, PNG, or
+                  editable Microsoft Word <strong>.DOCX</strong>.
                 </span>
               </li>
             </ul>
-            <div className="mt-6">
+            <div className="mt-6 flex flex-wrap gap-3">
               <SafeNavLink
-                href="/resume-builder/new"
-                className="fcs-btn-primary group px-4 py-2.5 text-xs"
+                href="/resume-builder"
+                className="fcs-btn-primary px-4 py-2 text-xs font-semibold"
               >
-                Start Building Resume <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
+                Explore 100 Templates
+              </SafeNavLink>
+              <SafeNavLink
+                href="/cover-letter"
+                className="fcs-btn-secondary px-4 py-2 text-xs font-semibold"
+              >
+                Open Cover Letter Studio
               </SafeNavLink>
             </div>
           </div>
-          </SlideReveal>
 
-          <SlideReveal direction="left" delay={90}>
-          <div className="h-full rounded-2xl border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] p-7">
-            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-amber-700 dark:text-amber-400">
-              <Stamp className="h-4 w-4" />
-              <span>Certificate & Stamp Studio Highlights</span>
-            </div>
-            <h3 className="mt-3 text-xl font-bold">
-              Authorized organization issuance with custom stamp control
-            </h3>
-            <ul className="mt-5 space-y-2.5 text-sm text-[var(--fcs-ink-muted)]">
+          <div className="rounded-2xl border border-[var(--fcs-border)] bg-[var(--fcs-bg)] p-6 sm:p-7">
+            <p className="text-xs font-semibold tracking-widest uppercase text-amber-700 dark:text-amber-400">
+              Certificate Designer Preview
+            </p>
+            <h2 className="mt-2 text-2xl font-bold tracking-tight">
+              Exact-parity visual canvas, bulk cohorts &amp; QR trust
+            </h2>
+            <ul className="mt-4 space-y-2.5 text-sm text-[var(--fcs-ink-muted)]">
               <li className="flex items-start gap-2.5">
-                <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
+                <Stamp className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
                 <span>
-                  Drag, resize, rotate, apply, or delete logos, recipient photos, official stamps,
-                  gold seals, and authorized signatures across A4 canvases.
+                  124 templates across {stats.categories} categories with undo/redo, layer controls,
+                  custom borders, auto photo crop, and Stamp &amp; Signature Studio.
                 </span>
               </li>
               <li className="flex items-start gap-2.5">
-                <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
+                <FileSpreadsheet className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
                 <span>
-                  Strict Admin approval gate: certificate creation and Stamp Studio unlock only for
-                  verified, authorized organizations (no decorative sample stamps).
+                  Generate <strong>1–500 identical certificates by number</strong> or import CSV /
+                  Excel rosters for multi-page PDF and ZIP exports.
                 </span>
               </li>
               <li className="flex items-start gap-2.5">
-                <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
+                <Download className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
                 <span>
-                  Instant scannable QR code on every certificate connected to the live public
-                  verification database.
+                  Unscaled 1:1 export pipeline ensures PNG, 2K/4K, JPEG &amp; A4 PDF match the live
+                  preview pixel-for-pixel, backed by public QR verification.
                 </span>
               </li>
             </ul>
             <div className="mt-6 flex flex-wrap gap-3">
               <SafeNavLink
                 href="/certificate-builder"
-                className="fcs-btn-gold group px-4 py-2.5 text-xs"
+                className="fcs-btn-primary px-4 py-2 text-xs font-semibold"
               >
-                Certificate Studio <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
+                Open Certificate Studio
+              </SafeNavLink>
+              <SafeNavLink
+                href="/bulk-generator"
+                className="fcs-btn-secondary px-4 py-2 text-xs font-semibold"
+              >
+                Bulk Generator (1–500)
               </SafeNavLink>
               <SafeNavLink
                 href="/verify"
-                className="fcs-btn-secondary px-4 py-2.5 text-xs"
+                className="fcs-btn-secondary px-4 py-2 text-xs font-semibold"
               >
-                <ShieldCheck className="h-3.5 w-3.5 text-teal-600" /> Public Verify Portal
+                <QrCode className="h-3.5 w-3.5" /> Verify ID
               </SafeNavLink>
             </div>
           </div>
-          </SlideReveal>
         </div>
       </section>
 
-      {/* HOW IT WORKS */}
-      <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6">
-        <SlideReveal direction="up">
-          <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">How It Works</h2>
-        </SlideReveal>
-        <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-          {[
-            {
-              step: "01",
-              title: "Choose a Studio & Template",
-              desc: "Explore 100 ATS-ready resume templates immediately, or design across 124 certificate layouts (14 categories) and apply for Authorized Organization verification.",
-              icon: Wand2,
-            },
-            {
-              step: "02",
-              title: "Edit & Enhance with AI",
-              desc: "Customize typography, reorder sections, remove photo backgrounds, and run Creator AI audits.",
-              icon: Sparkles,
-            },
-            {
-              step: "03",
-              title: "Manage Stamps & Vault",
-              desc: "Design official stamps and signatures in Stamp Studio, place or delete them on certificates, and save securely in Supabase.",
-              icon: FolderLock,
-            },
-            {
-              step: "04",
-              title: "Export & Verify Anywhere",
-              desc: "Download crisp print-ready A4 PDFs or PNGs and verify certificates publicly via unique ID or QR code.",
-              icon: Download,
-            },
-          ].map((item, idx) => (
-            <SlideReveal key={item.step} delay={idx * 75}>
-              <div className="h-full rounded-2xl border border-[var(--fcs-border)] bg-[var(--fcs-surface)] p-5">
-                <div className="flex items-center justify-between">
-                  <span className="font-mono text-xs font-semibold text-teal-700 dark:text-teal-400">
-                    STEP {item.step}
-                  </span>
-                  <item.icon className="h-4 w-4 text-[var(--fcs-ink-muted)]" />
-                </div>
-                <h3 className="mt-3 text-sm font-bold">{item.title}</h3>
-                <p className="mt-1.5 text-xs leading-relaxed text-[var(--fcs-ink-muted)]">
-                  {item.desc}
+      {/* 7. CREATOR AI INTRODUCTION */}
+      <section className="border-b border-[var(--fcs-border)] bg-[var(--fcs-bg)] py-16">
+        <div className="mx-auto grid max-w-7xl items-center gap-8 px-4 sm:px-6 lg:grid-cols-12">
+          <div className="lg:col-span-6">
+            <p className="text-xs font-semibold tracking-widest uppercase text-teal-700 dark:text-teal-400">
+              Creator AI Architecture
+            </p>
+            <h2 className="mt-2 text-2xl font-bold tracking-tight sm:text-3xl">
+              An intelligent co-pilot that asks before applying changes
+            </h2>
+            <p className="mt-3 text-sm leading-relaxed text-[var(--fcs-ink-muted)]">
+              Run Creator AI with your choice of provider—local Ollama, Google Gemini, Groq, or
+              OpenAI-compatible endpoints—while keeping every API key strictly server-side.
+            </p>
+            <div className="mt-6 grid grid-cols-2 gap-3 text-xs">
+              <div className="rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface)] p-3.5">
+                <Mic className="h-4 w-4 text-teal-600" />
+                <p className="mt-2 font-bold">Voice Input &amp; Read-Aloud</p>
+                <p className="mt-0.5 text-[11px] text-[var(--fcs-ink-muted)]">
+                  Dictate prompts hands-free and listen to responses.
                 </p>
               </div>
-            </SlideReveal>
-          ))}
+              <div className="rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface)] p-3.5">
+                <Compass className="h-4 w-4 text-teal-600" />
+                <p className="mt-2 font-bold">Screenshot &amp; Doc Analysis</p>
+                <p className="mt-0.5 text-[11px] text-[var(--fcs-ink-muted)]">
+                  Upload PNG/JPG screenshots, PDF, DOCX, or TXT files.
+                </p>
+              </div>
+            </div>
+            <div className="mt-6 flex flex-wrap gap-3">
+              <SafeNavLink href="/assistant" className="fcs-btn-primary px-5 py-2.5 text-xs">
+                Open Creator AI Hub
+              </SafeNavLink>
+              <SafeNavLink href="/settings" className="fcs-btn-secondary px-4 py-2.5 text-xs">
+                Configure Personal AI Provider
+              </SafeNavLink>
+            </div>
+          </div>
+
+          <div className="lg:col-span-6">
+            <div className="rounded-2xl border border-[var(--fcs-border)] bg-[var(--fcs-surface)] p-6">
+              <p className="font-mono text-[11px] font-semibold uppercase text-teal-700 dark:text-teal-400">
+                Supported Open Providers (Zero Vendor Lock-In)
+              </p>
+              <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                {["Ollama (Local)", "Google Gemini", "Groq Fast", "OpenAI / Custom"].map((p) => (
+                  <div
+                    key={p}
+                    className="rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] px-3 py-3 text-center text-xs font-semibold"
+                  >
+                    {p}
+                  </div>
+                ))}
+              </div>
+              <p className="mt-4 text-xs leading-relaxed text-[var(--fcs-ink-muted)]">
+                {websiteContent.openSourceNote}
+              </p>
+              <div className="mt-5 flex flex-wrap gap-2.5">
+                <SafeNavLink
+                  href={branding.githubUrl}
+                  external
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-slate-900 px-3.5 py-2 text-xs font-semibold text-white hover:bg-slate-800 dark:bg-teal-700"
+                >
+                  <ShieldCheck className="h-3.5 w-3.5" /> View MIT Source on GitHub
+                </SafeNavLink>
+                <SafeNavLink
+                  href="/tutorials"
+                  className="fcs-btn-secondary px-3.5 py-2 text-xs"
+                >
+                  Watch 12 Tutorials (EN / తెలుగు)
+                </SafeNavLink>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
-      {/* OPEN SOURCE SECTION */}
-      <section className="border-y border-[var(--fcs-border)] bg-[var(--fcs-surface)]">
-        <SlideReveal direction="up">
-          <div className="mx-auto flex max-w-7xl flex-col items-start justify-between gap-6 px-4 py-12 sm:px-6 lg:flex-row lg:items-center">
-          <div className="max-w-2xl">
-            <p className="text-xs font-semibold tracking-widest uppercase text-teal-700 dark:text-teal-400">
-              Free & Open-Source Software
-            </p>
-            <h2 className="mt-2 text-xl font-bold sm:text-2xl">
-              Zero paywalls. Full source transparency. MIT Licensed.
-            </h2>
-            <p className="mt-2 text-sm leading-relaxed text-[var(--fcs-ink-muted)]">
-              {websiteContent.openSourceNote}
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-3">
-            <SafeNavLink
-              href={branding.githubUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="fcs-btn-secondary px-4 py-2.5 text-xs"
-            >
-              <Code2 className="h-4 w-4" />
-              View on GitHub
-            </SafeNavLink>
-            <SafeNavLink
-              href="/tutorials"
-              className="fcs-btn-secondary px-4 py-2.5 text-xs"
-            >
-              12 Video Tutorials (EN / తెలుగు)
-            </SafeNavLink>
-            <SafeNavLink
-              href="/auth/signup"
-              className="fcs-btn-primary px-4 py-2.5 text-xs"
-            >
-              Create Free Account
-            </SafeNavLink>
-          </div>
-          </div>
-        </SlideReveal>
-      </section>
+      {/* 8. CUSTOMER TESTIMONIALS (REAL DATABASE BACKED) */}
+      <TestimonialsSection initialTestimonials={testimonials} />
 
-      {/* FAQ SECTION */}
-      <section id="faq" className="mx-auto max-w-4xl px-4 py-16 sm:px-6">
-        <SlideReveal direction="up">
+      {/* 9. FAQS */}
+      <section
+        id="faq"
+        className="border-t border-[var(--fcs-border)] bg-[var(--fcs-surface)] py-16"
+      >
+        <div className="mx-auto max-w-4xl px-4 sm:px-6">
           <div className="text-center">
             <p className="text-xs font-semibold tracking-widest uppercase text-teal-700 dark:text-teal-400">
               Frequently Asked Questions
             </p>
             <h2 className="mt-2 text-2xl font-bold tracking-tight sm:text-3xl">
-              Clear answers on privacy, AI & verification
+              Clear answers on privacy, AI &amp; verification
             </h2>
           </div>
 
-          <div className="mt-8 space-y-3">
-          {faqs.map((faq) => (
-            <details
-              key={faq.id}
-              className="group rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface)] p-4"
-            >
-              <summary className="flex cursor-pointer list-none items-center justify-between text-sm font-semibold">
-                <span>{faq.question}</span>
-                <span className="ml-4 text-xs text-[var(--fcs-ink-muted)] group-open:rotate-45 transition-transform">
-                  +
-                </span>
-              </summary>
-              <p className="mt-3 text-xs leading-relaxed text-[var(--fcs-ink-muted)]">
-                {faq.answer}
-              </p>
-            </details>
-          ))}
+          <div className="mt-10 space-y-3">
+            {faqs.map((faq) => (
+              <details
+                key={faq.id}
+                className="group rounded-2xl border border-[var(--fcs-border)] bg-[var(--fcs-bg)] p-5"
+              >
+                <summary className="flex cursor-pointer list-none items-center justify-between text-sm font-semibold">
+                  <span>{faq.question}</span>
+                  <span className="ml-4 text-teal-700 transition group-open:rotate-45 dark:text-teal-400">
+                    +
+                  </span>
+                </summary>
+                <p className="mt-3 text-xs leading-relaxed text-[var(--fcs-ink-muted)]">
+                  {faq.answer}
+                </p>
+              </details>
+            ))}
           </div>
-        </SlideReveal>
+        </div>
       </section>
     </div>
   );

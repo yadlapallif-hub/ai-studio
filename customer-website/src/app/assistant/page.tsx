@@ -1,22 +1,36 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { SafeNavLink } from "@/components/ui/SafeNavLink";
+import { useRouter } from "next/navigation";
 import {
   AlertTriangle,
   Bot,
   Briefcase,
   Check,
   Loader2,
+  Mic,
+  MicOff,
+  Paperclip,
   Send,
+  Settings,
   Sparkles,
   ThumbsDown,
   ThumbsUp,
   Trash2,
+  Volume2,
+  VolumeX,
   X,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { WatchTutorialButton } from "@/components/tutorials/WatchTutorialButton";
+import {
+  readFileToAiAttachment,
+  speakAiText,
+  startVoiceDictation,
+  stopAiSpeech,
+  type ClientAttachment,
+} from "@/lib/ai-client-helpers";
 
 interface AiConversation {
   id: string;
@@ -29,6 +43,15 @@ interface AiMessage {
   id: string;
   role: "user" | "assistant";
   content: string;
+  proposedPatch?: {
+    summary?: string;
+    technicalSkills?: string[];
+    softSkills?: string[];
+    targetRole?: string;
+    rationale?: string;
+  };
+  generatedPortfolio?: Record<string, unknown>;
+  generatedCoverLetter?: { bodyText?: string; subjectLine?: string };
 }
 
 interface SavedRecommendation {
@@ -41,17 +64,41 @@ interface SavedRecommendation {
   feedback: string;
 }
 
+interface UserResumeRef {
+  id: string;
+  title: string;
+  target_role: string | null;
+  data: Record<string, unknown>;
+}
+
 export default function AssistantAndIntelligencePage() {
+  const router = useRouter();
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const stopVoiceRef = useRef<(() => void) | null>(null);
+
   const [userId, setUserId] = useState<string | null>(null);
   const [conversations, setConversations] = useState<AiConversation[]>([]);
   const [activeConvId, setActiveConvId] = useState<string | null>(null);
   const [messages, setMessages] = useState<AiMessage[]>([]);
   const [recommendations, setRecommendations] = useState<SavedRecommendation[]>([]);
+  const [userResumes, setUserResumes] = useState<UserResumeRef[]>([]);
+  const [selectedResumeId, setSelectedResumeId] = useState<string>("");
+
   const [input, setInput] = useState("");
-  const [mode, setMode] = useState<"chat" | "resume_improve" | "resume_summary">(
-    "chat"
-  );
+  const [mode, setMode] = useState<
+    | "chat"
+    | "resume_health"
+    | "resume_improve"
+    | "resume_summary"
+    | "portfolio_generate"
+    | "cover_letter_generate"
+    | "certificate_assist"
+  >("chat");
   const [sending, setSending] = useState(false);
+  const [listening, setListening] = useState(false);
+  const [speakingMsgId, setSpeakingMsgId] = useState<string | null>(null);
+  const [attachments, setAttachments] = useState<ClientAttachment[]>([]);
+  const [actionBanner, setActionBanner] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [careerRole, setCareerRole] = useState("");
   const [careerPlanLoading, setCareerPlanLoading] = useState(false);
@@ -66,7 +113,7 @@ export default function AssistantAndIntelligencePage() {
     if (!user) return;
     setUserId(user.id);
 
-    const [{ data: profile }, { data: convs }, { data: recs }] = await Promise.all([
+    const [{ data: profile }, { data: convs }, { data: recs }, { data: resRows }] = await Promise.all([
       supabase.from("fcs_profiles").select("ai_recommendations_enabled").eq("id", user.id).single(),
       supabase
         .from("fcs_ai_conversations")
@@ -80,15 +127,25 @@ export default function AssistantAndIntelligencePage() {
         .eq("user_id", user.id)
         .order("created_at", { ascending: false })
         .limit(25),
+      supabase
+        .from("fcs_resumes")
+        .select("id, title, target_role, data")
+        .eq("user_id", user.id)
+        .order("updated_at", { ascending: false })
+        .limit(10),
     ]);
 
     if (profile) setAiOptIn(Boolean(profile.ai_recommendations_enabled));
     setConversations((convs as AiConversation[]) ?? []);
     setRecommendations((recs as SavedRecommendation[]) ?? []);
+    const typedRes = (resRows as UserResumeRef[]) ?? [];
+    setUserResumes(typedRes);
+    if (typedRes[0] && !selectedResumeId) setSelectedResumeId(typedRes[0].id);
   };
 
   useEffect(() => {
     void loadWorkspace();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const loadConversationMessages = async (convId: string) => {
@@ -102,14 +159,47 @@ export default function AssistantAndIntelligencePage() {
     setMessages(((data as AiMessage[]) ?? []).filter((m) => m.role === "user" || m.role === "assistant"));
   };
 
+  const toggleVoice = () => {
+    if (listening) {
+      stopVoiceRef.current?.();
+      setListening(false);
+      return;
+    }
+    setErrorMsg(null);
+    setListening(true);
+    stopVoiceRef.current = startVoiceDictation(
+      (transcript) => setInput((prev) => (prev ? `${prev} ${transcript}` : transcript)),
+      (err) => setErrorMsg(err),
+      () => setListening(false)
+    );
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const att = await readFileToAiAttachment(file);
+      setAttachments((prev) => [...prev.slice(-2), att]);
+    } catch (err) {
+      setErrorMsg(err instanceof Error ? err.message : "Could not attach file.");
+    }
+    e.target.value = "";
+  };
+
   const sendDirectPrompt = async (promptText: string) => {
     const trimmed = promptText.trim();
-    if (!trimmed || sending) return;
+    if ((!trimmed && attachments.length === 0) || sending) return;
     setErrorMsg(null);
+    setActionBanner(null);
     setInput("");
-    setMessages((prev) => [...prev, { id: `u-${Date.now()}`, role: "user", content: trimmed }]);
+    const userDisplay =
+      trimmed || `Analyze uploaded file(s): ${attachments.map((a) => a.name).join(", ")}`;
+    const payloadAttachments = [...attachments];
+    setAttachments([]);
+    setMessages((prev) => [...prev, { id: `u-${Date.now()}`, role: "user", content: userDisplay }]);
     setSending(true);
     try {
+      const activeResume = userResumes.find((r) => r.id === selectedResumeId);
       const res = await fetch("/api/ai/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -117,15 +207,23 @@ export default function AssistantAndIntelligencePage() {
           conversationId: activeConvId ?? undefined,
           mode,
           contextPage: "Creator AI Hub",
+          contextDocumentId: activeResume?.id,
+          contextData: activeResume
+            ? { title: activeResume.title, targetRole: activeResume.target_role, data: activeResume.data }
+            : undefined,
+          attachments: payloadAttachments.length > 0 ? payloadAttachments : undefined,
           messages: [
             ...messages.slice(-10).map((m) => ({ role: m.role, content: m.content })),
-            { role: "user", content: trimmed },
+            { role: "user", content: userDisplay },
           ],
         }),
       });
       const json = (await res.json()) as {
         reply?: string;
         conversationId?: string;
+        proposedPatch?: AiMessage["proposedPatch"];
+        generatedPortfolio?: AiMessage["generatedPortfolio"];
+        generatedCoverLetter?: AiMessage["generatedCoverLetter"];
         error?: string;
         message?: string;
       };
@@ -139,11 +237,90 @@ export default function AssistantAndIntelligencePage() {
       }
       setMessages((prev) => [
         ...prev,
-        { id: `a-${Date.now()}`, role: "assistant", content: json.reply || "" },
+        {
+          id: `a-${Date.now()}`,
+          role: "assistant",
+          content: json.reply || "",
+          proposedPatch: json.proposedPatch,
+          generatedPortfolio: json.generatedPortfolio,
+          generatedCoverLetter: json.generatedCoverLetter,
+        },
       ]);
     } finally {
       setSending(false);
     }
+  };
+
+  const applyResumePatchWithConsent = async (patch: NonNullable<AiMessage["proposedPatch"]>) => {
+    const activeResume = userResumes.find((r) => r.id === selectedResumeId);
+    if (!activeResume) {
+      setErrorMsg("Select a saved resume in the context dropdown to apply updates.");
+      return;
+    }
+    const supabase = createClient();
+    const nextData = {
+      ...activeResume.data,
+      ...(patch.summary ? { summary: patch.summary } : {}),
+      ...(patch.technicalSkills
+        ? {
+            technicalSkills: Array.from(
+              new Set([
+                ...((activeResume.data.technicalSkills as string[]) || []),
+                ...patch.technicalSkills,
+              ])
+            ),
+          }
+        : {}),
+    };
+    const { error } = await supabase
+      .from("fcs_resumes")
+      .update({
+        data: nextData,
+        ...(patch.targetRole ? { target_role: patch.targetRole } : {}),
+      })
+      .eq("id", activeResume.id);
+    if (error) {
+      setErrorMsg(error.message);
+      return;
+    }
+    setActionBanner(`Approved AI patch applied cleanly to "${activeResume.title}".`);
+    void loadWorkspace();
+  };
+
+  const savePortfolioWithConsent = async (portfolioData: Record<string, unknown>) => {
+    const res = await fetch("/api/portfolios", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        title: String(portfolioData.fullName || "AI Portfolio"),
+        template_slug: "linear-atelier",
+        data: portfolioData,
+      }),
+    });
+    const json = (await res.json()) as { portfolio?: { id: string }; error?: string };
+    if (!res.ok || !json.portfolio) {
+      setErrorMsg(json.error || "Sign in to save generated portfolio.");
+      return;
+    }
+    router.push(`/portfolio-builder?id=${json.portfolio.id}`);
+  };
+
+  const saveCoverLetterWithConsent = async (cl: { bodyText?: string; subjectLine?: string }) => {
+    const res = await fetch("/api/cover-letters", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        title: cl.subjectLine || "AI Generated Cover Letter",
+        body_text: cl.bodyText || "",
+        writing_style: "modern",
+      }),
+    });
+    const json = (await res.json()) as { coverLetter?: { id: string }; error?: string };
+    if (!res.ok || !json.coverLetter) {
+      setErrorMsg(json.error || "Sign in to save generated cover letter.");
+      return;
+    }
+    router.push(`/cover-letter?id=${json.coverLetter.id}`);
   };
 
   const handleSend = async (e: React.FormEvent) => {
@@ -220,40 +397,47 @@ export default function AssistantAndIntelligencePage() {
   };
 
   return (
-    <div className="mx-auto max-w-7xl space-y-8 px-4 py-10 sm:px-6">
+    <div className="mx-auto max-w-7xl space-y-6 px-4 py-8 sm:px-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <p className="text-xs font-semibold tracking-widest uppercase text-teal-700 dark:text-teal-400">
-            CREATOR AI & Intelligence
+            CREATOR AI v2.0 • Voice, Vision &amp; Studio Diffs
           </p>
-          <h1 className="mt-1 text-3xl font-bold tracking-tight">
-            Creator AI Assistant, Website & Certificate Guide
+          <h1 className="mt-1 text-2xl font-bold tracking-tight sm:text-3xl">
+            Creator AI Assistant Hub
           </h1>
-          <p className="mt-1 text-sm text-[var(--fcs-ink-muted)]">
-            Ask Creator AI about Creator Studio website tools, how to build a website, how to create
-            and publish verified certificates, or how to build an ATS resume.
+          <p className="mt-1 text-xs text-[var(--fcs-ink-muted)] sm:text-sm">
+            Dictate with voice, attach screenshots or PDF/DOCX/TXT files, review proposed diffs,
+            and choose Ollama, Gemini, Groq, or OpenAI in Settings.
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2.5">
+        <div className="flex flex-wrap items-center gap-2">
           <WatchTutorialButton sectionKey="assistant" label="Watch AI Tutorial" />
+          <SafeNavLink
+            href="/settings"
+            className="inline-flex items-center gap-1.5 rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface)] px-3 py-2 text-xs font-semibold hover:bg-[var(--fcs-surface-muted)]"
+          >
+            <Settings className="h-3.5 w-3.5 text-teal-600" /> AI Provider Settings
+          </SafeNavLink>
           {userId && (
             <button
               type="button"
               onClick={toggleAiOptIn}
-              className="rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface)] px-3.5 py-2 text-xs font-semibold"
+              className="rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface)] px-3 py-2 text-xs font-semibold"
             >
-              Personalization: {aiOptIn ? "Enabled" : "Disabled"}
+              Memory: {aiOptIn ? "On" : "Off"}
             </button>
           )}
-          <SafeNavLink
-            href="/support"
-            className="rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface)] px-3.5 py-2 text-xs font-semibold hover:bg-[var(--fcs-surface-muted)]"
-          >
-            Escalate to Human Support →
-          </SafeNavLink>
         </div>
       </div>
+
+      {actionBanner && (
+        <div className="flex items-center gap-2 rounded-xl border border-emerald-500/40 bg-emerald-50 p-3 text-xs text-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-200">
+          <Check className="h-4 w-4 shrink-0 text-emerald-600" />
+          <span>{actionBanner}</span>
+        </div>
+      )}
 
       {errorMsg && (
         <div className="flex items-center gap-2 rounded-xl border border-amber-500/40 bg-amber-50 p-3.5 text-xs text-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
@@ -269,19 +453,36 @@ export default function AssistantAndIntelligencePage() {
             <h2 className="text-xs font-bold uppercase tracking-wider text-[var(--fcs-ink-muted)]">
               Conversations
             </h2>
-            <div className="flex items-center gap-2">
-              <WatchTutorialButton sectionKey="conversations" label="Guide" variant="compact" />
-              {userId && conversations.length > 0 && (
-                <button
-                  type="button"
-                  onClick={clearHistory}
-                  className="inline-flex items-center gap-1 text-[11px] font-medium text-red-600 hover:underline"
-                >
-                  <Trash2 className="h-3 w-3" /> Clear
-                </button>
-              )}
-            </div>
+            {userId && conversations.length > 0 && (
+              <button
+                type="button"
+                onClick={clearHistory}
+                className="inline-flex items-center gap-1 text-[11px] font-medium text-red-600 hover:underline"
+              >
+                <Trash2 className="h-3 w-3" /> Clear
+              </button>
+            )}
           </div>
+
+          {userResumes.length > 0 && (
+            <div>
+              <label className="mb-1 block text-[11px] font-semibold text-[var(--fcs-ink-muted)]">
+                Active Resume Context
+              </label>
+              <select
+                value={selectedResumeId}
+                onChange={(e) => setSelectedResumeId(e.target.value)}
+                className="w-full rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] px-2.5 py-2 text-xs"
+              >
+                {userResumes.map((r) => (
+                  <option key={r.id} value={r.id}>
+                    {r.title}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
           <button
             type="button"
             onClick={() => {
@@ -295,7 +496,7 @@ export default function AssistantAndIntelligencePage() {
 
           {!userId ? (
             <p className="text-xs text-[var(--fcs-ink-muted)]">
-              Sign in to save AI conversation history and track recommendations.
+              Sign in to persist conversation memory across sessions.
             </p>
           ) : conversations.length === 0 ? (
             <p className="text-xs text-[var(--fcs-ink-muted)]">No saved AI threads yet.</p>
@@ -320,9 +521,9 @@ export default function AssistantAndIntelligencePage() {
           )}
         </div>
 
-        {/* Main AI Chat */}
+        {/* Main Multimodal + Voice AI Chat */}
         <div className="flex flex-col rounded-2xl border border-[var(--fcs-border)] bg-[var(--fcs-surface)] lg:col-span-5">
-          <div className="flex items-center justify-between border-b border-[var(--fcs-border)] px-4 py-3">
+          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--fcs-border)] px-4 py-3">
             <div className="flex items-center gap-2 text-sm font-bold">
               <Bot className="h-4 w-4 text-teal-600" />
               CREATOR AI Chat
@@ -332,26 +533,31 @@ export default function AssistantAndIntelligencePage() {
               onChange={(e) => setMode(e.target.value as never)}
               className="rounded-lg border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] px-2.5 py-1 text-xs"
             >
-              <option value="chat">Website & Certificate Guide</option>
-              <option value="resume_improve">Resume & Bullet Critic</option>
-              <option value="resume_summary">Career Summary Helper</option>
+              <option value="chat">General Assistant &amp; Studio Guide</option>
+              <option value="resume_health">AI Resume Health Check (Diff)</option>
+              <option value="resume_improve">Resume &amp; Bullet Upgrade (Diff)</option>
+              <option value="resume_summary">Career Summary Writer</option>
+              <option value="portfolio_generate">Generate Portfolio Website</option>
+              <option value="cover_letter_generate">Generate Cover Letter</option>
+              <option value="certificate_assist">Certificate Wording Assist</option>
             </select>
           </div>
 
-          <div className="flex-1 space-y-3 overflow-y-auto p-4 text-xs" style={{ minHeight: 360, maxHeight: 460 }}>
+          <div
+            className="flex-1 space-y-3 overflow-y-auto p-4 text-xs"
+            style={{ minHeight: 380, maxHeight: 500 }}
+          >
             {messages.length === 0 && (
               <div className="space-y-3 rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] p-4 text-[var(--fcs-ink-muted)]">
                 <p>
-                  Ask Creator AI for complete information about the Creator Studio website, how to
-                  build a website step by step, how to create &amp; publish verified certificates,
-                  or how to improve your resume.
+                  Try voice input, attach a screenshot or resume document, or click a quick task:
                 </p>
                 <div className="flex flex-wrap gap-1.5">
                   {[
-                    "Tell me about Creator Studio website",
-                    "How do I create & publish a verified certificate?",
-                    "How do I build a website?",
-                    "How do I build an ATS resume?",
+                    "Improve my resume for a software developer internship",
+                    "Generate a portfolio website from my resume",
+                    "Draft a cover letter for Frontend Engineer",
+                    "How do I publish a verified certificate?",
                   ].map((prompt) => (
                     <button
                       key={prompt}
@@ -365,18 +571,104 @@ export default function AssistantAndIntelligencePage() {
                 </div>
               </div>
             )}
+
             {messages.map((m) => (
-              <div
-                key={m.id}
-                className={`rounded-xl px-3.5 py-2.5 whitespace-pre-wrap leading-relaxed ${
-                  m.role === "user"
-                    ? "ml-8 bg-teal-700 text-white"
-                    : "mr-8 border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)]"
-                }`}
-              >
-                {m.content}
+              <div key={m.id} className="space-y-1.5">
+                <div
+                  className={`rounded-xl px-3.5 py-2.5 whitespace-pre-wrap leading-relaxed ${
+                    m.role === "user"
+                      ? "ml-8 bg-teal-700 text-white"
+                      : "mr-6 border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)]"
+                  }`}
+                >
+                  {m.content}
+                </div>
+
+                {m.role === "assistant" && (
+                  <div className="flex flex-wrap items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (speakingMsgId === m.id) {
+                          stopAiSpeech();
+                          setSpeakingMsgId(null);
+                        } else {
+                          setSpeakingMsgId(m.id);
+                          speakAiText(m.content, () => setSpeakingMsgId(null));
+                        }
+                      }}
+                      className="inline-flex items-center gap-1 text-[11px] text-[var(--fcs-ink-muted)] hover:text-teal-700"
+                    >
+                      {speakingMsgId === m.id ? (
+                        <>
+                          <VolumeX className="h-3.5 w-3.5" /> Stop Reading
+                        </>
+                      ) : (
+                        <>
+                          <Volume2 className="h-3.5 w-3.5" /> Read Aloud
+                        </>
+                      )}
+                    </button>
+                  </div>
+                )}
+
+                {m.proposedPatch && (
+                  <div className="mr-6 rounded-xl border border-teal-600/30 bg-teal-50/70 p-3 dark:bg-teal-950/30">
+                    <p className="font-bold text-teal-800 dark:text-teal-300">
+                      Proposed Resume Diff (Review Before Applying)
+                    </p>
+                    {m.proposedPatch.summary && (
+                      <p className="mt-1 text-[11px]">
+                        <strong>Summary:</strong> {m.proposedPatch.summary}
+                      </p>
+                    )}
+                    {m.proposedPatch.technicalSkills && (
+                      <p className="mt-1 text-[11px]">
+                        <strong>Skills:</strong> {m.proposedPatch.technicalSkills.join(", ")}
+                      </p>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => void applyResumePatchWithConsent(m.proposedPatch!)}
+                      className="mt-2 inline-flex items-center gap-1 rounded-lg bg-teal-700 px-3 py-1.5 text-[11px] font-semibold text-white hover:bg-teal-800"
+                    >
+                      <Check className="h-3 w-3" /> Approve &amp; Update Saved Resume
+                    </button>
+                  </div>
+                )}
+
+                {m.generatedPortfolio && (
+                  <div className="mr-6 rounded-xl border border-teal-600/30 bg-teal-50/70 p-3 dark:bg-teal-950/30">
+                    <p className="font-bold text-teal-800 dark:text-teal-300">
+                      Portfolio Draft Ready
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => void savePortfolioWithConsent(m.generatedPortfolio!)}
+                      className="mt-2 inline-flex items-center gap-1 rounded-lg bg-teal-700 px-3 py-1.5 text-[11px] font-semibold text-white hover:bg-teal-800"
+                    >
+                      Approve &amp; Open in Portfolio Builder →
+                    </button>
+                  </div>
+                )}
+
+                {m.generatedCoverLetter && (
+                  <div className="mr-6 rounded-xl border border-teal-600/30 bg-teal-50/70 p-3 dark:bg-teal-950/30">
+                    <p className="font-bold text-teal-800 dark:text-teal-300">
+                      Cover Letter Draft Ready
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => void saveCoverLetterWithConsent(m.generatedCoverLetter!)}
+                      className="mt-2 inline-flex items-center gap-1 rounded-lg bg-teal-700 px-3 py-1.5 text-[11px] font-semibold text-white hover:bg-teal-800"
+                    >
+                      Approve &amp; Open in Cover Letter Studio →
+                    </button>
+                  </div>
+                )}
               </div>
             ))}
+
             {sending && (
               <div className="inline-flex items-center gap-2 rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] px-3 py-2">
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -385,18 +677,65 @@ export default function AssistantAndIntelligencePage() {
             )}
           </div>
 
-          <form onSubmit={handleSend} className="flex gap-2 border-t border-[var(--fcs-border)] p-3">
+          {attachments.length > 0 && (
+            <div className="flex flex-wrap gap-1.5 border-t border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] px-3 py-2">
+              {attachments.map((att, idx) => (
+                <span
+                  key={`${att.name}-${idx}`}
+                  className="inline-flex items-center gap-1 rounded-full border border-[var(--fcs-border)] bg-[var(--fcs-surface)] px-2.5 py-0.5 text-[11px]"
+                >
+                  {att.name}
+                  <button
+                    type="button"
+                    onClick={() => setAttachments((prev) => prev.filter((_, i) => i !== idx))}
+                    className="text-red-500"
+                  >
+                    ×
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
+
+          <form onSubmit={handleSend} className="flex items-center gap-2 border-t border-[var(--fcs-border)] p-3">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".png,.jpg,.jpeg,.pdf,.docx,.txt,.md,.csv"
+              className="hidden"
+              onChange={handleFileChange}
+            />
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              title="Upload image, screenshot, PDF, DOCX, or TXT"
+              className="rounded-xl border border-[var(--fcs-border)] p-2 text-[var(--fcs-ink-muted)] hover:text-[var(--fcs-ink)]"
+            >
+              <Paperclip className="h-4 w-4" />
+            </button>
+            <button
+              type="button"
+              onClick={toggleVoice}
+              title={listening ? "Stop voice input" : "Speak prompt"}
+              className={`rounded-xl border p-2 ${
+                listening
+                  ? "border-red-500 bg-red-50 text-red-600"
+                  : "border-[var(--fcs-border)] text-[var(--fcs-ink-muted)] hover:text-[var(--fcs-ink)]"
+              }`}
+            >
+              {listening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+            </button>
             <input
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Ask Creator AI..."
-              className="flex-1 rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] px-3 py-2 text-xs"
+              placeholder={listening ? "Listening via microphone..." : "Ask Creator AI..."}
+              className="min-w-0 flex-1 rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] px-3 py-2 text-xs outline-none focus:border-teal-600"
             />
             <button
               type="submit"
-              disabled={sending}
-              className="inline-flex items-center gap-1 rounded-xl bg-teal-700 px-4 py-2 text-xs font-semibold text-white hover:bg-teal-800"
+              disabled={sending || (!input.trim() && attachments.length === 0)}
+              className="inline-flex items-center gap-1 rounded-xl bg-teal-700 px-4 py-2 text-xs font-semibold text-white hover:bg-teal-800 disabled:opacity-50"
             >
               <Send className="h-3.5 w-3.5" />
             </button>

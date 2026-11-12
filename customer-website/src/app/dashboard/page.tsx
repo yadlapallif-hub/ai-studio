@@ -38,6 +38,11 @@ export default async function DashboardPage() {
     { data: certTemplates },
     { data: aiConversations },
     { data: tickets },
+    { data: portfolios },
+    { data: coverLetters },
+    { data: vaultAssets },
+    { data: activityLogs },
+    { data: userNotifications },
     issuerAccess,
   ] = await Promise.all([
     supabase
@@ -117,6 +122,37 @@ export default async function DashboardPage() {
       .eq("user_id", user.id)
       .order("updated_at", { ascending: false })
       .limit(8),
+    supabase
+      .from("fcs_portfolios")
+      .select("id, title, slug, template_slug, is_published, updated_at")
+      .eq("user_id", user.id)
+      .order("updated_at", { ascending: false })
+      .limit(20),
+    supabase
+      .from("fcs_cover_letters")
+      .select("id, title, company_name, target_role, writing_style, updated_at")
+      .eq("user_id", user.id)
+      .order("updated_at", { ascending: false })
+      .limit(20),
+    supabase
+      .from("fcs_uploaded_assets")
+      .select("id, file_name, asset_type, mime_type, file_size, created_at")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false })
+      .limit(20),
+    supabase
+      .from("fcs_activity_logs")
+      .select("id, action, entity_type, metadata, created_at")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false })
+      .limit(25),
+    supabase
+      .from("fcs_notifications")
+      .select("id, title, message, link, is_read, created_at")
+      .eq("user_id", user.id)
+      .eq("audience", "customer")
+      .order("created_at", { ascending: false })
+      .limit(25),
     getAccessibleIssuersForUser(user),
   ]);
 
@@ -179,6 +215,11 @@ export default async function DashboardPage() {
       certTemplates={certTemplates ?? []}
       aiConversations={aiConversations ?? []}
       tickets={tickets ?? []}
+      initialPortfolios={(portfolios ?? []) as never[]}
+      initialCoverLetters={(coverLetters ?? []) as never[]}
+      initialVaultAssets={(vaultAssets ?? []) as never[]}
+      initialActivityLogs={(activityLogs ?? []) as never[]}
+      initialNotifications={(userNotifications ?? []) as never[]}
       orgApplications={issuerAccess.applications as never[]}
     />
   );

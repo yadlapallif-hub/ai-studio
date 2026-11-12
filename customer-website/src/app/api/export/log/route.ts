@@ -2,11 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createServerSupabase, createServiceSupabase } from "@/lib/supabase/server";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
+import { createWorkspaceNotification, logWorkspaceActivity } from "@/lib/notifications";
 
 const ExportLogSchema = z.object({
-  documentType: z.enum(["resume", "certificate"]),
+  documentType: z.enum(["resume", "certificate", "cover_letter", "portfolio"]),
   documentId: z.string().trim().min(1).max(80),
-  format: z.enum(["pdf", "png", "png_2k", "png_4k", "jpeg", "bulk_zip", "svg"]),
+  format: z.enum(["pdf", "png", "png_2k", "png_4k", "jpeg", "bulk_zip", "svg", "docx", "html"]),
   fileName: z.string().trim().max(180).optional(),
   resolutionLabel: z.string().trim().max(80).optional(),
 });
@@ -46,10 +47,18 @@ export async function POST(request: NextRequest) {
   }
 
   const adminDb = createServiceSupabase();
-  const table = documentType === "resume" ? "fcs_resumes" : "fcs_certificates";
+  const table =
+    documentType === "resume"
+      ? "fcs_resumes"
+      : documentType === "certificate"
+        ? "fcs_certificates"
+        : documentType === "cover_letter"
+          ? "fcs_cover_letters"
+          : "fcs_portfolios";
+
   const { data: existing } = await adminDb
     .from(table)
-    .select("id, download_count")
+    .select("id, title")
     .eq("id", documentId)
     .eq("user_id", user.id)
     .maybeSingle();
@@ -67,14 +76,55 @@ export async function POST(request: NextRequest) {
     resolution_label: resolutionLabel ?? null,
   });
 
-  await adminDb
-    .from(table)
-    .update({
-      download_count: (existing.download_count ?? 0) + 1,
-      last_exported_at: new Date().toISOString(),
-    })
-    .eq("id", documentId)
-    .eq("user_id", user.id);
+  if (documentType === "resume" || documentType === "certificate") {
+    const { data: cur } = await adminDb
+      .from(table)
+      .select("download_count")
+      .eq("id", documentId)
+      .maybeSingle();
+    await adminDb
+      .from(table)
+      .update({
+        download_count: ((cur?.download_count as number | undefined) ?? 0) + 1,
+        last_exported_at: new Date().toISOString(),
+      })
+      .eq("id", documentId)
+      .eq("user_id", user.id);
+  }
+
+  const labelTitle =
+    documentType === "resume"
+      ? "Resume"
+      : documentType === "certificate"
+        ? "Certificate"
+        : documentType === "cover_letter"
+          ? "Cover Letter"
+          : "Portfolio";
+  const link =
+    documentType === "resume"
+      ? `/resume-builder/${documentId}`
+      : documentType === "certificate"
+        ? `/certificate-builder/${documentId}`
+        : documentType === "cover_letter"
+          ? `/cover-letter?id=${documentId}`
+          : `/portfolio-builder?id=${documentId}`;
+
+  await Promise.all([
+    createWorkspaceNotification({
+      userId: user.id,
+      prefKey: "document_exported",
+      title: `${labelTitle} Exported (${format.toUpperCase()})`,
+      message: `${existing.title || fileName || "Document"} exported cleanly.`,
+      link,
+    }),
+    logWorkspaceActivity({
+      actorId: user.id,
+      action: `exported_${documentType}_${format}`,
+      entityType: documentType,
+      entityId: documentId,
+      details: { format, fileName: fileName ?? null },
+    }),
+  ]);
 
   return NextResponse.json({ ok: true });
 }

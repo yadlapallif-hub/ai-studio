@@ -66,6 +66,7 @@ export default async function AdminAnalyticsPage() {
 
   const exportCounts = {
     resumePdf: (exports ?? []).filter((e) => e.document_type === "resume" && e.format === "pdf").length,
+    resumeDocx: (exports ?? []).filter((e) => e.format === "docx").length,
     resumePng: (exports ?? []).filter((e) => e.document_type === "resume" && e.format === "png").length,
     certPdf: (exports ?? []).filter((e) => e.document_type === "certificate" && e.format === "pdf").length,
     certPng: (exports ?? []).filter((e) => e.document_type === "certificate" && e.format === "png").length,
@@ -87,7 +88,7 @@ export default async function AdminAnalyticsPage() {
             <p className="mt-2 text-2xl font-bold">{(profiles ?? []).length}</p>
           </div>
           <div className="rounded-2xl border border-[var(--adm-border)] bg-[var(--adm-surface)] p-4">
-            <p className="text-[var(--adm-ink-muted)]">Total Exports (PDF / PNG)</p>
+            <p className="text-[var(--adm-ink-muted)]">Total Exports (PDF / DOCX / PNG)</p>
             <p className="mt-2 text-2xl font-bold">{(exports ?? []).length}</p>
           </div>
           <div className="rounded-2xl border border-[var(--adm-border)] bg-[var(--adm-surface)] p-4">
@@ -110,6 +111,7 @@ export default async function AdminAnalyticsPage() {
             <div className="mt-4 space-y-3">
               {[
                 { label: "Resume A4 PDF", count: exportCounts.resumePdf },
+                { label: "Word DOCX (Resumes & Cover Letters)", count: exportCounts.resumeDocx },
                 { label: "Resume PNG", count: exportCounts.resumePng },
                 { label: "Certificate A4 PDF", count: exportCounts.certPdf },
                 { label: "Certificate PNG", count: exportCounts.certPng },
@@ -117,6 +119,7 @@ export default async function AdminAnalyticsPage() {
                 const max = Math.max(
                   1,
                   exportCounts.resumePdf,
+                  exportCounts.resumeDocx,
                   exportCounts.resumePng,
                   exportCounts.certPdf,
                   exportCounts.certPng

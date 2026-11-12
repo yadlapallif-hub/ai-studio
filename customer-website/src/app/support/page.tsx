@@ -3,6 +3,7 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { SafeNavLink } from "@/components/ui/SafeNavLink";
 import {
+  Bot,
   CheckCircle2,
   LifeBuoy,
   Loader2,
@@ -12,6 +13,7 @@ import {
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { WatchTutorialButton } from "@/components/tutorials/WatchTutorialButton";
+import { readFileToAiAttachment } from "@/lib/ai-client-helpers";
 
 interface TicketItem {
   id: string;
@@ -46,6 +48,13 @@ export default function CustomerSupportPage() {
   const [attachmentFile, setAttachmentFile] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [statusNote, setStatusNote] = useState<string | null>(null);
+
+  // Instant AI Support Triage
+  const [triageOpen, setTriageOpen] = useState(false);
+  const [triagePrompt, setTriagePrompt] = useState("");
+  const [triageLoading, setTriageLoading] = useState(false);
+  const [triageReply, setTriageReply] = useState<string | null>(null);
+  const [triageFile, setTriageFile] = useState<File | null>(null);
 
   const loadTickets = useCallback(async () => {
     const supabase = createClient();
@@ -114,6 +123,34 @@ export default function CustomerSupportPage() {
       void supabase.removeChannel(channel);
     };
   }, [selectedTicketId, loadMessages]);
+
+  const runAiTriage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!triagePrompt.trim()) return;
+    setTriageLoading(true);
+    setTriageReply(null);
+    try {
+      const att = triageFile ? [await readFileToAiAttachment(triageFile)] : undefined;
+      const res = await fetch("/api/ai/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          mode: "support_triage",
+          contextPage: "Customer Support Triage",
+          attachments: att,
+          messages: [{ role: "user", content: triagePrompt.trim() }],
+        }),
+      });
+      const json = (await res.json()) as { reply?: string; message?: string };
+      setTriageReply(
+        json.reply ||
+          json.message ||
+          "Please submit a human support ticket below and our team will assist."
+      );
+    } finally {
+      setTriageLoading(false);
+    }
+  };
 
   const uploadAttachment = async (ticketId: string, messageId: string | null, file: File) => {
     if (!userId) return;
@@ -245,10 +282,10 @@ export default function CustomerSupportPage() {
         <LifeBuoy className="mx-auto h-10 w-10 text-teal-600" />
         <h1 className="mt-4 text-2xl font-bold">Customer Support & Live Help</h1>
         <p className="mt-2 text-sm text-[var(--fcs-ink-muted)]">
-          Sign in to open support tickets, attach screenshots, and chat directly in real time with
-          Creator Studio Support Agents.
+          Sign in to open support tickets, attach screenshots, troubleshoot with AI Support, and
+          chat directly in real time with Creator Studio Support Agents.
         </p>
-        <div className="mt-6 flex justify-center gap-3">
+        <div className="mt-6 flex flex-wrap justify-center gap-3">
           <SafeNavLink
             href="/auth/login?redirect=/support"
             className="rounded-xl bg-teal-700 px-6 py-2.5 text-sm font-semibold text-white"
@@ -272,12 +309,19 @@ export default function CustomerSupportPage() {
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <p className="text-xs font-semibold tracking-widest uppercase text-teal-700 dark:text-teal-400">
-            Realtime Customer Support
+            AI Support Assistant + Human Agents
           </p>
-          <h1 className="mt-1 text-2xl font-bold tracking-tight">Support Tickets & Live Chat</h1>
+          <h1 className="mt-1 text-2xl font-bold tracking-tight">Support Tickets &amp; Live Help</h1>
         </div>
         <div className="flex flex-wrap items-center gap-2.5">
           <WatchTutorialButton sectionKey="support" label="Watch Support Tutorial" />
+          <button
+            type="button"
+            onClick={() => setTriageOpen((p) => !p)}
+            className="inline-flex items-center gap-2 rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface)] px-4 py-2.5 text-sm font-semibold hover:border-teal-600/40"
+          >
+            <Bot className="h-4 w-4 text-teal-600" /> Instant AI Help
+          </button>
           <button
             type="button"
             onClick={() => setShowNewForm((s) => !s)}
@@ -287,6 +331,62 @@ export default function CustomerSupportPage() {
           </button>
         </div>
       </div>
+
+      {triageOpen && (
+        <form
+          onSubmit={runAiTriage}
+          className="space-y-3 rounded-2xl border border-teal-600/30 bg-[var(--fcs-surface)] p-5 text-xs"
+        >
+          <p className="flex items-center gap-1.5 text-sm font-bold">
+            <Bot className="h-4 w-4 text-teal-600" /> AI Support Triage (Troubleshoot Before
+            Escalating)
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <input
+              type="text"
+              value={triagePrompt}
+              onChange={(e) => setTriagePrompt(e.target.value)}
+              placeholder="Describe what you're stuck on (e.g. DOCX export, QR certificate, vault upload)..."
+              className="min-w-[240px] flex-1 rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] px-3 py-2"
+            />
+            <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl border border-[var(--fcs-border)] px-3 py-2 font-medium">
+              <Paperclip className="h-3.5 w-3.5" />
+              {triageFile ? triageFile.name : "Attach Screenshot"}
+              <input
+                type="file"
+                accept="image/*,application/pdf"
+                className="hidden"
+                onChange={(e) => setTriageFile(e.target.files?.[0] ?? null)}
+              />
+            </label>
+            <button
+              type="submit"
+              disabled={triageLoading}
+              className="rounded-xl bg-teal-700 px-4 py-2 font-semibold text-white hover:bg-teal-800"
+            >
+              {triageLoading ? "Checking..." : "Ask AI Support"}
+            </button>
+          </div>
+          {triageReply && (
+            <div className="space-y-2 rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] p-3.5">
+              <p className="whitespace-pre-wrap leading-relaxed">{triageReply}</p>
+              <button
+                type="button"
+                onClick={() => {
+                  setSubject(triagePrompt.slice(0, 80) || "Support Escalation");
+                  setDescription(`${triagePrompt}\n\n[AI Summary]\n${triageReply}`);
+                  if (triageFile) setAttachmentFile(triageFile);
+                  setShowNewForm(true);
+                  setTriageOpen(false);
+                }}
+                className="font-semibold text-teal-700 hover:underline dark:text-teal-400"
+              >
+                Still need help? Escalate to Human Ticket →
+              </button>
+            </div>
+          )}
+        </form>
+      )}
 
       {statusNote && (
         <div className="flex items-center gap-2 rounded-xl border border-teal-500/30 bg-teal-50 px-4 py-2.5 text-xs text-teal-800 dark:bg-teal-950/40 dark:text-teal-300">
@@ -351,7 +451,7 @@ export default function CustomerSupportPage() {
               className="w-full rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] p-3"
             />
           </div>
-          <div className="sm:col-span-2 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center justify-between gap-3 sm:col-span-2">
             <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-[var(--fcs-border)] px-3 py-2 font-medium">
               <Paperclip className="h-3.5 w-3.5" />
               {attachmentFile ? attachmentFile.name : "Attach Screenshot / PDF (Optional)"}
@@ -374,7 +474,6 @@ export default function CustomerSupportPage() {
       )}
 
       <div className="grid gap-6 lg:grid-cols-12">
-        {/* Ticket List */}
         <div className="space-y-2 rounded-2xl border border-[var(--fcs-border)] bg-[var(--fcs-surface)] p-4 lg:col-span-4">
           <h2 className="text-xs font-bold uppercase tracking-wider text-[var(--fcs-ink-muted)]">
             Your Tickets ({tickets.length})
@@ -399,7 +498,7 @@ export default function CustomerSupportPage() {
                     <div className="flex items-center justify-between text-[11px]">
                       <span className="font-mono font-semibold">{t.ticket_number}</span>
                       <span className="rounded bg-[var(--fcs-surface-muted)] px-2 py-0.5 uppercase">
-                        {t.status.replace(/_/g, " ")}
+                        {t.status.replace(/_/g, " ")} • {t.priority}
                       </span>
                     </div>
                     <p className="mt-1 truncate text-xs font-bold">{t.subject}</p>
@@ -410,7 +509,6 @@ export default function CustomerSupportPage() {
           )}
         </div>
 
-        {/* Realtime Conversation Pane */}
         <div className="flex flex-col rounded-2xl border border-[var(--fcs-border)] bg-[var(--fcs-surface)] lg:col-span-8">
           {!activeTicket ? (
             <div className="flex min-h-[380px] items-center justify-center p-8 text-sm text-[var(--fcs-ink-muted)]">
@@ -421,7 +519,8 @@ export default function CustomerSupportPage() {
               <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--fcs-border)] px-5 py-4">
                 <div>
                   <p className="font-mono text-xs text-[var(--fcs-ink-muted)]">
-                    {activeTicket.ticket_number} • {activeTicket.category.replace(/_/g, " ")}
+                    {activeTicket.ticket_number} • {activeTicket.category.replace(/_/g, " ")} •
+                    Priority: {activeTicket.priority}
                   </p>
                   <h3 className="text-sm font-bold">{activeTicket.subject}</h3>
                 </div>
@@ -446,7 +545,10 @@ export default function CustomerSupportPage() {
                 </div>
               </div>
 
-              <div className="flex-1 space-y-3 overflow-y-auto p-5 text-xs" style={{ minHeight: 320, maxHeight: 420 }}>
+              <div
+                className="flex-1 space-y-3 overflow-y-auto p-5 text-xs"
+                style={{ minHeight: 320, maxHeight: 420 }}
+              >
                 {messages.map((m) => (
                   <div
                     key={m.id}

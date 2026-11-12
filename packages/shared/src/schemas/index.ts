@@ -103,8 +103,13 @@ export const aiChatRequestSchema = z.object({
       "resume_objective",
       "resume_ats_optimize",
       "resume_jd_match",
+      "resume_health_check",
+      "resume_action_patch",
+      "portfolio_generate",
+      "cover_letter_generate",
       "certificate_assist",
       "recommendations",
+      "support_triage",
     ])
     .optional()
     .default("chat"),
@@ -115,13 +120,24 @@ export const aiChatRequestSchema = z.object({
     .array(
       z.object({
         role: z.enum(["user", "assistant", "system"]),
-        content: z.string().min(1).max(8000),
+        content: z.string().min(1).max(16000),
       })
     )
     .min(1)
     .max(30),
   contextData: z.record(z.unknown()).optional(),
-  jobDescription: z.string().max(8000).optional(),
+  jobDescription: z.string().max(10000).optional(),
+  attachments: z
+    .array(
+      z.object({
+        name: z.string().max(180),
+        mimeType: z.string().max(120),
+        textContent: z.string().max(24000).optional(),
+        imageDataUrl: z.string().max(2_000_000).optional(),
+      })
+    )
+    .max(3)
+    .optional(),
 });
 
 export const profileUpdateSchema = z.object({
@@ -137,3 +153,74 @@ export const profileUpdateSchema = z.object({
   ai_recommendations_enabled: z.boolean().optional(),
   email_notifications_enabled: z.boolean().optional(),
 });
+
+export const portfolioSaveSchema = z.object({
+  id: z.string().uuid().optional(),
+  slug: z
+    .string()
+    .min(2)
+    .max(80)
+    .regex(/^[a-z0-9-]+$/, "Slug must contain lowercase letters, numbers, or hyphens"),
+  title: z.string().min(1).max(160),
+  template_id: z.enum([
+    "linear-atelier",
+    "notion-editorial",
+    "stripe-mesh",
+    "apple-minimal",
+    "framer-obsidian",
+    "academic-folio",
+  ]),
+  theme_mode: z.enum(["light", "dark", "auto"]).default("dark"),
+  accent_color: z.string().regex(/^#[0-9a-fA-F]{6}$/).default("#0F766E"),
+  font_family: z.string().min(1).max(80).default("Plus Jakarta Sans"),
+  is_published: z.boolean().default(false),
+  data: z.record(z.unknown()),
+});
+
+export const coverLetterSaveSchema = z.object({
+  id: z.string().uuid().optional(),
+  resume_id: z.string().uuid().nullable().optional(),
+  title: z.string().min(1).max(180),
+  company_name: z.string().max(160).default(""),
+  target_role: z.string().max(160).default(""),
+  hiring_manager: z.string().max(120).nullable().optional(),
+  writing_style: z.enum(["executive", "modern_tech", "warm_story", "academic", "internship"]),
+  job_description: z.string().max(10000).nullable().optional(),
+  content: z.string().min(1).max(20000),
+  recommendations: z.array(z.string()).optional().default([]),
+});
+
+export const vaultFolderSchema = z.object({
+  id: z.string().uuid().optional(),
+  name: z.string().trim().min(1, "Folder name required").max(80),
+  color: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional().default("#0F766E"),
+});
+
+export const notificationPreferencesSchema = z.object({
+  project_saved: z.boolean().optional(),
+  document_exported: z.boolean().optional(),
+  certificate_generated: z.boolean().optional(),
+  ai_task_completed: z.boolean().optional(),
+  support_ticket_updated: z.boolean().optional(),
+  organization_approved: z.boolean().optional(),
+  in_app_enabled: z.boolean().optional(),
+  email_digest: z.boolean().optional(),
+});
+
+export const testimonialSubmitSchema = z.object({
+  author_name: z.string().trim().min(2).max(100),
+  author_role: z.string().trim().min(2).max(120),
+  organization: z.string().trim().max(120).optional().or(z.literal("")),
+  quote: z.string().trim().min(15).max(600),
+  rating: z.number().int().min(1).max(5).default(5),
+});
+
+export const userAiConfigSchema = z.object({
+  enabled: z.boolean(),
+  provider: z.enum(["ollama", "gemini", "groq", "openai", "openrouter", "custom"]),
+  model: z.string().trim().min(1).max(120),
+  base_url: z.string().trim().max(300).optional().or(z.literal("")),
+  api_key: z.string().trim().max(300).optional(),
+  clear_api_key: z.boolean().optional(),
+});
+

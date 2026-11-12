@@ -64,7 +64,12 @@ export const ResumeRenderer = React.forwardRef<HTMLDivElement, ResumeRendererPro
           ? "1.62"
           : "1.48";
 
-    const isTwoColumn = resolvedLayout.columns === 2;
+    const isTwoColumn =
+      style.columnOverride === "single"
+        ? false
+        : style.columnOverride === "two_column"
+          ? true
+          : resolvedLayout.columns === 2;
     const sidebarRight = resolvedLayout.sidebarPosition === "right";
     const headerAlign = resolvedLayout.headerAlign || "left";
     const headingStyle = resolvedLayout.headingStyle || "uppercase-rule";

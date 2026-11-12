@@ -141,6 +141,7 @@ const AI_QUICK_PROMPTS = [
 export function CertificateStudio(props: CertificateStudioProps) {
   const router = useRouter();
   const canvasRef = useRef<HTMLDivElement | null>(null);
+  const exportRef = useRef<HTMLDivElement | null>(null);
 
   const [certId, setCertId] = useState<string | null>(props.initialCertId);
   const [projectId, setProjectId] = useState<string | null>(props.initialProjectId ?? null);
@@ -194,6 +195,19 @@ export function CertificateStudio(props: CertificateStudioProps) {
 
   const [zoom, setZoom] = useState(orientation === "landscape" ? 0.64 : 0.72);
   const [showGrid, setShowGrid] = useState(false);
+
+  useEffect(() => {
+    const fitToViewport = () => {
+      if (window.innerWidth < 768) {
+        const w = Number(style.canvasWidth) || (orientation === "landscape" ? 1123 : 794);
+        const fitted = Math.max(0.28, Math.min(0.64, Number(((window.innerWidth - 64) / w).toFixed(2))));
+        setZoom(fitted);
+      }
+    };
+    fitToViewport();
+    window.addEventListener("resize", fitToViewport);
+    return () => window.removeEventListener("resize", fitToViewport);
+  }, [orientation, style.canvasWidth]);
   const [snapToGuides, setSnapToGuides] = useState(true);
   const [photoModalOpen, setPhotoModalOpen] = useState(false);
   const [signatureModalOpen, setSignatureModalOpen] = useState(false);
@@ -873,7 +887,8 @@ export function CertificateStudio(props: CertificateStudioProps) {
   };
 
   const handleExport = async (mode: "pdf" | "png" | "png_2k" | "png_4k" | "jpeg") => {
-    if (!canvasRef.current) return;
+    const targetNode = exportRef.current || canvasRef.current;
+    if (!targetNode) return;
     setExporting(mode);
     setExportMenuOpen(false);
     try {
@@ -883,31 +898,31 @@ export function CertificateStudio(props: CertificateStudioProps) {
         height: Number(style.canvasHeight) || (orientation === "landscape" ? 794 : 1123),
       };
       if (mode === "pdf") {
-        await exportElementToPdf(canvasRef.current, `${slug}.pdf`, orientation, {
+        await exportElementToPdf(targetNode, `${slug}.pdf`, orientation, {
           documentType: "certificate",
           documentId: certId || undefined,
           dimensionsPx: baseDims,
         });
       } else if (mode === "png") {
-        await exportElementToPng(canvasRef.current, `${slug}.png`, {
+        await exportElementToPng(targetNode, `${slug}.png`, {
           documentType: "certificate",
           documentId: certId || undefined,
           resolution: "standard",
         });
       } else if (mode === "png_2k") {
-        await exportElementToPng(canvasRef.current, `${slug}_2K.png`, {
+        await exportElementToPng(targetNode, `${slug}_2K.png`, {
           documentType: "certificate",
           documentId: certId || undefined,
           resolution: "2k",
         });
       } else if (mode === "png_4k") {
-        await exportElementToPng(canvasRef.current, `${slug}_4K.png`, {
+        await exportElementToPng(targetNode, `${slug}_4K.png`, {
           documentType: "certificate",
           documentId: certId || undefined,
           resolution: "4k",
         });
       } else if (mode === "jpeg") {
-        await exportElementToJpeg(canvasRef.current, `${slug}.jpg`, {
+        await exportElementToJpeg(targetNode, `${slug}.jpg`, {
           documentType: "certificate",
           documentId: certId || undefined,
           backgroundColor: style.backgroundColor,
@@ -2472,6 +2487,41 @@ export function CertificateStudio(props: CertificateStudioProps) {
         onApply={handleApplyRecipientPhoto}
         title="Certificate Recipient Photo Editor"
       />
+
+      {/* Hidden unscaled 1:1 clone for exact pixel-accurate PDF/PNG/JPEG exports */}
+      <div
+        aria-hidden="true"
+        style={{
+          position: "fixed",
+          left: "-12000px",
+          top: 0,
+          pointerEvents: "none",
+          zIndex: -1,
+        }}
+      >
+        <CertificateCanvas
+          ref={exportRef}
+          certificateCode={certificateCode}
+          title={title}
+          recipientName={recipientName}
+          courseOrAchievement={courseOrAchievement}
+          organizationName={organizationName}
+          description={description}
+          issueDate={issueDate}
+          expiryDate={expiryDate}
+          signatoryName={signatoryName}
+          signatoryDesignation={signatoryDesignation}
+          orientation={orientation}
+          elements={elements}
+          style={style}
+          isVerified={verificationStatus === "verified"}
+          isSample={!hasApprovedIssuer || verificationStatus !== "verified"}
+          showGrid={false}
+          snapToGuides={false}
+          selectedElementId={null}
+          interactive={false}
+        />
+      </div>
 
       <SignatureDrawerModal
         open={signatureModalOpen}

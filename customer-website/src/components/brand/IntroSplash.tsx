@@ -31,7 +31,7 @@ export function IntroSplash() {
     }, 760);
   }, []);
 
-  // Auto-play on fresh homepage load or first visit in session (never re-trigger on client nav back to "/")
+  // Auto-play on fresh homepage load (never block deep-links like /verify or /p/[slug], and never re-trigger on client nav back to "/")
   useEffect(() => {
     if (typeof window === "undefined") return;
 
@@ -43,9 +43,7 @@ export function IntroSplash() {
     }
 
     const isHomeEntry = window.location.pathname === "/";
-    const seenThisSession = window.sessionStorage.getItem("fcs-intro-played") === "1";
-
-    if (isHomeEntry || !seenThisSession) {
+    if (isHomeEntry) {
       window.sessionStorage.setItem("fcs-intro-played", "1");
       exitingRef.current = false;
       setPercent(0);

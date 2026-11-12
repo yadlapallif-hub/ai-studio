@@ -1,5 +1,24 @@
+import {
+  analyzeResumeHealthCheck,
+  buildDeterministicCoverLetter,
+  buildDeterministicResumePatch,
+  buildPortfolioFromResume,
+  type CoverLetterTone,
+  type PortfolioData,
+  type ResumeAiPatchProposal,
+  type ResumeData,
+  type ResumeHealthCheckReport,
+} from "@francis/shared";
 import { createServiceSupabase } from "@/lib/supabase/server";
 import { buildCreatorAiGuideReply } from "@/lib/creator-ai-guide";
+import { createWorkspaceNotification } from "@/lib/notifications";
+
+export interface AiAttachmentInput {
+  name: string;
+  mimeType: string;
+  textContent?: string;
+  imageDataUrl?: string;
+}
 
 export interface AiInvocationInput {
   accessToken: string;
@@ -11,6 +30,7 @@ export interface AiInvocationInput {
   messages: Array<{ role: "user" | "assistant" | "system"; content: string }>;
   contextData?: Record<string, unknown>;
   jobDescription?: string;
+  attachments?: AiAttachmentInput[];
 }
 
 export interface AiInvocationResult {
@@ -21,6 +41,10 @@ export interface AiInvocationResult {
   model?: string;
   tokensUsed?: number;
   conversationId?: string;
+  proposedPatch?: ResumeAiPatchProposal;
+  healthReport?: ResumeHealthCheckReport;
+  generatedPortfolio?: PortfolioData;
+  generatedCoverLetter?: { content: string; recommendations: string[] };
   error?: string;
   message?: string;
 }
@@ -34,11 +58,18 @@ interface AiConfigShape {
   privacy_retain_conversations?: boolean;
 }
 
-function getLocalProviderConfig(provider: string, configuredModel?: string) {
+function resolveProviderConfig(
+  provider: string,
+  configuredModel?: string,
+  override?: { baseUrl?: string | null; apiKey?: string | null }
+) {
   const p = provider.toLowerCase();
+  const customKey = override?.apiKey?.trim() || "";
+  const customBase = override?.baseUrl?.trim()?.replace(/\/+$/, "") || "";
+
   if (p === "openai") {
-    const apiKey = process.env.OPENAI_API_KEY ?? "";
-    const baseUrl = (process.env.OPENAI_BASE_URL ?? "https://api.openai.com/v1").replace(/\/+$/, "");
+    const apiKey = customKey || (process.env.OPENAI_API_KEY ?? "");
+    const baseUrl = customBase || (process.env.OPENAI_BASE_URL ?? "https://api.openai.com/v1").replace(/\/+$/, "");
     return {
       endpoint: apiKey ? `${baseUrl}/chat/completions` : "",
       apiKey,
@@ -47,7 +78,7 @@ function getLocalProviderConfig(provider: string, configuredModel?: string) {
     };
   }
   if (p === "gemini") {
-    const apiKey = process.env.GEMINI_API_KEY ?? "";
+    const apiKey = customKey || (process.env.GEMINI_API_KEY ?? "");
     return {
       endpoint: apiKey ? "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions" : "",
       apiKey,
@@ -56,7 +87,7 @@ function getLocalProviderConfig(provider: string, configuredModel?: string) {
     };
   }
   if (p === "groq") {
-    const apiKey = process.env.GROQ_API_KEY ?? "";
+    const apiKey = customKey || (process.env.GROQ_API_KEY ?? "");
     return {
       endpoint: apiKey ? "https://api.groq.com/openai/v1/chat/completions" : "",
       apiKey,
@@ -65,7 +96,7 @@ function getLocalProviderConfig(provider: string, configuredModel?: string) {
     };
   }
   if (p === "openrouter") {
-    const apiKey = process.env.OPENROUTER_API_KEY ?? "";
+    const apiKey = customKey || (process.env.OPENROUTER_API_KEY ?? "");
     return {
       endpoint: apiKey ? "https://openrouter.ai/api/v1/chat/completions" : "",
       apiKey,
@@ -74,26 +105,23 @@ function getLocalProviderConfig(provider: string, configuredModel?: string) {
     };
   }
   if (p === "ollama") {
-    const apiKey = process.env.OLLAMA_API_KEY ?? "";
-    const base = (process.env.OLLAMA_BASE_URL ?? (apiKey ? "https://ollama.com/api" : "")).replace(
-      /\/+$/,
-      ""
-    );
+    const apiKey = customKey || (process.env.OLLAMA_API_KEY ?? "");
+    const base =
+      customBase ||
+      (process.env.OLLAMA_BASE_URL ?? (apiKey ? "https://ollama.com/api" : "")).replace(/\/+$/, "");
     return {
       endpoint: base ? (base.endsWith("/chat") ? base : `${base}/chat`) : "",
       apiKey,
-      model: process.env.OLLAMA_MODEL || configuredModel || "llama3.2",
+      model: configuredModel || process.env.OLLAMA_MODEL || "llama3.2",
       isOllamaNative: true,
     };
   }
   if (p === "custom") {
-    const apiKey = process.env.CUSTOM_AI_API_KEY ?? process.env.OPENAI_API_KEY ?? "";
-    const baseUrl = (process.env.CUSTOM_AI_BASE_URL ?? process.env.OPENAI_BASE_URL ?? "").replace(
-      /\/+$/,
-      ""
-    );
+    const apiKey = customKey || (process.env.CUSTOM_AI_API_KEY ?? process.env.OPENAI_API_KEY ?? "");
+    const baseUrl =
+      customBase || (process.env.CUSTOM_AI_BASE_URL ?? process.env.OPENAI_BASE_URL ?? "").replace(/\/+$/, "");
     return {
-      endpoint: baseUrl && apiKey ? `${baseUrl}/chat/completions` : "",
+      endpoint: baseUrl ? `${baseUrl}/chat/completions` : "",
       apiKey,
       model: configuredModel || process.env.AI_MODEL || "default",
       isOllamaNative: false,
@@ -103,18 +131,72 @@ function getLocalProviderConfig(provider: string, configuredModel?: string) {
   return { endpoint: "", apiKey: "", model: configuredModel || "", isOllamaNative: false };
 }
 
+function buildStructuredContextExtras(input: AiInvocationInput) {
+  const ctxResume = input.contextData?.resume as ResumeData | undefined;
+  const lastPrompt = [...input.messages].reverse().find((m) => m.role === "user")?.content ?? "";
+
+  let proposedPatch: ResumeAiPatchProposal | undefined;
+  let healthReport: ResumeHealthCheckReport | undefined;
+  let generatedPortfolio: PortfolioData | undefined;
+  let generatedCoverLetter: { content: string; recommendations: string[] } | undefined;
+
+  if (ctxResume && (input.mode === "resume_health_check" || input.mode === "resume_action_patch")) {
+    healthReport = analyzeResumeHealthCheck(ctxResume, undefined, input.jobDescription);
+    proposedPatch = buildDeterministicResumePatch(ctxResume, lastPrompt || input.jobDescription);
+  } else if (
+    ctxResume &&
+    input.mode === "chat" &&
+    /improve my resume|tailor my resume|optimize my resume|rewrite my resume|internship/i.test(
+      lastPrompt
+    )
+  ) {
+    proposedPatch = buildDeterministicResumePatch(ctxResume, lastPrompt);
+  }
+
+  if (input.mode === "portfolio_generate") {
+    if (ctxResume) {
+      generatedPortfolio = buildPortfolioFromResume(ctxResume, "Creator");
+    }
+  }
+
+  if (input.mode === "cover_letter_generate") {
+    const meta = (input.contextData ?? {}) as {
+      candidateName?: string;
+      companyName?: string;
+      targetRole?: string;
+      hiringManager?: string;
+      writingStyle?: CoverLetterTone;
+      resume?: ResumeData;
+    };
+    generatedCoverLetter = buildDeterministicCoverLetter({
+      candidateName: meta.candidateName || meta.resume?.personalInfo?.fullName || "Applicant",
+      companyName: meta.companyName || "Target Company",
+      targetRole: meta.targetRole || "Role",
+      hiringManager: meta.hiringManager,
+      writingStyle: meta.writingStyle || "modern_tech",
+      resume: meta.resume ?? null,
+      jobDescription: input.jobDescription,
+    });
+  }
+
+  return { proposedPatch, healthReport, generatedPortfolio, generatedCoverLetter };
+}
+
 export async function invokeCreatorAi(input: AiInvocationInput): Promise<AiInvocationResult> {
   const adminDb = createServiceSupabase();
 
-  const { data: settingsRow } = await adminDb
-    .from("fcs_platform_settings")
-    .select("value")
-    .eq("key", "ai_config")
-    .maybeSingle();
+  const [{ data: settingsRow }, { data: userAiRow }] = await Promise.all([
+    adminDb.from("fcs_platform_settings").select("value").eq("key", "ai_config").maybeSingle(),
+    adminDb
+      .from("fcs_user_ai_configs")
+      .select("enabled, provider, model, base_url, encrypted_api_key")
+      .eq("user_id", input.userId)
+      .maybeSingle(),
+  ]);
 
   const aiConfig = (settingsRow?.value ?? {}) as AiConfigShape;
 
-  if (aiConfig.enabled === false) {
+  if (aiConfig.enabled === false && !userAiRow?.enabled) {
     return {
       ok: false,
       status: 503,
@@ -123,9 +205,21 @@ export async function invokeCreatorAi(input: AiInvocationInput): Promise<AiInvoc
     };
   }
 
-  const provider = (aiConfig.provider || process.env.AI_PROVIDER || "ollama").toLowerCase();
-  const localCfg = getLocalProviderConfig(provider, aiConfig.model);
+  const usingUserOverride = Boolean(userAiRow?.enabled);
+  const provider = (
+    (usingUserOverride ? userAiRow?.provider : aiConfig.provider) ||
+    process.env.AI_PROVIDER ||
+    "ollama"
+  ).toLowerCase();
 
+  const localCfg = usingUserOverride
+    ? resolveProviderConfig(provider, userAiRow?.model, {
+        baseUrl: userAiRow?.base_url,
+        apiKey: userAiRow?.encrypted_api_key,
+      })
+    : resolveProviderConfig(provider, aiConfig.model);
+
+  const extras = buildStructuredContextExtras(input);
   let reply = "";
   let usedProvider = provider;
   let usedModel = localCfg.model;
@@ -133,8 +227,7 @@ export async function invokeCreatorAi(input: AiInvocationInput): Promise<AiInvoc
   let fallbackReason: string | null = null;
 
   if (localCfg.endpoint) {
-    // Rate limit locally before calling upstream directly
-    const hourlyLimit = Number(aiConfig.hourly_limit_per_user ?? 40);
+    const hourlyLimit = Number(aiConfig.hourly_limit_per_user ?? 60);
     const windowStart = new Date();
     windowStart.setMinutes(0, 0, 0);
     const { data: rlRow } = await adminDb
@@ -145,12 +238,12 @@ export async function invokeCreatorAi(input: AiInvocationInput): Promise<AiInvoc
       .eq("window_start", windowStart.toISOString())
       .maybeSingle();
 
-    if ((rlRow?.request_count ?? 0) >= hourlyLimit) {
+    if ((rlRow?.request_count ?? 0) >= hourlyLimit && !usingUserOverride) {
       return {
         ok: false,
         status: 429,
         error: "RATE_LIMIT_EXCEEDED",
-        message: `Hourly AI limit (${hourlyLimit} requests/hour) reached. Please try again later.`,
+        message: `Hourly AI limit (${hourlyLimit} requests/hour) reached. You can configure your own local Ollama or API provider in Settings.`,
       };
     }
 
@@ -180,17 +273,44 @@ export async function invokeCreatorAi(input: AiInvocationInput): Promise<AiInvoc
       .map((f: { question: string; answer: string }) => `Q: ${f.question}\nA: ${f.answer}`)
       .join("\n\n");
 
+    const docAttachmentsText = (input.attachments ?? [])
+      .filter((a) => a.textContent && a.textContent.trim().length > 0)
+      .map((a) => `Attached File "${a.name}" (${a.mimeType}):\n${a.textContent!.slice(0, 8000)}`)
+      .join("\n\n");
+
     const systemPrompt = [
       aiConfig.system_instructions ||
-        "You are Creator AI inside CREATOR STUDIO (Built by Francis). Be factual, practical, and helpful.",
-      "Platform Overview: Creator Studio is a 100% free, open-source (MIT) website Built by Francis offering (1) AI Resume Studio (/resume-builder, 100 templates, 14 sections, ATS scoring, free A4 PDF/PNG export), (2) Authorized Certificate Studio (/certificate-builder, 100 templates exclusively for Admin-approved Authorized Organizations, Stamp Studio /stamps with add/delete controls, and one-click 'Publish Verified Certificate' turning drafts into Verified records on /verify), (3) Public Certificate Verification (/verify), (4) Document Vault (/vault), and (5) Just Email magic-link or password login (/auth/login).",
-      "Also help users who ask how to build a website (planning pages, Next.js + React + Tailwind frontend, Supabase/PostgreSQL auth & RLS database, API routes, testing, and Vercel deployment) or how to build/publish a verified certificate.",
+        "You are Creator AI inside FRANCIS CREATOR STUDIO (Created & Developed by FRANCIS). Be factual, practical, and helpful.",
+      "Platform Modules: AI Resume Studio (/resume-builder, 100 templates, 14 sections, DOCX + PDF + PNG exports, AI Resume Health Check), Certificate Studio & Bulk Generator (/certificate-builder, /bulk-generator, 124 templates, Stamp/Signature studio, QR Verification /verify), AI Portfolio Generator (/portfolio-builder), AI Cover Letter Studio (/cover-letter), Document Vault (/vault), Global Search (Ctrl+K), Tutorials (/tutorials), Support (/support).",
       `Active route context: ${input.contextPage}. Task mode: ${input.mode}.`,
       faqKnowledge ? `Platform FAQ Knowledge:\n${faqKnowledge}` : "",
-      "Never fabricate user employment, degrees, or credentials. Never guarantee ATS selection. If the user faces an unresolved technical/account issue, advise opening live support or a ticket at /support.",
+      docAttachmentsText ? `Uploaded Document Attachments:\n${docAttachmentsText}` : "",
+      "Never fabricate user employment, degrees, or credentials. Never guarantee ATS selection. Only suggest realistic, user-approved improvements.",
     ]
       .filter(Boolean)
       .join("\n\n");
+
+    const imageAttachments = (input.attachments ?? []).filter(
+      (a) => a.imageDataUrl && a.imageDataUrl.startsWith("data:image/")
+    );
+
+    const trimmedMessages = input.messages.slice(-12);
+    const formattedMessages = trimmedMessages.map((m, idx) => {
+      const isLastUser = idx === trimmedMessages.length - 1 && m.role === "user";
+      if (isLastUser && imageAttachments.length > 0 && !localCfg.isOllamaNative) {
+        return {
+          role: m.role,
+          content: [
+            { type: "text", text: m.content },
+            ...imageAttachments.map((img) => ({
+              type: "image_url",
+              image_url: { url: img.imageDataUrl! },
+            })),
+          ],
+        };
+      }
+      return m;
+    });
 
     const fullMessages = [
       { role: "system" as const, content: systemPrompt },
@@ -198,7 +318,7 @@ export async function invokeCreatorAi(input: AiInvocationInput): Promise<AiInvoc
         ? [
             {
               role: "system" as const,
-              content: `Workspace context JSON: ${JSON.stringify(input.contextData).slice(0, 6000)}`,
+              content: `Workspace context JSON: ${JSON.stringify(input.contextData).slice(0, 7000)}`,
             },
           ]
         : []),
@@ -210,7 +330,7 @@ export async function invokeCreatorAi(input: AiInvocationInput): Promise<AiInvoc
             },
           ]
         : []),
-      ...input.messages.slice(-12),
+      ...formattedMessages,
     ];
 
     try {
@@ -232,13 +352,15 @@ export async function invokeCreatorAi(input: AiInvocationInput): Promise<AiInvoc
         const json = await upstream.json();
         reply = json?.choices?.[0]?.message?.content ?? json?.message?.content ?? "";
         tokensUsed =
-          Number(json?.usage?.total_tokens ?? ((json?.prompt_eval_count ?? 0) + (json?.eval_count ?? 0))) || 0;
+          Number(
+            json?.usage?.total_tokens ??
+              (json?.prompt_eval_count ?? 0) + (json?.eval_count ?? 0)
+          ) || 0;
       }
     } catch {
       fallbackReason = "Upstream network unreachable";
     }
   } else {
-    // Delegate to Supabase Edge Function fcs-ai-assistant (which reads Supabase Edge Secrets)
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
     if (!supabaseUrl || !anonKey) {
@@ -293,19 +415,51 @@ export async function invokeCreatorAi(input: AiInvocationInput): Promise<AiInvoc
     }
   }
 
-  // Fallback gracefully to built-in Creator AI guide whenever external LLM keys are missing/unavailable
+  // Deterministic smart synthesis fallback if external LLM keys are unconfigured/unreachable
   if (!reply) {
-    reply = buildCreatorAiGuideReply({
-      mode: input.mode,
-      contextPage: input.contextPage,
-      messages: input.messages,
-      contextData: input.contextData,
-    });
-    usedProvider = "creator-ai-guide";
-    usedModel = fallbackReason ? "built-in-guide" : "creator-ai-guide";
+    if (extras.generatedCoverLetter) {
+      reply = extras.generatedCoverLetter.content;
+      usedProvider = "creator-ai-engine";
+      usedModel = "deterministic-cover-letter";
+    } else if (extras.healthReport) {
+      const r = extras.healthReport;
+      reply = [
+        `AI Resume Health Check — Overall Score: ${r.overallScore}/100 (${r.readinessLabel})`,
+        "",
+        ...r.axes.map(
+          (ax) => `• ${ax.label}: ${ax.score}/100 — ${ax.finding} Next: ${ax.action}`
+        ),
+        "",
+        extras.proposedPatch ? `Recommended Update Ready for Review:\n${extras.proposedPatch.rationale}` : "",
+      ]
+        .filter(Boolean)
+        .join("\n");
+      usedProvider = "creator-ai-engine";
+      usedModel = "resume-health-analyzer";
+    } else {
+      const attachmentNote =
+        (input.attachments?.length ?? 0) > 0
+          ? `I received your attachment(s): ${input.attachments!.map((a) => a.name).join(", ")}. `
+          : "";
+      const extractedPreview = (input.attachments ?? [])
+        .find((a) => a.textContent)
+        ?.textContent?.slice(0, 420);
+      reply =
+        attachmentNote +
+        buildCreatorAiGuideReply({
+          mode: input.mode,
+          contextPage: input.contextPage,
+          messages: input.messages,
+          contextData: input.contextData,
+        }) +
+        (extractedPreview
+          ? `\n\nDocument Excerpt Analyzed:\n"${extractedPreview.trim()}${extractedPreview.length >= 420 ? "..." : ""}"`
+          : "");
+      usedProvider = "creator-ai-guide";
+      usedModel = fallbackReason ? "built-in-guide" : "creator-ai-guide";
+    }
   }
 
-  // Persist conversation history if retention enabled
   let conversationId = input.conversationId;
   if (aiConfig.privacy_retain_conversations !== false) {
     const lastUserMessage = [...input.messages].reverse().find((m) => m.role === "user");
@@ -348,12 +502,23 @@ export async function invokeCreatorAi(input: AiInvocationInput): Promise<AiInvoc
         user_id: input.userId,
         role: "assistant",
         content: reply,
+        suggested_actions: extras.proposedPatch ?? null,
         tokens_used: tokensUsed,
         provider: usedProvider,
         model: usedModel,
       });
       await adminDb.from("fcs_ai_messages").insert(rowsToInsert);
     }
+  }
+
+  if (input.mode !== "chat" && input.mode !== "support_triage") {
+    await createWorkspaceNotification({
+      userId: input.userId,
+      prefKey: "ai_task_completed",
+      title: "Creator AI Task Complete",
+      message: `Finished "${input.mode.replace(/_/g, " ")}" in ${input.contextPage}.`,
+      link: input.contextDocumentId ? `/resume-builder/${input.contextDocumentId}` : "/assistant",
+    });
   }
 
   return {
@@ -364,6 +529,10 @@ export async function invokeCreatorAi(input: AiInvocationInput): Promise<AiInvoc
     model: usedModel,
     tokensUsed,
     conversationId,
+    proposedPatch: extras.proposedPatch,
+    healthReport: extras.healthReport,
+    generatedPortfolio: extras.generatedPortfolio,
+    generatedCoverLetter: extras.generatedCoverLetter,
   };
 }
 

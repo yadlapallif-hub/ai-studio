@@ -34,6 +34,7 @@ export const ADMIN_ROUTE_ROLES: Record<string, readonly AppRole[]> = {
   users: ["super_admin", "admin"],
   verifications: ["super_admin", "admin", "content_manager"],
   templates: ["super_admin", "admin", "content_manager"],
+  documents: ["super_admin", "admin"],
   website: ["super_admin", "admin", "content_manager"],
   analytics: ["super_admin", "admin"],
   ai: ["super_admin"],

@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
   if (conversationId) {
     const { data: messages, error } = await supabase
       .from("fcs_ai_messages")
-      .select("id, role, content, provider, model, created_at")
+      .select("id, role, content, suggested_actions, provider, model, created_at")
       .eq("conversation_id", conversationId)
       .eq("user_id", user.id)
       .order("created_at", { ascending: true });
@@ -78,7 +78,11 @@ export async function POST(request: NextRequest) {
   } = await supabase.auth.getSession();
 
   if (!user || !session?.access_token) {
-    if (parsed.data.mode === "chat" || parsed.data.mode === "certificate_assist") {
+    if (
+      parsed.data.mode === "chat" ||
+      parsed.data.mode === "certificate_assist" ||
+      parsed.data.mode === "support_triage"
+    ) {
       const reply = buildCreatorAiGuideReply({
         mode: parsed.data.mode,
         contextPage: parsed.data.contextPage,
@@ -112,6 +116,7 @@ export async function POST(request: NextRequest) {
     messages: parsed.data.messages,
     contextData: parsed.data.contextData,
     jobDescription: parsed.data.jobDescription,
+    attachments: parsed.data.attachments,
   });
 
   if (!result.ok) {
@@ -131,5 +136,9 @@ export async function POST(request: NextRequest) {
     model: result.model,
     tokensUsed: result.tokensUsed,
     conversationId: result.conversationId,
+    proposedPatch: result.proposedPatch,
+    healthReport: result.healthReport,
+    generatedPortfolio: result.generatedPortfolio,
+    generatedCoverLetter: result.generatedCoverLetter,
   });
 }

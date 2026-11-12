@@ -4,11 +4,13 @@ import React, { useMemo, useRef, useState } from "react";
 import { SafeNavLink } from "@/components/ui/SafeNavLink";
 import { useRouter } from "next/navigation";
 import {
+  analyzeResumeHealthCheck,
   analyzeResumeQuality,
   createEmptyResumeData,
   createSampleStarterResumeData,
   getResumeTemplateLayout,
   type ResumeData,
+  type ResumeHealthCheckReport,
   type ResumeQualityReport,
   type ResumeSectionKey,
   type ResumeStyleConfig,
@@ -39,6 +41,7 @@ import { PhotoEditorModal, type EditedPhotoResult } from "../studio/PhotoEditorM
 import {
   exportElementAsA4Pdf,
   exportElementAsPng,
+  exportResumeToDocx,
   logDocumentExport,
 } from "@/lib/exportHelpers";
 
@@ -126,10 +129,22 @@ export function ResumeStudio(props: ResumeStudioProps) {
     mode: string;
     label: string;
     text: string;
+    proposedPatch?: {
+      summary?: string;
+      technicalSkills?: string[];
+      softSkills?: string[];
+      targetRole?: string;
+      rationale?: string;
+    };
   } | null>(null);
 
   const qualityReport: ResumeQualityReport = useMemo(
     () => analyzeResumeQuality(data, style, jobDescription),
+    [data, style, jobDescription]
+  );
+
+  const healthReport: ResumeHealthCheckReport = useMemo(
+    () => analyzeResumeHealthCheck(data, style, jobDescription),
     [data, style, jobDescription]
   );
 
@@ -296,6 +311,63 @@ export function ResumeStudio(props: ResumeStudioProps) {
     }
   };
 
+  const handleExportDocx = async () => {
+    setExporting(true);
+    setErrorMsg(null);
+    try {
+      const safeName = `${(title || "resume").replace(/[^a-z0-9-_]+/gi, "_")}.docx`;
+      await exportResumeToDocx(data, safeName);
+      if (resumeId) await logDocumentExport("resume", resumeId, "docx");
+      setStatusMsg("Microsoft Word (.docx) exported successfully.");
+    } catch (err) {
+      setErrorMsg(err instanceof Error ? err.message : "Failed to export DOCX.");
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const handleSaveAsVersion = async () => {
+    if (!props.isAuthenticated) {
+      setErrorMsg("Sign in to save multiple named resume versions.");
+      return;
+    }
+    setSaving(true);
+    setErrorMsg(null);
+    try {
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) return;
+      const versionLabel = `${title.trim() || "Resume"} — v${new Date().toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+      })}`;
+      const { data: inserted, error } = await supabase
+        .from("fcs_resumes")
+        .insert({
+          user_id: user.id,
+          title: versionLabel,
+          template_slug: templateSlug,
+          target_role: targetRole.trim() || null,
+          data,
+          style_config: style,
+          ats_score: qualityReport.atsReadiness,
+          quality_report: qualityReport,
+        })
+        .select("id")
+        .single();
+      if (error || !inserted) {
+        setErrorMsg(error?.message || "Could not create resume version.");
+        return;
+      }
+      setStatusMsg(`Saved new version "${versionLabel}".`);
+      router.push(`/resume-builder/${inserted.id}`);
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const handleApplyPhoto = async (result: EditedPhotoResult) => {
     const finalUrl = result.dataUrl;
     let assetPath: string | undefined;
@@ -386,7 +458,8 @@ export function ResumeStudio(props: ResumeStudioProps) {
       | "resume_grammar"
       | "resume_skills"
       | "resume_ats_optimize"
-      | "resume_jd_match",
+      | "resume_jd_match"
+      | "resume_health",
     label: string,
     prompt: string
   ) => {
@@ -406,7 +479,17 @@ export function ResumeStudio(props: ResumeStudioProps) {
           messages: [{ role: "user", content: prompt }],
         }),
       });
-      const json = (await res.json()) as { reply?: string; message?: string };
+      const json = (await res.json()) as {
+        reply?: string;
+        message?: string;
+        proposedPatch?: {
+          summary?: string;
+          technicalSkills?: string[];
+          softSkills?: string[];
+          targetRole?: string;
+          rationale?: string;
+        };
+      };
       if (!res.ok || !json.reply) {
         setAiError(
           json.message ||
@@ -414,7 +497,12 @@ export function ResumeStudio(props: ResumeStudioProps) {
         );
         return;
       }
-      setAiSuggestion({ mode, label, text: json.reply });
+      setAiSuggestion({
+        mode,
+        label,
+        text: json.reply,
+        proposedPatch: json.proposedPatch,
+      });
     } catch {
       setAiError("Network error communicating with Creator AI.");
     } finally {
@@ -424,6 +512,23 @@ export function ResumeStudio(props: ResumeStudioProps) {
 
   const applyAiSuggestion = () => {
     if (!aiSuggestion) return;
+    if (aiSuggestion.proposedPatch) {
+      const patch = aiSuggestion.proposedPatch;
+      if (patch.targetRole) setTargetRole(patch.targetRole);
+      setData((prev) => ({
+        ...prev,
+        summary: patch.summary ?? prev.summary,
+        technicalSkills: patch.technicalSkills
+          ? Array.from(new Set([...prev.technicalSkills, ...patch.technicalSkills]))
+          : prev.technicalSkills,
+        softSkills: patch.softSkills
+          ? Array.from(new Set([...prev.softSkills, ...patch.softSkills]))
+          : prev.softSkills,
+      }));
+      setStatusMsg("Approved AI patch applied cleanly to your resume.");
+      setAiSuggestion(null);
+      return;
+    }
     if (aiSuggestion.mode === "resume_summary") {
       setData((prev) => ({ ...prev, summary: aiSuggestion.text.trim() }));
       setStatusMsg("AI summary applied.");
@@ -508,11 +613,29 @@ export function ResumeStudio(props: ResumeStudioProps) {
             </button>
             <button
               type="button"
+              onClick={handleExportDocx}
+              disabled={exporting}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] px-3 py-1.5 text-xs font-semibold hover:border-teal-600/50"
+            >
+              <FileDown className="h-3.5 w-3.5 text-teal-600" /> DOCX
+            </button>
+            <button
+              type="button"
               onClick={() => window.print()}
               className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--fcs-border)] px-3 py-1.5 text-xs font-semibold hover:bg-[var(--fcs-surface-muted)]"
             >
               <Printer className="h-3.5 w-3.5" /> Print A4
             </button>
+            {props.isAuthenticated && (
+              <button
+                type="button"
+                onClick={handleSaveAsVersion}
+                disabled={saving}
+                className="rounded-lg border border-[var(--fcs-border)] px-2.5 py-1.5 text-xs font-semibold hover:bg-[var(--fcs-surface-muted)]"
+              >
+                + Save Version
+              </button>
+            )}
             {props.isAuthenticated && resumeId && (
               <>
                 <button
@@ -1775,6 +1898,23 @@ export function ResumeStudio(props: ResumeStudioProps) {
                       <option value="comfortable">Comfortable</option>
                     </select>
                   </div>
+                  <div className="col-span-2">
+                    <label className="mb-1 block font-medium">Column Layout</label>
+                    <select
+                      value={style.columnOverride || "auto"}
+                      onChange={(e) =>
+                        setStyle({
+                          ...style,
+                          columnOverride: e.target.value as "auto" | "single" | "two_column",
+                        })
+                      }
+                      className="w-full rounded-lg border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] px-2.5 py-1.5"
+                    >
+                      <option value="auto">Template Default</option>
+                      <option value="single">Single Column (Classic ATS)</option>
+                      <option value="two_column">Two-Column Executive Sidebar</option>
+                    </select>
+                  </div>
                 </div>
 
                 <div className="mt-3">
@@ -1862,16 +2002,69 @@ export function ResumeStudio(props: ResumeStudioProps) {
           {/* CREATOR AI TAB */}
           {activeTab === "ai" && (
             <div className="space-y-4 rounded-2xl border border-[var(--fcs-border)] bg-[var(--fcs-surface)] p-4 text-xs">
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-3 gap-2">
                 <div className="rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] p-3">
-                  <p className="text-[11px] text-[var(--fcs-ink-muted)]">Overall Quality</p>
-                  <p className="mt-1 text-2xl font-bold">{qualityReport.overallScore}/100</p>
+                  <p className="text-[10px] text-[var(--fcs-ink-muted)]">Health Score</p>
+                  <p className="mt-1 text-xl font-bold text-teal-700 dark:text-teal-400">
+                    {healthReport.overallScore}/100
+                  </p>
                 </div>
                 <div className="rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] p-3">
-                  <p className="text-[11px] text-[var(--fcs-ink-muted)]">ATS Readiness</p>
-                  <p className="mt-1 text-2xl font-bold text-teal-700 dark:text-teal-400">
-                    {qualityReport.atsReadiness}% ({qualityReport.atsLevel})
+                  <p className="text-[10px] text-[var(--fcs-ink-muted)]">Overall Quality</p>
+                  <p className="mt-1 text-xl font-bold">{qualityReport.overallScore}/100</p>
+                </div>
+                <div className="rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] p-3">
+                  <p className="text-[10px] text-[var(--fcs-ink-muted)]">ATS Readiness</p>
+                  <p className="mt-1 text-xl font-bold">
+                    {qualityReport.atsReadiness}%
                   </p>
+                </div>
+              </div>
+
+              {/* 8-Axis AI Resume Health Check Breakdown */}
+              <div className="rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] p-3">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="font-bold">AI Resume Health Check (8 Dimensions)</p>
+                  <button
+                    type="button"
+                    disabled={aiLoading}
+                    onClick={() =>
+                      runAiTask(
+                        "resume_health",
+                        "8-Axis AI Health Review & Patch",
+                        "Perform a thorough AI Resume Health Check covering structure, summary, skills, experience, education, grammar, ATS optimization, and job relevance, and propose an approved summary/skill improvement."
+                      )
+                    }
+                    className="rounded-lg bg-teal-700 px-2.5 py-1 text-[10px] font-semibold text-white hover:bg-teal-800 disabled:opacity-60"
+                  >
+                    Run Deep AI Health Check
+                  </button>
+                </div>
+                <div className="mt-2.5 grid grid-cols-2 gap-1.5">
+                  {healthReport.axes.map((axis) => (
+                    <div
+                      key={axis.key}
+                      className="rounded-lg border border-[var(--fcs-border)] bg-[var(--fcs-surface)] p-2"
+                    >
+                      <div className="flex items-center justify-between text-[11px] font-semibold">
+                        <span>{axis.label}</span>
+                        <span
+                          className={
+                            axis.status === "strong"
+                              ? "text-emerald-700 dark:text-emerald-400"
+                              : axis.status === "good"
+                                ? "text-amber-700 dark:text-amber-400"
+                                : "text-red-600"
+                          }
+                        >
+                          {axis.score}%
+                        </span>
+                      </div>
+                      <p className="mt-0.5 text-[10px] text-[var(--fcs-ink-muted)]">
+                        {axis.action}
+                      </p>
+                    </div>
+                  ))}
                 </div>
               </div>
 
@@ -2036,6 +2229,29 @@ export function ResumeStudio(props: ResumeStudioProps) {
                     <p className="max-h-48 overflow-y-auto whitespace-pre-wrap text-[11px] leading-relaxed">
                       {aiSuggestion.text}
                     </p>
+                    {aiSuggestion.proposedPatch && (
+                      <div className="rounded-lg border border-teal-600/20 bg-[var(--fcs-surface)] p-2.5 text-[11px]">
+                        <p className="font-bold text-teal-700 dark:text-teal-400">
+                          Diff Preview Before Applying
+                        </p>
+                        {aiSuggestion.proposedPatch.summary && (
+                          <div className="mt-1 space-y-1">
+                            <p className="line-through opacity-60">
+                              Before: {data.summary || "(Empty summary)"}
+                            </p>
+                            <p className="font-medium text-emerald-700 dark:text-emerald-300">
+                              After: {aiSuggestion.proposedPatch.summary}
+                            </p>
+                          </div>
+                        )}
+                        {aiSuggestion.proposedPatch.technicalSkills && (
+                          <p className="mt-1 text-[10px]">
+                            + Suggested skills:{" "}
+                            {aiSuggestion.proposedPatch.technicalSkills.join(", ")}
+                          </p>
+                        )}
+                      </div>
+                    )}
                     <div className="flex gap-2">
                       <button
                         type="button"
@@ -2043,7 +2259,8 @@ export function ResumeStudio(props: ResumeStudioProps) {
                         className="inline-flex items-center gap-1 rounded-lg bg-teal-700 px-3 py-1.5 text-[11px] font-semibold text-white"
                       >
                         <Check className="h-3 w-3" />
-                        {aiSuggestion.mode === "resume_summary" ||
+                        {aiSuggestion.proposedPatch ||
+                        aiSuggestion.mode === "resume_summary" ||
                         aiSuggestion.mode === "resume_objective"
                           ? "Approve & Apply"
                           : "Copy Suggestion"}

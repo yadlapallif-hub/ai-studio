@@ -23,14 +23,15 @@ export function Footer({
           <div className="md:col-span-2">
             <div className="flex items-center gap-2.5">
               <CreatorStudioLogo size={28} className="shrink-0" />
-              <p className="text-sm font-bold tracking-wide uppercase">CREATOR STUDIO</p>
+              <p className="text-sm font-bold tracking-wide uppercase">FRANCIS CREATOR STUDIO</p>
             </div>
             <p className="mt-1.5 text-xs font-medium text-teal-700 dark:text-teal-400">
-              Create Your Future. Design Your Identity.
+              Create. Design. Innovate.
             </p>
             <p className="mt-3 max-w-md text-xs leading-relaxed text-[var(--fcs-ink-muted)]">
-              Free, open-source AI Resume Builder, Certificate Studio with official QR verification,
-              and Document Vault. Zero paywalls, zero paid exports, zero hidden fees.
+              Free, open-source AI Resume Studio, Certificate &amp; Bulk Atelier with QR
+              verification, AI Portfolio Generator, Cover Letter Studio, and encrypted Document
+              Vault. Zero paywalls, zero paid exports.
             </p>
             <p className="mt-3 text-[11px] text-[var(--fcs-ink-muted)]">
               {footerContent.disclaimer}
@@ -39,9 +40,14 @@ export function Footer({
 
           <div>
             <p className="text-xs font-semibold tracking-wider uppercase text-[var(--fcs-ink-muted)]">
-              Studios & Tools
+              Studios &amp; Ecosystem
             </p>
             <ul className="mt-3 space-y-2 text-xs">
+              <li>
+                <SafeNavLink href="/dashboard" className="hover:text-teal-700 dark:hover:text-teal-400">
+                  Unified Workspace Dashboard
+                </SafeNavLink>
+              </li>
               <li>
                 <SafeNavLink href="/resume-builder" className="hover:text-teal-700 dark:hover:text-teal-400">
                   AI Resume Studio
@@ -57,10 +63,18 @@ export function Footer({
               </li>
               <li>
                 <SafeNavLink
-                  href="/stamps"
+                  href="/portfolio-builder"
                   className="hover:text-teal-700 dark:hover:text-teal-400"
                 >
-                  Stamp &amp; Signature Studio
+                  AI Portfolio Generator
+                </SafeNavLink>
+              </li>
+              <li>
+                <SafeNavLink
+                  href="/cover-letter"
+                  className="hover:text-teal-700 dark:hover:text-teal-400"
+                >
+                  AI Cover Letter Generator
                 </SafeNavLink>
               </li>
               <li>
@@ -72,8 +86,36 @@ export function Footer({
                 </SafeNavLink>
               </li>
               <li>
+                <SafeNavLink href="/vault" className="hover:text-teal-700 dark:hover:text-teal-400">
+                  Document Vault
+                </SafeNavLink>
+              </li>
+              <li>
                 <SafeNavLink href="/verify" className="hover:text-teal-700 dark:hover:text-teal-400">
                   Public Certificate Verification
+                </SafeNavLink>
+              </li>
+            </ul>
+          </div>
+
+          <div>
+            <p className="text-xs font-semibold tracking-wider uppercase text-[var(--fcs-ink-muted)]">
+              AI, Support &amp; Open Source
+            </p>
+            <ul className="mt-3 space-y-2 text-xs">
+              <li>
+                <SafeNavLink href="/assistant" className="hover:text-teal-700 dark:hover:text-teal-400">
+                  Creator AI Assistant
+                </SafeNavLink>
+              </li>
+              <li>
+                <SafeNavLink href="/tutorials" className="hover:text-teal-700 dark:hover:text-teal-400">
+                  Video Tutorials (EN &amp; తెలుగు)
+                </SafeNavLink>
+              </li>
+              <li>
+                <SafeNavLink href="/support" className="hover:text-teal-700 dark:hover:text-teal-400">
+                  Live Support &amp; Tickets
                 </SafeNavLink>
               </li>
               <li>
@@ -82,31 +124,8 @@ export function Footer({
                 </SafeNavLink>
               </li>
               <li>
-                <SafeNavLink href="/assistant" className="hover:text-teal-700 dark:hover:text-teal-400">
-                  Creator AI &amp; Intelligence
-                </SafeNavLink>
-              </li>
-              <li>
-                <SafeNavLink href="/support" className="hover:text-teal-700 dark:hover:text-teal-400">
-                  Live Support & Tickets
-                </SafeNavLink>
-              </li>
-            </ul>
-          </div>
-
-          <div>
-            <p className="text-xs font-semibold tracking-wider uppercase text-[var(--fcs-ink-muted)]">
-              Open Source & Contact
-            </p>
-            <ul className="mt-3 space-y-2 text-xs">
-              <li>
-                <SafeNavLink href="/tutorials" className="hover:text-teal-700 dark:hover:text-teal-400">
-                  Video Tutorials (EN &amp; తెలుగు)
-                </SafeNavLink>
-              </li>
-              <li>
                 <SafeNavLink href="/about" className="hover:text-teal-700 dark:hover:text-teal-400">
-                  About &amp; Documentation
+                  About &amp; Self-Hosting Docs
                 </SafeNavLink>
               </li>
               <li>
@@ -134,7 +153,7 @@ export function Footer({
               </li>
               <li className="text-[var(--fcs-ink-muted)]">{footerContent.license}</li>
               <li className="pt-2 font-semibold text-[var(--fcs-ink)]">
-                {footerContent.credit}
+                Created &amp; Developed by FRANCIS.
               </li>
               <li className="pt-1">
                 <ReplayIntroButton />

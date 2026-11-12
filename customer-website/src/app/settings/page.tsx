@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { SafeNavLink } from "@/components/ui/SafeNavLink";
-import { CheckCircle2, Loader2, Shield, Trash2, User } from "lucide-react";
+import { Bell, Bot, CheckCircle2, KeyRound, Loader2, Shield, Trash2, User } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useTheme } from "@/components/layout/ThemeProvider";
 
@@ -28,6 +28,22 @@ export default function SettingsPage() {
   const [emailNotifsEnabled, setEmailNotifsEnabled] = useState(true);
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [notifPrefs, setNotifPrefs] = useState({
+    project_saved: true,
+    document_exported: true,
+    certificate_generated: true,
+    ai_task_completed: true,
+    support_ticket_updated: true,
+    organization_approved: true,
+    in_app_enabled: true,
+    email_digest: true,
+  });
+  const [aiEnabled, setAiEnabled] = useState(false);
+  const [aiProvider, setAiProvider] = useState<"ollama" | "gemini" | "groq" | "openai">("gemini");
+  const [aiModel, setAiModel] = useState("");
+  const [aiBaseUrl, setAiBaseUrl] = useState("");
+  const [aiApiKey, setAiApiKey] = useState("");
+  const [aiHasKey, setAiHasKey] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -56,6 +72,33 @@ export default function SettingsPage() {
           setThemePref((p.theme_preference as "light" | "dark" | "system") || "system");
           setAiRecsEnabled(p.ai_recommendations_enabled !== false);
           setEmailNotifsEnabled(p.email_notifications_enabled !== false);
+        }
+
+        const [npRes, aiRes] = await Promise.all([
+          fetch("/api/notifications/preferences"),
+          fetch("/api/ai/provider-config"),
+        ]);
+        if (npRes.ok) {
+          const npJson = (await npRes.json()) as { preferences?: typeof notifPrefs };
+          if (npJson.preferences) setNotifPrefs((prev) => ({ ...prev, ...npJson.preferences }));
+        }
+        if (aiRes.ok) {
+          const aiJson = (await aiRes.json()) as {
+            config?: {
+              enabled?: boolean;
+              provider?: "ollama" | "gemini" | "groq" | "openai";
+              model?: string | null;
+              base_url?: string | null;
+              hasApiKey?: boolean;
+            };
+          };
+          if (aiJson.config) {
+            setAiEnabled(Boolean(aiJson.config.enabled));
+            if (aiJson.config.provider) setAiProvider(aiJson.config.provider);
+            setAiModel(aiJson.config.model || "");
+            setAiBaseUrl(aiJson.config.base_url || "");
+            setAiHasKey(Boolean(aiJson.config.hasApiKey));
+          }
         }
       } finally {
         setLoading(false);
@@ -363,6 +406,234 @@ export default function SettingsPage() {
           </button>
         </div>
       </form>
+
+      {/* Granular Notification Preferences */}
+      <section className="space-y-4 rounded-2xl border border-[var(--fcs-border)] bg-[var(--fcs-surface)] p-6">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <h2 className="flex items-center gap-2 text-base font-bold">
+              <Bell className="h-4 w-4 text-teal-600" /> Notification Preferences
+            </h2>
+            <p className="mt-0.5 text-xs text-[var(--fcs-ink-muted)]">
+              Choose which workspace events trigger real-time bell notifications.
+            </p>
+          </div>
+          <button
+            type="button"
+            disabled={saving}
+            onClick={async () => {
+              setSaving(true);
+              setErrorMsg(null);
+              try {
+                const res = await fetch("/api/notifications/preferences", {
+                  method: "PUT",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify(notifPrefs),
+                });
+                if (res.ok) setSavedMsg("Notification preferences saved.");
+                else setErrorMsg("Failed to save notification preferences.");
+              } finally {
+                setSaving(false);
+              }
+            }}
+            className="rounded-xl bg-teal-700 px-4 py-2 text-xs font-semibold text-white hover:bg-teal-800"
+          >
+            Save Notifications
+          </button>
+        </div>
+
+        <div className="grid gap-2.5 sm:grid-cols-2">
+          {(
+            [
+              ["project_saved", "Project & Resume Saves"],
+              ["document_exported", "Document Exports (PDF, PNG, DOCX)"],
+              ["certificate_generated", "Certificates & Bulk Generation"],
+              ["ai_task_completed", "Creator AI Generation & Health Checks"],
+              ["support_ticket_updated", "Support Ticket Admin Replies"],
+              ["organization_approved", "Organization Verification Updates"],
+              ["in_app_enabled", "In-App Real-Time Bell Alerts"],
+              ["email_digest", "Email Activity Summary"],
+            ] as Array<[keyof typeof notifPrefs, string]>
+          ).map(([key, label]) => (
+            <label
+              key={key}
+              className="flex cursor-pointer items-center justify-between rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] px-3.5 py-2.5 text-xs font-medium"
+            >
+              <span>{label}</span>
+              <input
+                type="checkbox"
+                checked={notifPrefs[key]}
+                onChange={(e) =>
+                  setNotifPrefs((prev) => ({ ...prev, [key]: e.target.checked }))
+                }
+                className="h-4 w-4 accent-teal-700"
+              />
+            </label>
+          ))}
+        </div>
+      </section>
+
+      {/* Personal AI Provider Configuration (Server-Only Storage) */}
+      <section className="space-y-4 rounded-2xl border border-[var(--fcs-border)] bg-[var(--fcs-surface)] p-6">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 className="flex items-center gap-2 text-base font-bold">
+              <Bot className="h-4 w-4 text-teal-600" /> Personal AI Provider Configuration
+            </h2>
+            <p className="mt-0.5 text-xs text-[var(--fcs-ink-muted)]">
+              Optionally override the platform AI model with your own Ollama, Gemini, Groq, or
+              OpenAI-compatible endpoint. API keys are stored strictly server-side and never sent
+              back to the browser.
+            </p>
+          </div>
+          {aiHasKey && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-1 text-[10px] font-bold text-emerald-800">
+              <KeyRound className="h-3 w-3" /> Server Key Saved
+            </span>
+          )}
+        </div>
+
+        <label className="flex items-center gap-2.5 text-xs font-semibold">
+          <input
+            type="checkbox"
+            checked={aiEnabled}
+            onChange={(e) => setAiEnabled(e.target.checked)}
+            className="h-4 w-4 accent-teal-700"
+          />
+          Use my custom AI provider configuration for Creator AI requests
+        </label>
+
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div>
+            <label className="mb-1 block text-xs font-semibold">Provider</label>
+            <select
+              value={aiProvider}
+              onChange={(e) =>
+                setAiProvider(e.target.value as "ollama" | "gemini" | "groq" | "openai")
+              }
+              className="w-full rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] px-3 py-2 text-xs outline-none focus:border-teal-600"
+            >
+              <option value="ollama">Ollama (Local / Self-Hosted)</option>
+              <option value="gemini">Google Gemini</option>
+              <option value="groq">Groq (Llama / Mixtral)</option>
+              <option value="openai">OpenAI / Compatible Endpoint</option>
+            </select>
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-semibold">Model Name</label>
+            <input
+              type="text"
+              value={aiModel}
+              onChange={(e) => setAiModel(e.target.value)}
+              placeholder={
+                aiProvider === "ollama"
+                  ? "llama3.1:8b"
+                  : aiProvider === "gemini"
+                    ? "gemini-2.0-flash"
+                    : aiProvider === "groq"
+                      ? "llama-3.3-70b-versatile"
+                      : "gpt-4o-mini"
+              }
+              className="w-full rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] px-3 py-2 text-xs outline-none focus:border-teal-600"
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-semibold">
+              Base URL {aiProvider === "ollama" ? "(Required for Ollama)" : "(Optional Override)"}
+            </label>
+            <input
+              type="text"
+              value={aiBaseUrl}
+              onChange={(e) => setAiBaseUrl(e.target.value)}
+              placeholder={aiProvider === "ollama" ? "http://localhost:11434" : "https://api.openai.com/v1"}
+              className="w-full rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] px-3 py-2 text-xs outline-none focus:border-teal-600"
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-semibold">
+              API Key {aiHasKey ? "(Leave blank to keep existing server key)" : ""}
+            </label>
+            <input
+              type="password"
+              value={aiApiKey}
+              onChange={(e) => setAiApiKey(e.target.value)}
+              placeholder={aiHasKey ? "•••••••••••• (Stored securely on server)" : "sk-... or AIza..."}
+              className="w-full rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] px-3 py-2 text-xs outline-none focus:border-teal-600"
+            />
+          </div>
+        </div>
+
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          {aiHasKey && (
+            <button
+              type="button"
+              onClick={async () => {
+                setSaving(true);
+                try {
+                  const res = await fetch("/api/ai/provider-config", {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      enabled: aiEnabled,
+                      provider: aiProvider,
+                      model: aiModel,
+                      base_url: aiBaseUrl,
+                      clearApiKey: true,
+                    }),
+                  });
+                  if (res.ok) {
+                    setAiHasKey(false);
+                    setAiApiKey("");
+                    setSavedMsg("Stored server API key cleared.");
+                  }
+                } finally {
+                  setSaving(false);
+                }
+              }}
+              className="rounded-xl border border-red-500/30 px-3 py-2 text-xs font-semibold text-red-600 hover:bg-red-50"
+            >
+              Clear Stored Key
+            </button>
+          )}
+          <button
+            type="button"
+            disabled={saving}
+            onClick={async () => {
+              setSaving(true);
+              setErrorMsg(null);
+              try {
+                const res = await fetch("/api/ai/provider-config", {
+                  method: "PUT",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    enabled: aiEnabled,
+                    provider: aiProvider,
+                    model: aiModel,
+                    base_url: aiBaseUrl,
+                    api_key: aiApiKey.trim() || undefined,
+                  }),
+                });
+                const json = (await res.json()) as {
+                  config?: { hasApiKey?: boolean };
+                  error?: string;
+                };
+                if (!res.ok) {
+                  setErrorMsg(json.error || "Failed to save AI provider config.");
+                } else {
+                  setAiApiKey("");
+                  if (json.config) setAiHasKey(Boolean(json.config.hasApiKey));
+                  setSavedMsg("Personal AI provider settings saved securely on server.");
+                }
+              } finally {
+                setSaving(false);
+              }
+            }}
+            className="ml-auto rounded-xl bg-teal-700 px-5 py-2 text-xs font-semibold text-white hover:bg-teal-800"
+          >
+            Save AI Provider
+          </button>
+        </div>
+      </section>
     </div>
   );
 }

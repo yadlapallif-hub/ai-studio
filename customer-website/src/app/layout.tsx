@@ -24,11 +24,11 @@ export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: `${SITE_NAME} — Free AI Resume Builder, Certificate Studio & QR Verification`,
+    default: `${SITE_NAME} — Create. Design. Innovate.`,
     template: `%s`,
   },
   description:
-    "Create Your Future. Design Your Identity. Free, open-source AI Resume Studio (100 templates), Certificate Design Studio (124 templates), QR Verification, Creator AI, Document Vault, and English/Telugu video tutorials.",
+    "Create. Design. Innovate. Free, open-source AI Resume Studio (100 templates), Certificate Design Studio (124 templates), AI Portfolio Builder, Cover Letter Studio, QR Verification, Creator AI, and Document Vault.",
   openGraph: {
     type: "website",
     locale: "en_US",

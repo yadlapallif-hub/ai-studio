@@ -14,7 +14,7 @@ export function SlideReveal({
   children,
   direction = "up",
   delay = 0,
-  duration = 560,
+  duration = 380,
   className = "",
 }: SlideRevealProps) {
   const ref = useRef<HTMLDivElement | null>(null);
@@ -33,6 +33,12 @@ export function SlideReveal({
       return;
     }
 
+    const rect = el.getBoundingClientRect();
+    if (rect.top < window.innerHeight + 120 && rect.bottom > -40) {
+      setRevealed(true);
+      return;
+    }
+
     const observer = new IntersectionObserver(
       (entries) => {
         for (const entry of entries) {
@@ -43,11 +49,11 @@ export function SlideReveal({
           }
         }
       },
-      { threshold: 0.05, rootMargin: "0px 0px -12px 0px" }
+      { threshold: 0, rootMargin: "120px 0px 120px 0px" }
     );
 
     observer.observe(el);
-    const safetyTimer = window.setTimeout(() => setRevealed(true), 1050 + delay);
+    const safetyTimer = window.setTimeout(() => setRevealed(true), 450 + delay);
 
     return () => {
       observer.disconnect();
