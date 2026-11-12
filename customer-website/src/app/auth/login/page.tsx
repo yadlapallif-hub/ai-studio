@@ -2,22 +2,29 @@
 
 import React, { Suspense, useEffect, useState } from "react";
 import { SafeNavLink } from "@/components/ui/SafeNavLink";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import {
   AlertCircle,
   ArrowRight,
   CheckCircle2,
+  Eye,
+  EyeOff,
   KeyRound,
   Loader2,
   Lock,
   Mail,
+  Phone,
   Sparkles,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { CreatorStudioLogo } from "@/components/brand/CreatorStudioLogo";
-import { GoogleIcon } from "@/components/auth/PhoneInputRow";
+import {
+  GoogleIcon,
+  MobileNumberField,
+  normalizeE164Phone,
+} from "@/components/auth/PhoneInputRow";
 
-type EmailLoginMode = "magic" | "password";
+type LoginMode = "password" | "phone" | "magic";
 
 interface ProviderStatus {
   googleEnabled: boolean;
@@ -25,20 +32,22 @@ interface ProviderStatus {
 }
 
 function LoginForm() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const rawNext = searchParams.get("next") || searchParams.get("redirect") || "/dashboard";
   const safeNext = rawNext.startsWith("/") && !rawNext.startsWith("//") ? rawNext : "/dashboard";
   const rawErr = searchParams.get("error");
   const initialError = rawErr
     ? rawErr.toLowerCase().includes("pkce") || rawErr.toLowerCase().includes("code verifier")
-      ? "That older link was opened on a different browser or device. Request a fresh link below (now works across all browsers and phones) or sign in with Email & Password."
+      ? "That older link was opened on a different browser or device. Sign in with Email & Password, Mobile & Password, or request a fresh link below."
       : rawErr
     : null;
 
-  const [mode, setMode] = useState<EmailLoginMode>("password");
+  const [mode, setMode] = useState<LoginMode>("password");
   const [email, setEmail] = useState("");
+  const [countryCode, setCountryCode] = useState("+91");
+  const [phoneNumber, setPhoneNumber] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [magicSent, setMagicSent] = useState(false);
   const [rateLimited, setRateLimited] = useState(false);
   const [emailOtp, setEmailOtp] = useState("");
@@ -71,8 +80,7 @@ function LoginForm() {
     } catch {
       // non-fatal
     }
-    router.push(safeNext);
-    router.refresh();
+    window.location.assign(safeNext);
   };
 
   const handleGoogleLogin = async () => {
@@ -191,21 +199,53 @@ function LoginForm() {
     }
   };
 
+  const handlePhonePasswordSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setInfo(null);
+
+    const e164Phone = normalizeE164Phone(countryCode, phoneNumber);
+    if (!/^\+[1-9]\d{7,14}$/.test(e164Phone)) {
+      setError("Enter a valid mobile number with country code.");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const supabase = createClient();
+      const { error: signInErr } = await supabase.auth.signInWithPassword({
+        phone: e164Phone,
+        password,
+      });
+
+      if (signInErr) {
+        setError(signInErr.message);
+        return;
+      }
+
+      await finalizeSignedInSession();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to sign in with mobile number.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="mx-auto flex min-h-[calc(100vh-12rem)] max-w-md items-center px-4 py-12">
-      <div className="w-full rounded-2xl border border-[var(--fcs-border)] bg-[var(--fcs-surface)] p-7 shadow-sm">
+      <div className="w-full rounded-2xl border border-[var(--fcs-border)] bg-[var(--fcs-surface)] p-7 shadow-lg">
         <div className="flex items-center gap-3">
           <CreatorStudioLogo size={38} className="shrink-0" />
           <div>
             <p className="text-[11px] font-semibold tracking-widest uppercase text-teal-700 dark:text-teal-400">
               CREATOR STUDIO
             </p>
-            <h1 className="text-xl font-bold tracking-tight">Sign in with Email</h1>
+            <h1 className="text-xl font-bold tracking-tight">Sign in to your workspace</h1>
           </div>
         </div>
         <p className="mt-2 text-xs text-[var(--fcs-ink-muted)]">
-          Enter just your email for a cross-device sign-in link, or sign in instantly with email
-          and password.
+          Sign in instantly with Email &amp; Password or Mobile &amp; Password (no OTP required), or
+          request a cross-device email link.
         </p>
 
         {error && (
@@ -223,9 +263,20 @@ function LoginForm() {
                     setError(null);
                     setRateLimited(false);
                   }}
-                  className="cursor-pointer rounded-lg bg-red-700 px-3 py-1.5 text-[11px] font-semibold text-white hover:bg-red-800"
+                  className="fcs-btn-primary cursor-pointer px-3 py-1.5 text-[11px]"
                 >
-                  Switch to Email &amp; Password →
+                  Use Email &amp; Password →
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMode("phone");
+                    setError(null);
+                    setRateLimited(false);
+                  }}
+                  className="fcs-btn-secondary cursor-pointer px-3 py-1.5 text-[11px]"
+                >
+                  Use Mobile &amp; Password →
                 </button>
               </div>
             )}
@@ -245,7 +296,7 @@ function LoginForm() {
               type="button"
               onClick={handleGoogleLogin}
               disabled={googleLoading}
-              className="mt-5 flex w-full items-center justify-center gap-2.5 rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] py-2.5 text-sm font-semibold transition hover:border-teal-600/50 hover:bg-[var(--fcs-surface)] disabled:opacity-60"
+              className="fcs-btn-secondary mt-5 w-full cursor-pointer py-2.5 text-sm"
             >
               {googleLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <GoogleIcon />}
               <span>Continue with Google</span>
@@ -253,13 +304,13 @@ function LoginForm() {
 
             <div className="my-4 flex items-center gap-3 text-[11px] text-[var(--fcs-ink-muted)]">
               <div className="h-px flex-1 bg-[var(--fcs-border)]" />
-              <span>or use email</span>
+              <span>or sign in directly</span>
               <div className="h-px flex-1 bg-[var(--fcs-border)]" />
             </div>
           </>
         )}
 
-        <div className="mt-5 grid grid-cols-2 gap-1.5 rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] p-1 text-xs font-semibold">
+        <div className="mt-5 grid grid-cols-3 gap-1 rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] p-1 text-[11px] font-semibold">
           <button
             type="button"
             onClick={() => {
@@ -267,13 +318,28 @@ function LoginForm() {
               setError(null);
               setRateLimited(false);
             }}
-            className={`flex cursor-pointer items-center justify-center gap-1.5 rounded-lg py-2 transition ${
+            className={`flex cursor-pointer items-center justify-center gap-1 rounded-lg py-2 transition ${
               mode === "password"
                 ? "bg-[var(--fcs-surface)] text-[var(--fcs-ink)] shadow-sm"
                 : "text-[var(--fcs-ink-muted)] hover:text-[var(--fcs-ink)]"
             }`}
           >
-            <Lock className="h-3.5 w-3.5" /> Email &amp; Password
+            <Lock className="h-3 w-3" /> Email
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setMode("phone");
+              setError(null);
+              setRateLimited(false);
+            }}
+            className={`flex cursor-pointer items-center justify-center gap-1 rounded-lg py-2 transition ${
+              mode === "phone"
+                ? "bg-[var(--fcs-surface)] text-[var(--fcs-ink)] shadow-sm"
+                : "text-[var(--fcs-ink-muted)] hover:text-[var(--fcs-ink)]"
+            }`}
+          >
+            <Phone className="h-3 w-3" /> Mobile
           </button>
           <button
             type="button"
@@ -282,13 +348,13 @@ function LoginForm() {
               setError(null);
               setRateLimited(false);
             }}
-            className={`flex cursor-pointer items-center justify-center gap-1.5 rounded-lg py-2 transition ${
+            className={`flex cursor-pointer items-center justify-center gap-1 rounded-lg py-2 transition ${
               mode === "magic"
                 ? "bg-[var(--fcs-surface)] text-[var(--fcs-ink)] shadow-sm"
                 : "text-[var(--fcs-ink-muted)] hover:text-[var(--fcs-ink)]"
             }`}
           >
-            <Sparkles className="h-3.5 w-3.5" /> Just Email Link
+            <Sparkles className="h-3 w-3" /> Email Link
           </button>
         </div>
 
@@ -316,7 +382,7 @@ function LoginForm() {
               <button
                 type="submit"
                 disabled={loading}
-                className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-teal-700 py-2.5 text-sm font-semibold text-white transition hover:bg-teal-800 disabled:opacity-60"
+                className="fcs-btn-primary w-full cursor-pointer py-2.5 text-sm disabled:opacity-60"
               >
                 {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Mail className="h-4 w-4" />}
                 <span>
@@ -356,67 +422,95 @@ function LoginForm() {
                 <button
                   type="submit"
                   disabled={loading || !emailOtp.trim()}
-                  className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-teal-700/40 bg-teal-50 py-2 text-xs font-semibold text-teal-800 transition hover:bg-teal-100 disabled:opacity-60 dark:bg-teal-950/50 dark:text-teal-200"
+                  className="fcs-btn-secondary w-full cursor-pointer py-2 text-xs disabled:opacity-60"
                 >
-                  <ArrowRight className="h-3.5 w-3.5" /> Verify Code &amp; Sign In
+                  Verify Email Code &amp; Sign In
                 </button>
               </form>
             )}
           </div>
         ) : (
-          <form onSubmit={handleEmailPasswordSubmit} className="mt-4 space-y-4">
-            <div>
-              <label className="mb-1.5 block text-xs font-semibold" htmlFor="login-email">
-                Email Address
-              </label>
-              <div className="relative">
-                <Mail className="absolute top-2.5 left-3 h-4 w-4 text-[var(--fcs-ink-muted)]" />
-                <input
-                  id="login-email"
-                  type="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@example.com"
-                  className="w-full rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] py-2 pr-3 pl-9 text-sm outline-none focus:border-teal-600"
-                />
+          <form
+            onSubmit={mode === "phone" ? handlePhonePasswordSubmit : handleEmailPasswordSubmit}
+            className="mt-4 space-y-4"
+          >
+            {mode === "phone" ? (
+              <MobileNumberField
+                id="login-phone"
+                countryCode={countryCode}
+                onCountryCodeChange={setCountryCode}
+                phoneNumber={phoneNumber}
+                onPhoneNumberChange={setPhoneNumber}
+              />
+            ) : (
+              <div>
+                <label className="mb-1.5 block text-xs font-semibold" htmlFor="login-email">
+                  Email Address
+                </label>
+                <div className="relative">
+                  <Mail className="absolute top-2.5 left-3 h-4 w-4 text-[var(--fcs-ink-muted)]" />
+                  <input
+                    id="login-email"
+                    type="email"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="you@example.com"
+                    className="w-full rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] py-2 pr-3 pl-9 text-sm outline-none focus:border-teal-600"
+                  />
+                </div>
               </div>
-            </div>
+            )}
 
             <div>
               <div className="mb-1.5 flex items-center justify-between">
                 <label className="text-xs font-semibold" htmlFor="login-password">
                   Password
                 </label>
-                <SafeNavLink
-                  href="/auth/forgot-password"
-                  className="text-xs font-medium text-teal-700 hover:underline dark:text-teal-400"
-                >
-                  Forgot password?
-                </SafeNavLink>
+                {mode === "password" && (
+                  <SafeNavLink
+                    href="/auth/forgot-password"
+                    className="text-xs font-medium text-teal-700 hover:underline dark:text-teal-400"
+                  >
+                    Forgot password?
+                  </SafeNavLink>
+                )}
               </div>
               <div className="relative">
                 <Lock className="absolute top-2.5 left-3 h-4 w-4 text-[var(--fcs-ink-muted)]" />
                 <input
                   id="login-password"
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   required
-                  minLength={6}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] py-2 pr-3 pl-9 text-sm outline-none focus:border-teal-600"
+                  className="w-full rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] py-2 pr-10 pl-9 text-sm outline-none focus:border-teal-600"
                 />
+                <button
+                  type="button"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  onClick={() => setShowPassword((p) => !p)}
+                  className="absolute top-2 right-2.5 cursor-pointer rounded p-0.5 text-[var(--fcs-ink-muted)] hover:text-[var(--fcs-ink)]"
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
               </div>
             </div>
 
             <button
               type="submit"
               disabled={loading}
-              className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-teal-700 py-2.5 text-sm font-semibold text-white transition hover:bg-teal-800 disabled:opacity-60"
+              className="fcs-btn-primary w-full cursor-pointer py-2.5 text-sm disabled:opacity-60"
             >
               {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowRight className="h-4 w-4" />}
-              <span>{loading ? "Signing in..." : "Sign In with Email"}</span>
+              <span>
+                {loading
+                  ? "Signing in..."
+                  : mode === "phone"
+                    ? "Sign In with Mobile & Password"
+                    : "Sign In with Email & Password"}
+              </span>
             </button>
           </form>
         )}

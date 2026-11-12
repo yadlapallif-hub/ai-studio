@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState } from "react";
-import { useRouter } from "next/navigation";
 import { SafeNavLink } from "@/components/ui/SafeNavLink";
 import {
   AlertCircle,
@@ -14,7 +13,6 @@ import {
 import { createClient } from "@/lib/supabase/client";
 
 export default function ForgotPasswordPage() {
-  const router = useRouter();
   const [email, setEmail] = useState("");
   const [recoveryCode, setRecoveryCode] = useState("");
   const [showCodeBox, setShowCodeBox] = useState(false);
@@ -86,8 +84,7 @@ export default function ForgotPasswordPage() {
         setError(verErr.message);
         return;
       }
-      router.push("/auth/reset-password");
-      router.refresh();
+      window.location.assign("/auth/reset-password");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Invalid recovery code.");
     } finally {
@@ -154,7 +151,7 @@ export default function ForgotPasswordPage() {
           <button
             type="submit"
             disabled={loading}
-            className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-teal-700 py-2.5 text-sm font-semibold text-white hover:bg-teal-800 disabled:opacity-60"
+            className="fcs-btn-primary w-full cursor-pointer py-2.5 text-sm disabled:opacity-60"
           >
             {loading && <Loader2 className="h-4 w-4 animate-spin" />}
             Send Reset Link
@@ -190,7 +187,7 @@ export default function ForgotPasswordPage() {
                 <button
                   type="submit"
                   disabled={loading || !email.trim() || !recoveryCode.trim()}
-                  className="inline-flex cursor-pointer items-center gap-1 rounded-xl border border-teal-700/40 bg-teal-50 px-3.5 text-xs font-semibold text-teal-800 hover:bg-teal-100 disabled:opacity-60 dark:bg-teal-950/40 dark:text-teal-200"
+                  className="fcs-btn-secondary cursor-pointer px-3.5 text-xs disabled:opacity-60"
                 >
                   Verify <ArrowRight className="h-3.5 w-3.5" />
                 </button>

@@ -21,12 +21,32 @@ export function SafeNavLink({
   replace,
   scroll,
   onClick,
+  onMouseEnter,
+  onFocus,
   className = "",
   style,
   children,
   ...rest
 }: SafeNavLinkProps) {
   const router = useRouter();
+
+  const isInternalRoute =
+    Boolean(href) &&
+    !external &&
+    target !== "_blank" &&
+    !href.startsWith("mailto:") &&
+    !href.startsWith("tel:") &&
+    !/^https?:\/\//i.test(href);
+
+  const handlePrefetch = () => {
+    if (isInternalRoute && typeof router.prefetch === "function") {
+      try {
+        router.prefetch(href);
+      } catch {
+        // ignore
+      }
+    }
+  };
 
   const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
     onClick?.(e);
@@ -62,6 +82,14 @@ export function SafeNavLink({
       type="button"
       role="link"
       onClick={handleClick}
+      onMouseEnter={(e) => {
+        handlePrefetch();
+        onMouseEnter?.(e);
+      }}
+      onFocus={(e) => {
+        handlePrefetch();
+        onFocus?.(e);
+      }}
       style={{ textAlign: "inherit", ...style }}
       className={`cursor-pointer ${className}`}
       {...rest}

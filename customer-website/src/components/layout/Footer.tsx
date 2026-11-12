@@ -1,6 +1,7 @@
 import React from "react";
 import { SafeNavLink } from "@/components/ui/SafeNavLink";
 import { CreatorStudioLogo } from "../brand/CreatorStudioLogo";
+import { ReplayIntroButton } from "../brand/ReplayIntroButton";
 
 export function Footer({
   footerContent,
@@ -98,6 +99,9 @@ export function Footer({
               <li className="text-[var(--fcs-ink-muted)]">{footerContent.license}</li>
               <li className="pt-2 font-semibold text-[var(--fcs-ink)]">
                 {footerContent.credit}
+              </li>
+              <li className="pt-1">
+                <ReplayIntroButton />
               </li>
             </ul>
           </div>

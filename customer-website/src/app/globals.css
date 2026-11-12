@@ -61,15 +61,17 @@ body {
   background: rgba(100, 116, 139, 0.55);
 }
 
-/* Intro & Page Slide Reveal Keyframes */
+/* ==========================================================================
+   Luxury Motion Intro Keyframes
+   ========================================================================== */
 @keyframes fcsLogoPop {
   0% {
     opacity: 0;
-    transform: scale(0.84) translateY(12px);
+    transform: scale(0.76) translateY(16px);
   }
   65% {
     opacity: 1;
-    transform: scale(1.03) translateY(0);
+    transform: scale(1.04) translateY(-1px);
   }
   100% {
     opacity: 1;
@@ -79,12 +81,12 @@ body {
 
 @keyframes fcsStrokeDraw {
   0% {
-    stroke-dasharray: 90;
-    stroke-dashoffset: 90;
-    opacity: 0.3;
+    stroke-dasharray: 96;
+    stroke-dashoffset: 96;
+    opacity: 0.25;
   }
   100% {
-    stroke-dasharray: 90;
+    stroke-dasharray: 96;
     stroke-dashoffset: 0;
     opacity: 1;
   }
@@ -93,15 +95,24 @@ body {
 @keyframes fcsRingPulse {
   0% {
     opacity: 0;
-    transform: scale(0.85);
+    transform: scale(0.8);
   }
-  50% {
-    opacity: 0.7;
+  45% {
+    opacity: 0.85;
     transform: scale(1.06);
   }
   100% {
-    opacity: 0.25;
-    transform: scale(1.16);
+    opacity: 0.28;
+    transform: scale(1.22);
+  }
+}
+
+@keyframes fcsOrbitSpin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
   }
 }
 
@@ -109,7 +120,7 @@ body {
   0% {
     opacity: 0;
     clip-path: inset(0 100% 0 0);
-    transform: translateX(-18px);
+    transform: translateX(-22px);
   }
   100% {
     opacity: 1;
@@ -122,7 +133,7 @@ body {
   0% {
     opacity: 0;
     clip-path: inset(0 0 100% 0);
-    transform: translateY(22px);
+    transform: translateY(20px);
   }
   100% {
     opacity: 1;
@@ -144,17 +155,92 @@ body {
 
 @keyframes fcsProgressSweep {
   0% {
-    width: 0%;
-    opacity: 0.7;
+    transform: scaleX(0);
+    opacity: 0.65;
   }
   100% {
-    width: 100%;
+    transform: scaleX(1);
     opacity: 1;
   }
 }
 
+@keyframes fcsCinemaSheen {
+  0% {
+    transform: translateX(-140%) skewX(-22deg);
+    opacity: 0;
+  }
+  35% {
+    opacity: 0.9;
+  }
+  100% {
+    transform: translateX(240%) skewX(-22deg);
+    opacity: 0;
+  }
+}
+
+@keyframes fcsAuroraDrift {
+  0% {
+    transform: translate3d(-4%, -2%, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(4%, 3%, 0) scale(1.06);
+  }
+  100% {
+    transform: translate3d(-4%, -2%, 0) scale(1);
+  }
+}
+
+/* ==========================================================================
+   Smooth Page Slide & Navigation Motion
+   ========================================================================== */
+@keyframes fcsPageSlideIn {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 14px, 0) scale(0.992);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes fcsMenuSlideDown {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, -8px, 0) scale(0.97);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes fcsDrawerSlide {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, -10px, 0);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+.fcs-page-enter {
+  animation: fcsPageSlideIn 380ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.fcs-menu-enter {
+  animation: fcsMenuSlideDown 200ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  transform-origin: top right;
+}
+
+.fcs-drawer-enter {
+  animation: fcsDrawerSlide 240ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
 .fcs-intro-emblem {
-  animation: fcsLogoPop 640ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation: fcsLogoPop 700ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
 .fcs-logo-draw {
@@ -170,27 +256,226 @@ body {
 }
 
 .fcs-intro-ring {
-  animation: fcsRingPulse 1200ms ease-out 180ms both;
+  animation: fcsRingPulse 1400ms ease-out 180ms both;
+}
+
+.fcs-intro-orbit {
+  animation: fcsOrbitSpin 16s linear infinite;
 }
 
 .fcs-intro-title {
-  animation: fcsSlideRevealClip 680ms cubic-bezier(0.22, 1, 0.36, 1) 240ms both;
+  animation: fcsSlideRevealClip 760ms cubic-bezier(0.22, 1, 0.36, 1) 360ms both;
 }
 
 .fcs-intro-rule {
-  animation: fcsExpandLine 580ms cubic-bezier(0.22, 1, 0.36, 1) 380ms both;
+  animation: fcsExpandLine 620ms cubic-bezier(0.22, 1, 0.36, 1) 520ms both;
 }
 
 .fcs-intro-subtitle {
-  animation: fcsSlideRevealUp 620ms cubic-bezier(0.22, 1, 0.36, 1) 460ms both;
+  animation: fcsSlideRevealUp 640ms cubic-bezier(0.22, 1, 0.36, 1) 600ms both;
 }
 
 .fcs-intro-bottom {
-  animation: fcsSlideRevealUp 640ms cubic-bezier(0.22, 1, 0.36, 1) 560ms both;
+  animation: fcsSlideRevealUp 640ms cubic-bezier(0.22, 1, 0.36, 1) 700ms both;
 }
 
 .fcs-intro-progress {
-  animation: fcsProgressSweep 1650ms cubic-bezier(0.22, 1, 0.36, 1) 120ms both;
+  transform-origin: left center;
+  animation: fcsProgressSweep 2400ms cubic-bezier(0.22, 1, 0.36, 1) 160ms both;
+}
+
+.fcs-intro-sheen {
+  animation: fcsCinemaSheen 1550ms cubic-bezier(0.22, 1, 0.36, 1) 820ms both;
+}
+
+.fcs-intro-aurora {
+  animation: fcsAuroraDrift 6s ease-in-out infinite;
+}
+
+/* ==========================================================================
+   Premium UI Button System
+   ========================================================================== */
+.fcs-btn-primary {
+  position: relative;
+  overflow: hidden;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 0.875rem;
+  background: linear-gradient(135deg, #0f766e 0%, #115e59 55%, #0d4a46 100%);
+  color: #ffffff;
+  font-weight: 600;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.24),
+    0 10px 24px -10px rgba(15, 118, 110, 0.58),
+    0 2px 6px rgba(15, 118, 110, 0.2);
+  transition:
+    transform 220ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 220ms cubic-bezier(0.22, 1, 0.36, 1),
+    filter 220ms ease;
+}
+
+.fcs-btn-primary::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    115deg,
+    transparent 20%,
+    rgba(255, 255, 255, 0.24) 48%,
+    transparent 76%
+  );
+  transform: translateX(-130%);
+  transition: transform 620ms cubic-bezier(0.22, 1, 0.36, 1);
+  pointer-events: none;
+}
+
+.fcs-btn-primary:hover:not(:disabled) {
+  transform: translateY(-1.5px);
+  filter: brightness(1.06);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.32),
+    0 16px 32px -10px rgba(15, 118, 110, 0.65),
+    0 4px 10px rgba(15, 118, 110, 0.26);
+}
+
+.fcs-btn-primary:hover:not(:disabled)::after {
+  transform: translateX(130%);
+}
+
+.fcs-btn-primary:active:not(:disabled) {
+  transform: translateY(0) scale(0.982);
+}
+
+.fcs-btn-secondary {
+  position: relative;
+  overflow: hidden;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 0.875rem;
+  background: var(--fcs-surface);
+  color: var(--fcs-ink);
+  font-weight: 600;
+  border: 1px solid var(--fcs-border);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.65),
+    0 4px 14px -6px rgba(15, 23, 42, 0.14);
+  transition:
+    transform 220ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 200ms ease,
+    box-shadow 220ms cubic-bezier(0.22, 1, 0.36, 1),
+    background-color 200ms ease;
+}
+
+.dark .fcs-btn-secondary {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 6px 18px -8px rgba(0, 0, 0, 0.6);
+}
+
+.fcs-btn-secondary:hover:not(:disabled) {
+  transform: translateY(-1.5px);
+  border-color: rgba(15, 118, 110, 0.5);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.8),
+    0 12px 24px -10px rgba(15, 118, 110, 0.2);
+}
+
+.dark .fcs-btn-secondary:hover:not(:disabled) {
+  border-color: rgba(20, 184, 166, 0.55);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    0 14px 26px -10px rgba(20, 184, 166, 0.2);
+}
+
+.fcs-btn-secondary:active:not(:disabled) {
+  transform: translateY(0) scale(0.985);
+}
+
+.fcs-btn-gold {
+  position: relative;
+  overflow: hidden;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 0.875rem;
+  background: linear-gradient(135deg, #171717 0%, #26221d 60%, #1c1915 100%);
+  color: #faf6ee;
+  font-weight: 600;
+  border: 1px solid rgba(200, 169, 106, 0.45);
+  box-shadow:
+    inset 0 1px 0 rgba(232, 212, 166, 0.25),
+    0 10px 24px -10px rgba(180, 130, 50, 0.32);
+  transition:
+    transform 220ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 200ms ease,
+    box-shadow 220ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.fcs-btn-gold::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    115deg,
+    transparent 20%,
+    rgba(232, 212, 166, 0.22) 50%,
+    transparent 80%
+  );
+  transform: translateX(-130%);
+  transition: transform 640ms cubic-bezier(0.22, 1, 0.36, 1);
+  pointer-events: none;
+}
+
+.fcs-btn-gold:hover:not(:disabled) {
+  transform: translateY(-1.5px);
+  border-color: rgba(200, 169, 106, 0.8);
+  box-shadow:
+    inset 0 1px 0 rgba(232, 212, 166, 0.35),
+    0 16px 30px -10px rgba(180, 130, 50, 0.42);
+}
+
+.fcs-btn-gold:hover:not(:disabled)::after {
+  transform: translateX(130%);
+}
+
+.fcs-btn-gold:active:not(:disabled) {
+  transform: translateY(0) scale(0.985);
+}
+
+.fcs-btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  border-radius: 0.75rem;
+  font-weight: 500;
+  transition:
+    background-color 180ms ease,
+    color 180ms ease,
+    transform 180ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.fcs-btn-ghost:hover:not(:disabled) {
+  transform: translateY(-0.5px);
+}
+
+.fcs-card-interactive {
+  transition:
+    transform 280ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 240ms ease,
+    box-shadow 280ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.fcs-card-interactive:hover {
+  transform: translateY(-3px);
+  border-color: rgba(15, 118, 110, 0.4);
+  box-shadow: 0 16px 34px -18px rgba(15, 118, 110, 0.25);
 }
 
 /* Section Slide Reveal transitions */
@@ -202,23 +487,23 @@ body {
 
 .fcs-slide-reveal-hidden-up {
   opacity: 0;
-  transform: translate3d(0, 24px, 0);
+  transform: translate3d(0, 26px, 0);
 }
 
 .fcs-slide-reveal-hidden-left {
   opacity: 0;
-  transform: translate3d(28px, 0, 0);
+  transform: translate3d(30px, 0, 0);
 }
 
 .fcs-slide-reveal-hidden-right {
   opacity: 0;
-  transform: translate3d(-28px, 0, 0);
+  transform: translate3d(-30px, 0, 0);
 }
 
 .fcs-slide-reveal-hidden-clip {
   opacity: 0;
   clip-path: inset(0 100% 0 0);
-  transform: translate3d(-14px, 0, 0);
+  transform: translate3d(-16px, 0, 0);
 }
 
 .fcs-slide-reveal-visible {
@@ -229,16 +514,22 @@ body {
 
 @media (prefers-reduced-motion: reduce) {
   .fcs-slide-reveal,
+  .fcs-page-enter,
+  .fcs-menu-enter,
+  .fcs-drawer-enter,
   .fcs-intro-emblem,
   .fcs-logo-draw,
   .fcs-logo-draw-delay,
   .fcs-logo-seal,
   .fcs-intro-ring,
+  .fcs-intro-orbit,
   .fcs-intro-title,
   .fcs-intro-rule,
   .fcs-intro-subtitle,
   .fcs-intro-bottom,
-  .fcs-intro-progress {
+  .fcs-intro-progress,
+  .fcs-intro-sheen,
+  .fcs-intro-aurora {
     animation: none !important;
     transition: none !important;
     opacity: 1 !important;

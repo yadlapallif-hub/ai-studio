@@ -2,39 +2,47 @@
 
 import React, { Suspense, useEffect, useState } from "react";
 import { SafeNavLink } from "@/components/ui/SafeNavLink";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import {
   AlertCircle,
   ArrowRight,
   CheckCircle2,
+  Eye,
+  EyeOff,
   Loader2,
   Lock,
   Mail,
+  Phone,
   Sparkles,
   User,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { CreatorStudioLogo } from "@/components/brand/CreatorStudioLogo";
-import { GoogleIcon } from "@/components/auth/PhoneInputRow";
+import {
+  GoogleIcon,
+  MobileNumberField,
+  normalizeE164Phone,
+} from "@/components/auth/PhoneInputRow";
 
-type SignupMode = "password" | "magic";
+type SignupMode = "password" | "phone" | "magic";
 
 interface ProviderStatus {
   googleEnabled: boolean;
 }
 
 function SignupForm() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const rawNext = searchParams.get("next") || searchParams.get("redirect") || "/dashboard";
   const safeNext = rawNext.startsWith("/") && !rawNext.startsWith("//") ? rawNext : "/dashboard";
 
-  // Default to instant password signup (never hits email rate limit), while keeping Just Email tab
   const [mode, setMode] = useState<SignupMode>("password");
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
+  const [countryCode, setCountryCode] = useState("+91");
+  const [phoneNumber, setPhoneNumber] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [rateLimited, setRateLimited] = useState(false);
 
   const [providerStatus, setProviderStatus] = useState<ProviderStatus | null>(null);
@@ -144,6 +152,7 @@ function SignupForm() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          mode: "email",
           fullName: fullName.trim(),
           email: normalizedEmail,
           password,
@@ -171,8 +180,7 @@ function SignupForm() {
         await supabase.rpc("fcs_ensure_profile");
       } catch {}
 
-      router.push(safeNext);
-      router.refresh();
+      window.location.assign(safeNext);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to create account.");
     } finally {
@@ -180,21 +188,88 @@ function SignupForm() {
     }
   };
 
+  const handlePhonePasswordSignup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setInfo(null);
+    setRateLimited(false);
+
+    if (fullName.trim().length < 2) {
+      setError("Please enter your full name (at least 2 characters).");
+      return;
+    }
+    if (password.length < 8) {
+      setError("Password must be at least 8 characters long.");
+      return;
+    }
+    if (password !== confirmPassword) {
+      setError("Passwords do not match.");
+      return;
+    }
+
+    const e164Phone = normalizeE164Phone(countryCode, phoneNumber);
+    if (!/^\+[1-9]\d{7,14}$/.test(e164Phone)) {
+      setError("Enter a valid mobile number with country code.");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const res = await fetch("/api/auth/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          mode: "phone",
+          fullName: fullName.trim(),
+          phone: e164Phone,
+          password,
+        }),
+      });
+
+      const json = (await res.json()) as { ok?: boolean; error?: string };
+      if (!res.ok || !json.ok) {
+        setError(json.error || "Unable to create mobile account.");
+        return;
+      }
+
+      const supabase = createClient();
+      const { error: signInErr } = await supabase.auth.signInWithPassword({
+        phone: e164Phone,
+        password,
+      });
+
+      if (signInErr) {
+        setError(signInErr.message);
+        return;
+      }
+
+      try {
+        await supabase.rpc("fcs_ensure_profile");
+      } catch {}
+
+      window.location.assign(safeNext);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unable to create mobile account.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="mx-auto flex min-h-[calc(100vh-12rem)] max-w-md items-center px-4 py-12">
-      <div className="w-full rounded-2xl border border-[var(--fcs-border)] bg-[var(--fcs-surface)] p-7 shadow-sm">
+      <div className="w-full rounded-2xl border border-[var(--fcs-border)] bg-[var(--fcs-surface)] p-7 shadow-lg">
         <div className="flex items-center gap-3">
           <CreatorStudioLogo size={38} className="shrink-0" />
           <div>
             <p className="text-[11px] font-semibold tracking-widest uppercase text-teal-700 dark:text-teal-400">
-              CREATOR STUDIO • Free Forever
+              CREATOR STUDIO &bull; Free Forever
             </p>
             <h1 className="text-xl font-bold tracking-tight">Create your free account</h1>
           </div>
         </div>
         <p className="mt-2 text-xs text-[var(--fcs-ink-muted)]">
-          Create your account instantly with Email &amp; Password or receive a cross-device sign-up
-          link via Just Email.
+          Sign up instantly with Email &amp; Password or Mobile &amp; Password — zero OTP wait — or
+          use a cross-device Email Link.
         </p>
 
         {error && (
@@ -204,7 +279,7 @@ function SignupForm() {
               <span>{error}</span>
             </div>
             {rateLimited && mode === "magic" && (
-              <div className="pl-6">
+              <div className="flex flex-wrap gap-2 pl-6">
                 <button
                   type="button"
                   onClick={() => {
@@ -212,9 +287,20 @@ function SignupForm() {
                     setError(null);
                     setRateLimited(false);
                   }}
-                  className="cursor-pointer rounded-lg bg-red-700 px-3 py-1.5 text-[11px] font-semibold text-white hover:bg-red-800"
+                  className="fcs-btn-primary cursor-pointer px-3 py-1.5 text-[11px]"
                 >
-                  Create Instantly with Email &amp; Password →
+                  Use Email &amp; Password →
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMode("phone");
+                    setError(null);
+                    setRateLimited(false);
+                  }}
+                  className="fcs-btn-secondary cursor-pointer px-3 py-1.5 text-[11px]"
+                >
+                  Use Mobile &amp; Password →
                 </button>
               </div>
             )}
@@ -234,7 +320,7 @@ function SignupForm() {
               type="button"
               onClick={handleGoogleSignup}
               disabled={googleLoading}
-              className="mt-5 flex w-full items-center justify-center gap-2.5 rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] py-2.5 text-sm font-semibold transition hover:border-teal-600/50 hover:bg-[var(--fcs-surface)] disabled:opacity-60"
+              className="fcs-btn-secondary mt-5 w-full cursor-pointer py-2.5 text-sm"
             >
               {googleLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <GoogleIcon />}
               <span>Continue with Google</span>
@@ -242,13 +328,13 @@ function SignupForm() {
 
             <div className="my-4 flex items-center gap-3 text-[11px] text-[var(--fcs-ink-muted)]">
               <div className="h-px flex-1 bg-[var(--fcs-border)]" />
-              <span>or sign up with email</span>
+              <span>or sign up directly</span>
               <div className="h-px flex-1 bg-[var(--fcs-border)]" />
             </div>
           </>
         )}
 
-        <div className="mt-5 grid grid-cols-2 gap-1.5 rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] p-1 text-xs font-semibold">
+        <div className="mt-5 grid grid-cols-3 gap-1 rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] p-1 text-[11px] font-semibold">
           <button
             type="button"
             onClick={() => {
@@ -256,13 +342,28 @@ function SignupForm() {
               setError(null);
               setRateLimited(false);
             }}
-            className={`flex cursor-pointer items-center justify-center gap-1.5 rounded-lg py-2 transition ${
+            className={`flex cursor-pointer items-center justify-center gap-1 rounded-lg py-2 transition ${
               mode === "password"
                 ? "bg-[var(--fcs-surface)] text-[var(--fcs-ink)] shadow-sm"
                 : "text-[var(--fcs-ink-muted)] hover:text-[var(--fcs-ink)]"
             }`}
           >
-            <Lock className="h-3.5 w-3.5" /> Email &amp; Password
+            <Lock className="h-3 w-3" /> Email
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setMode("phone");
+              setError(null);
+              setRateLimited(false);
+            }}
+            className={`flex cursor-pointer items-center justify-center gap-1 rounded-lg py-2 transition ${
+              mode === "phone"
+                ? "bg-[var(--fcs-surface)] text-[var(--fcs-ink)] shadow-sm"
+                : "text-[var(--fcs-ink-muted)] hover:text-[var(--fcs-ink)]"
+            }`}
+          >
+            <Phone className="h-3 w-3" /> Mobile
           </button>
           <button
             type="button"
@@ -271,13 +372,13 @@ function SignupForm() {
               setError(null);
               setRateLimited(false);
             }}
-            className={`flex cursor-pointer items-center justify-center gap-1.5 rounded-lg py-2 transition ${
+            className={`flex cursor-pointer items-center justify-center gap-1 rounded-lg py-2 transition ${
               mode === "magic"
                 ? "bg-[var(--fcs-surface)] text-[var(--fcs-ink)] shadow-sm"
                 : "text-[var(--fcs-ink-muted)] hover:text-[var(--fcs-ink)]"
             }`}
           >
-            <Sparkles className="h-3.5 w-3.5" /> Just Email
+            <Sparkles className="h-3 w-3" /> Email Link
           </button>
         </div>
 
@@ -321,14 +422,17 @@ function SignupForm() {
             <button
               type="submit"
               disabled={loading}
-              className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-teal-700 py-2.5 text-sm font-semibold text-white transition hover:bg-teal-800 disabled:opacity-60"
+              className="fcs-btn-primary w-full cursor-pointer py-2.5 text-sm disabled:opacity-60"
             >
               {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Mail className="h-4 w-4" />}
-              <span>{loading ? "Sending link..." : "Continue with Just Email"}</span>
+              <span>{loading ? "Sending link..." : "Send Sign-Up Email Link"}</span>
             </button>
           </form>
         ) : (
-          <form onSubmit={handlePasswordSignup} className="mt-4 space-y-4">
+          <form
+            onSubmit={mode === "phone" ? handlePhonePasswordSignup : handlePasswordSignup}
+            className="mt-4 space-y-4"
+          >
             <div>
               <label className="mb-1.5 block text-xs font-semibold" htmlFor="signup-name">
                 Full Name
@@ -348,23 +452,33 @@ function SignupForm() {
               </div>
             </div>
 
-            <div>
-              <label className="mb-1.5 block text-xs font-semibold" htmlFor="signup-email">
-                Email Address
-              </label>
-              <div className="relative">
-                <Mail className="absolute top-2.5 left-3 h-4 w-4 text-[var(--fcs-ink-muted)]" />
-                <input
-                  id="signup-email"
-                  type="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@example.com"
-                  className="w-full rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] py-2 pr-3 pl-9 text-sm outline-none focus:border-teal-600"
-                />
+            {mode === "phone" ? (
+              <MobileNumberField
+                id="signup-phone"
+                countryCode={countryCode}
+                onCountryCodeChange={setCountryCode}
+                phoneNumber={phoneNumber}
+                onPhoneNumberChange={setPhoneNumber}
+              />
+            ) : (
+              <div>
+                <label className="mb-1.5 block text-xs font-semibold" htmlFor="signup-email">
+                  Email Address
+                </label>
+                <div className="relative">
+                  <Mail className="absolute top-2.5 left-3 h-4 w-4 text-[var(--fcs-ink-muted)]" />
+                  <input
+                    id="signup-email"
+                    type="email"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="you@example.com"
+                    className="w-full rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] py-2 pr-3 pl-9 text-sm outline-none focus:border-teal-600"
+                  />
+                </div>
               </div>
-            </div>
+            )}
 
             <div>
               <label className="mb-1.5 block text-xs font-semibold" htmlFor="signup-password">
@@ -374,14 +488,22 @@ function SignupForm() {
                 <Lock className="absolute top-2.5 left-3 h-4 w-4 text-[var(--fcs-ink-muted)]" />
                 <input
                   id="signup-password"
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   required
                   minLength={8}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] py-2 pr-3 pl-9 text-sm outline-none focus:border-teal-600"
+                  className="w-full rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] py-2 pr-10 pl-9 text-sm outline-none focus:border-teal-600"
                 />
+                <button
+                  type="button"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  onClick={() => setShowPassword((p) => !p)}
+                  className="absolute top-2 right-2.5 cursor-pointer rounded p-0.5 text-[var(--fcs-ink-muted)] hover:text-[var(--fcs-ink)]"
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
               </div>
             </div>
 
@@ -393,7 +515,7 @@ function SignupForm() {
                 <Lock className="absolute top-2.5 left-3 h-4 w-4 text-[var(--fcs-ink-muted)]" />
                 <input
                   id="signup-confirm"
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   required
                   minLength={8}
                   value={confirmPassword}
@@ -407,7 +529,7 @@ function SignupForm() {
             <button
               type="submit"
               disabled={loading}
-              className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-teal-700 py-2.5 text-sm font-semibold text-white transition hover:bg-teal-800 disabled:opacity-60"
+              className="fcs-btn-primary w-full cursor-pointer py-2.5 text-sm disabled:opacity-60"
             >
               {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowRight className="h-4 w-4" />}
               <span>{loading ? "Creating account..." : "Create Free Account"}</span>

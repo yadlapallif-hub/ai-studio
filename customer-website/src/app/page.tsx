@@ -49,22 +49,22 @@ export default async function HomePage() {
               <div className="mt-7 flex flex-wrap items-center gap-3">
                 <SafeNavLink
                   href="/resume-builder/new"
-                  className="inline-flex items-center gap-2 rounded-xl bg-teal-700 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-teal-800 dark:bg-teal-600 dark:hover:bg-teal-500"
+                  className="fcs-btn-primary group px-5 py-3 text-sm"
                 >
                   <FileText className="h-4 w-4" />
                   <span>{websiteContent.primaryCta}</span>
-                  <ArrowRight className="h-4 w-4" />
+                  <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" />
                 </SafeNavLink>
                 <SafeNavLink
                   href="/certificate-builder"
-                  className="inline-flex items-center gap-2 rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] px-5 py-3 text-sm font-semibold text-[var(--fcs-ink)] transition hover:border-teal-600/50"
+                  className="fcs-btn-secondary px-5 py-3 text-sm"
                 >
                   <Award className="h-4 w-4 text-amber-600" />
                   <span>{websiteContent.secondaryCta}</span>
                 </SafeNavLink>
                 <SafeNavLink
                   href="/verify"
-                  className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-[var(--fcs-ink-muted)] hover:text-teal-700 dark:hover:text-teal-300"
+                  className="fcs-btn-ghost px-3.5 py-2.5 text-sm text-[var(--fcs-ink-muted)] hover:bg-[var(--fcs-surface-muted)] hover:text-teal-700 dark:hover:text-teal-300"
                 >
                   <QrCode className="h-4 w-4" />
                   Verify a Certificate
@@ -206,7 +206,7 @@ export default async function HomePage() {
 
         <div className="mt-10 grid gap-5 md:grid-cols-2 lg:grid-cols-4">
           <SlideReveal delay={0}>
-            <div className="h-full rounded-2xl border border-[var(--fcs-border)] bg-[var(--fcs-surface)] p-6">
+            <div className="fcs-card-interactive h-full rounded-2xl border border-[var(--fcs-border)] bg-[var(--fcs-surface)] p-6">
             <FileText className="h-6 w-6 text-teal-700 dark:text-teal-400" />
             <h3 className="mt-4 text-base font-bold">AI Resume Builder</h3>
             <p className="mt-2 text-xs leading-relaxed text-[var(--fcs-ink-muted)]">
@@ -215,15 +215,15 @@ export default async function HomePage() {
             </p>
             <SafeNavLink
               href="/resume-builder"
-              className="mt-4 inline-flex items-center gap-1 text-xs font-semibold text-teal-700 hover:underline dark:text-teal-400"
+              className="group mt-4 inline-flex items-center gap-1 text-xs font-semibold text-teal-700 hover:underline dark:text-teal-400"
             >
-              Open Resume Builder <ArrowRight className="h-3.5 w-3.5" />
+              Open Resume Builder <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
             </SafeNavLink>
             </div>
           </SlideReveal>
 
           <SlideReveal delay={70}>
-            <div className="h-full rounded-2xl border border-[var(--fcs-border)] bg-[var(--fcs-surface)] p-6">
+            <div className="fcs-card-interactive h-full rounded-2xl border border-[var(--fcs-border)] bg-[var(--fcs-surface)] p-6">
             <Award className="h-6 w-6 text-amber-600" />
             <h3 className="mt-4 text-base font-bold">Authorized Certificate Studio</h3>
             <p className="mt-2 text-xs leading-relaxed text-[var(--fcs-ink-muted)]">
@@ -232,15 +232,15 @@ export default async function HomePage() {
             </p>
             <SafeNavLink
               href="/certificate-builder"
-              className="mt-4 inline-flex items-center gap-1 text-xs font-semibold text-teal-700 hover:underline dark:text-teal-400"
+              className="group mt-4 inline-flex items-center gap-1 text-xs font-semibold text-teal-700 hover:underline dark:text-teal-400"
             >
-              View Certificate Studio <ArrowRight className="h-3.5 w-3.5" />
+              View Certificate Studio <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
             </SafeNavLink>
             </div>
           </SlideReveal>
 
           <SlideReveal delay={140}>
-            <div className="h-full rounded-2xl border border-[var(--fcs-border)] bg-[var(--fcs-surface)] p-6">
+            <div className="fcs-card-interactive h-full rounded-2xl border border-[var(--fcs-border)] bg-[var(--fcs-surface)] p-6">
             <Compass className="h-6 w-6 text-teal-700 dark:text-teal-400" />
             <h3 className="mt-4 text-base font-bold">Creator AI</h3>
             <p className="mt-2 text-xs leading-relaxed text-[var(--fcs-ink-muted)]">
@@ -249,15 +249,15 @@ export default async function HomePage() {
             </p>
             <SafeNavLink
               href="/assistant"
-              className="mt-4 inline-flex items-center gap-1 text-xs font-semibold text-teal-700 hover:underline dark:text-teal-400"
+              className="group mt-4 inline-flex items-center gap-1 text-xs font-semibold text-teal-700 hover:underline dark:text-teal-400"
             >
-              Explore Intelligence <ArrowRight className="h-3.5 w-3.5" />
+              Explore Intelligence <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
             </SafeNavLink>
             </div>
           </SlideReveal>
 
           <SlideReveal delay={210}>
-            <div className="h-full rounded-2xl border border-[var(--fcs-border)] bg-[var(--fcs-surface)] p-6">
+            <div className="fcs-card-interactive h-full rounded-2xl border border-[var(--fcs-border)] bg-[var(--fcs-surface)] p-6">
             <LifeBuoy className="h-6 w-6 text-teal-700 dark:text-teal-400" />
             <h3 className="mt-4 text-base font-bold">Live Customer Support</h3>
             <p className="mt-2 text-xs leading-relaxed text-[var(--fcs-ink-muted)]">
@@ -266,9 +266,9 @@ export default async function HomePage() {
             </p>
             <SafeNavLink
               href="/support"
-              className="mt-4 inline-flex items-center gap-1 text-xs font-semibold text-teal-700 hover:underline dark:text-teal-400"
+              className="group mt-4 inline-flex items-center gap-1 text-xs font-semibold text-teal-700 hover:underline dark:text-teal-400"
             >
-              Visit Support Center <ArrowRight className="h-3.5 w-3.5" />
+              Visit Support Center <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
             </SafeNavLink>
             </div>
           </SlideReveal>
@@ -313,9 +313,9 @@ export default async function HomePage() {
             <div className="mt-6">
               <SafeNavLink
                 href="/resume-builder/new"
-                className="inline-flex items-center gap-2 rounded-lg bg-teal-700 px-4 py-2 text-xs font-semibold text-white hover:bg-teal-800"
+                className="fcs-btn-primary group px-4 py-2.5 text-xs"
               >
-                Start Building Resume <ArrowRight className="h-3.5 w-3.5" />
+                Start Building Resume <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
               </SafeNavLink>
             </div>
           </div>
@@ -356,13 +356,13 @@ export default async function HomePage() {
             <div className="mt-6 flex flex-wrap gap-3">
               <SafeNavLink
                 href="/certificate-builder"
-                className="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-xs font-semibold text-white hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900"
+                className="fcs-btn-gold group px-4 py-2.5 text-xs"
               >
-                Certificate Studio <ArrowRight className="h-3.5 w-3.5" />
+                Certificate Studio <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
               </SafeNavLink>
               <SafeNavLink
                 href="/verify"
-                className="inline-flex items-center gap-2 rounded-lg border border-[var(--fcs-border)] bg-[var(--fcs-surface)] px-4 py-2 text-xs font-semibold"
+                className="fcs-btn-secondary px-4 py-2.5 text-xs"
               >
                 <ShieldCheck className="h-3.5 w-3.5 text-teal-600" /> Public Verify Portal
               </SafeNavLink>
@@ -442,14 +442,14 @@ export default async function HomePage() {
               href={branding.githubUrl}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center gap-2 rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] px-4 py-2.5 text-xs font-semibold transition hover:border-teal-600/50"
+              className="fcs-btn-secondary px-4 py-2.5 text-xs"
             >
               <Code2 className="h-4 w-4" />
               View on GitHub
             </SafeNavLink>
             <SafeNavLink
               href="/auth/signup"
-              className="inline-flex items-center gap-2 rounded-xl bg-teal-700 px-4 py-2.5 text-xs font-semibold text-white hover:bg-teal-800"
+              className="fcs-btn-primary px-4 py-2.5 text-xs"
             >
               Create Free Account
             </SafeNavLink>

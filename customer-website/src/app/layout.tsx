@@ -10,6 +10,7 @@ import "@fontsource/ibm-plex-mono/500.css";
 import "./globals.css";
 import { ThemeProvider } from "@/components/layout/ThemeProvider";
 import { Navbar } from "@/components/layout/Navbar";
+import { PageTransitionShell } from "@/components/layout/PageTransitionShell";
 import { Footer } from "@/components/layout/Footer";
 import { FloatingAiAssistant } from "@/components/ai/FloatingAiAssistant";
 import { IntroSplash } from "@/components/brand/IntroSplash";
@@ -40,7 +41,9 @@ export default async function RootLayout({
               platformName={platform.branding.platformName}
               announcements={platform.announcements}
             />
-            <main className="flex-1">{children}</main>
+            <main className="flex-1">
+              <PageTransitionShell>{children}</PageTransitionShell>
+            </main>
             <Footer
               footerContent={platform.footerContent}
               githubUrl={platform.branding.githubUrl}

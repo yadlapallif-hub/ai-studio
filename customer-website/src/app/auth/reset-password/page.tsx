@@ -1,17 +1,16 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { AlertCircle, CheckCircle2, Loader2, Lock } from "lucide-react";
+import { AlertCircle, CheckCircle2, Eye, EyeOff, Loader2, Lock } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { SafeNavLink } from "@/components/ui/SafeNavLink";
 
 export default function ResetPasswordPage() {
-  const router = useRouter();
   const [checkingSession, setCheckingSession] = useState(true);
   const [hasSession, setHasSession] = useState(false);
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -55,9 +54,8 @@ export default function ResetPasswordPage() {
       } else {
         setDone(true);
         setTimeout(() => {
-          router.push("/dashboard");
-          router.refresh();
-        }, 1200);
+          window.location.assign("/dashboard");
+        }, 1000);
       }
     } finally {
       setLoading(false);
@@ -85,13 +83,13 @@ export default function ResetPasswordPage() {
           <div className="mt-5 flex flex-wrap justify-center gap-2.5">
             <SafeNavLink
               href="/auth/forgot-password"
-              className="rounded-xl bg-teal-700 px-4 py-2 text-xs font-semibold text-white hover:bg-teal-800"
+              className="fcs-btn-primary px-4 py-2 text-xs"
             >
               Request Reset Link
             </SafeNavLink>
             <SafeNavLink
               href="/auth/login"
-              className="rounded-xl border border-[var(--fcs-border)] px-4 py-2 text-xs font-semibold"
+              className="fcs-btn-secondary px-4 py-2 text-xs"
             >
               Back to Sign In
             </SafeNavLink>
@@ -127,13 +125,21 @@ export default function ResetPasswordPage() {
             <div className="relative">
               <Lock className="absolute top-2.5 left-3 h-4 w-4 text-[var(--fcs-ink-muted)]" />
               <input
-                type="password"
+                type={showPassword ? "text" : "password"}
                 required
                 minLength={8}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] py-2 pr-3 pl-9 text-sm outline-none focus:border-teal-600"
+                className="w-full rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] py-2 pr-10 pl-9 text-sm outline-none focus:border-teal-600"
               />
+              <button
+                type="button"
+                aria-label={showPassword ? "Hide password" : "Show password"}
+                onClick={() => setShowPassword((p) => !p)}
+                className="absolute top-2 right-2.5 cursor-pointer rounded p-0.5 text-[var(--fcs-ink-muted)] hover:text-[var(--fcs-ink)]"
+              >
+                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
             </div>
           </div>
           <div>
@@ -141,7 +147,7 @@ export default function ResetPasswordPage() {
             <div className="relative">
               <Lock className="absolute top-2.5 left-3 h-4 w-4 text-[var(--fcs-ink-muted)]" />
               <input
-                type="password"
+                type={showPassword ? "text" : "password"}
                 required
                 minLength={8}
                 value={confirm}
@@ -153,7 +159,7 @@ export default function ResetPasswordPage() {
           <button
             type="submit"
             disabled={loading}
-            className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-teal-700 py-2.5 text-sm font-semibold text-white hover:bg-teal-800 disabled:opacity-60"
+            className="fcs-btn-primary w-full cursor-pointer py-2.5 text-sm disabled:opacity-60"
           >
             {loading && <Loader2 className="h-4 w-4 animate-spin" />}
             Update Password

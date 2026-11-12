@@ -14,7 +14,7 @@ export function SlideReveal({
   children,
   direction = "up",
   delay = 0,
-  duration = 620,
+  duration = 560,
   className = "",
 }: SlideRevealProps) {
   const ref = useRef<HTMLDivElement | null>(null);
@@ -43,13 +43,11 @@ export function SlideReveal({
           }
         }
       },
-      { threshold: 0.06, rootMargin: "0px 0px -16px 0px" }
+      { threshold: 0.05, rootMargin: "0px 0px -12px 0px" }
     );
 
     observer.observe(el);
-
-    // Safety fallback so sections never remain hidden even on instant deep-link scroll
-    const safetyTimer = window.setTimeout(() => setRevealed(true), 1400 + delay);
+    const safetyTimer = window.setTimeout(() => setRevealed(true), 1050 + delay);
 
     return () => {
       observer.disconnect();

@@ -74,7 +74,7 @@ function VerifyEmailContent() {
           <button
             type="submit"
             disabled={loading}
-            className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] py-2 text-xs font-semibold hover:border-teal-600/50"
+            className="fcs-btn-secondary w-full cursor-pointer py-2 text-xs"
           >
             <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} />
             Resend Confirmation Email

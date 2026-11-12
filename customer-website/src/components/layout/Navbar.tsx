@@ -295,9 +295,10 @@ export function Navbar({
                 <SafeNavLink
                   key={item.href}
                   href={item.href}
-                  className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
+                  aria-current={active ? "page" : undefined}
+                  className={`fcs-btn-ghost px-3 py-1.5 text-sm ${
                     active
-                      ? "bg-teal-50 text-teal-800 dark:bg-teal-950/60 dark:text-teal-300"
+                      ? "bg-teal-50/90 font-semibold text-teal-800 shadow-[inset_0_0_0_1px_rgba(15,118,110,0.18)] dark:bg-teal-950/60 dark:text-teal-300"
                       : "text-[var(--fcs-ink-muted)] hover:bg-[var(--fcs-surface-muted)] hover:text-[var(--fcs-ink)]"
                   }`}
                 >
@@ -308,9 +309,10 @@ export function Navbar({
             {user && (
               <SafeNavLink
                 href="/vault"
-                className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
+                aria-current={pathname.startsWith("/vault") ? "page" : undefined}
+                className={`fcs-btn-ghost px-3 py-1.5 text-sm ${
                   pathname.startsWith("/vault")
-                    ? "bg-teal-50 text-teal-800 dark:bg-teal-950/60 dark:text-teal-300"
+                    ? "bg-teal-50/90 font-semibold text-teal-800 shadow-[inset_0_0_0_1px_rgba(15,118,110,0.18)] dark:bg-teal-950/60 dark:text-teal-300"
                     : "text-[var(--fcs-ink-muted)] hover:bg-[var(--fcs-surface-muted)] hover:text-[var(--fcs-ink)]"
                 }`}
               >
@@ -325,11 +327,11 @@ export function Navbar({
             type="button"
             onClick={() => setSearchOpen(true)}
             aria-label="Global search"
-            className="flex items-center gap-2 rounded-lg border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] px-2.5 py-1.5 text-xs font-medium text-[var(--fcs-ink-muted)] transition hover:border-teal-600/40 hover:text-[var(--fcs-ink)]"
+            className="fcs-btn-secondary cursor-pointer px-3 py-1.5 text-xs font-medium text-[var(--fcs-ink-muted)]"
           >
             <Search className="h-3.5 w-3.5" />
             <span className="hidden sm:inline">Search</span>
-            <kbd className="hidden rounded border border-[var(--fcs-border)] bg-[var(--fcs-surface)] px-1 text-[10px] md:inline">
+            <kbd className="hidden rounded border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] px-1 text-[10px] md:inline">
               ⌘K
             </kbd>
           </button>
@@ -338,7 +340,7 @@ export function Navbar({
             type="button"
             onClick={toggleTheme}
             aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} theme`}
-            className="rounded-lg border border-[var(--fcs-border)] p-2 text-[var(--fcs-ink-muted)] transition hover:bg-[var(--fcs-surface-muted)] hover:text-[var(--fcs-ink)]"
+            className="fcs-btn-secondary cursor-pointer p-2 text-[var(--fcs-ink-muted)]"
           >
             {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
           </button>
@@ -360,7 +362,7 @@ export function Navbar({
               </button>
 
               {notifOpen && (
-                <div className="absolute right-0 mt-2 w-80 rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface)] p-3 shadow-xl">
+                <div className="fcs-menu-enter absolute right-0 mt-2 w-80 rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface)] p-3 shadow-xl">
                   <div className="mb-2 flex items-center justify-between border-b border-[var(--fcs-border)] pb-2">
                     <span className="text-xs font-semibold tracking-wide uppercase">
                       Notifications
@@ -434,7 +436,7 @@ export function Navbar({
               </button>
 
               {profileMenuOpen && (
-                <div className="absolute right-0 mt-2 w-56 rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface)] p-1.5 shadow-xl">
+                <div className="fcs-menu-enter absolute right-0 mt-2 w-56 rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface)] p-1.5 shadow-xl">
                   <div className="border-b border-[var(--fcs-border)] px-3 py-2">
                     <p className="truncate text-xs font-semibold">{user.full_name}</p>
                     <p className="truncate text-[11px] text-[var(--fcs-ink-muted)]">
@@ -488,13 +490,13 @@ export function Navbar({
             <div className="hidden items-center gap-2 sm:flex">
               <SafeNavLink
                 href="/auth/login"
-                className="rounded-lg px-3 py-1.5 text-sm font-medium text-[var(--fcs-ink)] hover:bg-[var(--fcs-surface-muted)]"
+                className="fcs-btn-secondary px-3.5 py-1.5 text-sm"
               >
                 Sign In
               </SafeNavLink>
               <SafeNavLink
                 href="/auth/signup"
-                className="rounded-lg bg-teal-700 px-3.5 py-1.5 text-sm font-semibold text-white transition hover:bg-teal-800 dark:bg-teal-600 dark:hover:bg-teal-500"
+                className="fcs-btn-primary px-4 py-1.5 text-sm"
               >
                 Free Account
               </SafeNavLink>
@@ -513,7 +515,7 @@ export function Navbar({
       </div>
 
       {mobileOpen && (
-        <div className="border-t border-[var(--fcs-border)] bg-[var(--fcs-surface)] px-4 py-3 lg:hidden">
+        <div className="fcs-drawer-enter border-t border-[var(--fcs-border)] bg-[var(--fcs-surface)] px-4 py-3 lg:hidden">
           <div className="flex flex-col gap-1">
             {navLinks.map((item) => (
               <SafeNavLink
@@ -547,14 +549,14 @@ export function Navbar({
                 <SafeNavLink
                   href="/auth/login"
                   onClick={() => setMobileOpen(false)}
-                  className="flex-1 rounded-lg border border-[var(--fcs-border)] px-3 py-2 text-center text-sm font-medium"
+                  className="fcs-btn-secondary flex-1 px-3 py-2 text-center text-sm"
                 >
                   Sign In
                 </SafeNavLink>
                 <SafeNavLink
                   href="/auth/signup"
                   onClick={() => setMobileOpen(false)}
-                  className="flex-1 rounded-lg bg-teal-700 px-3 py-2 text-center text-sm font-semibold text-white"
+                  className="fcs-btn-primary flex-1 px-3 py-2 text-center text-sm"
                 >
                   Free Account
                 </SafeNavLink>
