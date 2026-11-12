@@ -3,6 +3,7 @@ import { aiChatRequestSchema } from "@francis/shared";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { invokeCreatorAi } from "@/lib/ai-server";
 import { buildCreatorAiGuideReply } from "@/lib/creator-ai-guide";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 
 export async function GET(request: NextRequest) {
   const supabase = await createServerSupabase();
@@ -44,6 +45,15 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const ip = getClientIp(request.headers);
+  const rl = checkRateLimit(`ai-chat:${ip}`, 30, 60_000);
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { error: "RATE_LIMIT", message: "Too many AI chat requests. Please pause briefly." },
+      { status: 429 }
+    );
+  }
+
   let body: unknown;
   try {
     body = await request.json();

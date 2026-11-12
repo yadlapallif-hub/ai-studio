@@ -1,9 +1,19 @@
 import React from "react";
+import type { Metadata } from "next";
 import { SafeNavLink } from "@/components/ui/SafeNavLink";
 import { ExternalLink, Lock, ShieldCheck } from "lucide-react";
 import { getAuthenticatedContext } from "@/lib/supabase/server";
+import { buildPageMetadata } from "@/lib/seo";
+import { WatchTutorialButton } from "@/components/tutorials/WatchTutorialButton";
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = buildPageMetadata({
+  title: "Admin Console Portal",
+  description: "Authorized administrator console access for Francis Creator Studio.",
+  path: "/admin",
+  noIndex: true,
+});
 
 export default async function AdminPortalEntryPage() {
   const { supabase, user } = await getAuthenticatedContext();
@@ -45,6 +55,7 @@ export default async function AdminPortalEntryPage() {
           >
             Open Admin Console <ExternalLink className="h-4 w-4" />
           </a>
+          <WatchTutorialButton sectionKey="admin_dashboard" label="Watch Admin Tutorial" />
           <SafeNavLink
             href="/dashboard"
             className="rounded-xl border border-[var(--fcs-border)] px-5 py-2.5 text-sm font-semibold hover:bg-[var(--fcs-surface-muted)]"

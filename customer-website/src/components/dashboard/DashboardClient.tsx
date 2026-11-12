@@ -36,6 +36,7 @@ import {
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { SlideReveal } from "@/components/motion/SlideReveal";
+import { WatchTutorialButton } from "@/components/tutorials/WatchTutorialButton";
 
 interface ResumeRow {
   id: string;
@@ -499,7 +500,8 @@ export function DashboardClient(props: Props) {
                 </div>
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
+                <WatchTutorialButton sectionKey="recommendations" label="Watch Tutorial" variant="compact" />
                 <button
                   type="button"
                   onClick={toggleRecommendationsEnabled}

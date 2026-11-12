@@ -11,6 +11,7 @@ import {
   Send,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { WatchTutorialButton } from "@/components/tutorials/WatchTutorialButton";
 
 interface TicketItem {
   id: string;
@@ -260,6 +261,7 @@ export default function CustomerSupportPage() {
           >
             Ask AI Assistant
           </SafeNavLink>
+          <WatchTutorialButton sectionKey="support" label="Watch Support Tutorial" />
         </div>
       </div>
     );
@@ -274,13 +276,16 @@ export default function CustomerSupportPage() {
           </p>
           <h1 className="mt-1 text-2xl font-bold tracking-tight">Support Tickets & Live Chat</h1>
         </div>
-        <button
-          type="button"
-          onClick={() => setShowNewForm((s) => !s)}
-          className="inline-flex items-center gap-2 rounded-xl bg-teal-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-teal-800"
-        >
-          <MessageSquarePlus className="h-4 w-4" /> New Support Ticket
-        </button>
+        <div className="flex flex-wrap items-center gap-2.5">
+          <WatchTutorialButton sectionKey="support" label="Watch Support Tutorial" />
+          <button
+            type="button"
+            onClick={() => setShowNewForm((s) => !s)}
+            className="inline-flex items-center gap-2 rounded-xl bg-teal-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-teal-800"
+          >
+            <MessageSquarePlus className="h-4 w-4" /> New Support Ticket
+          </button>
+        </div>
       </div>
 
       {statusNote && (

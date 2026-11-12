@@ -1,8 +1,10 @@
 import React from "react";
+import type { Metadata } from "next";
 import {
   getAccessibleIssuersForUser,
   getStampsForApprovedIssuers,
 } from "@/lib/issuers";
+import { buildPageMetadata } from "@/lib/seo";
 import { getAuthenticatedContext } from "@/lib/supabase/server";
 import { StampStudioPageClient } from "@/components/certificate/StampStudioPageClient";
 import {
@@ -12,6 +14,13 @@ import {
 } from "@francis/shared";
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = buildPageMetadata({
+  title: "Stamp & Signature Studio & Authorized Organizations",
+  description:
+    "Design sample stamps and digital signatures or apply for Authorized Organization verification to unlock official stamps and QR credentials.",
+  path: "/stamps",
+});
 
 export default async function OrganizationStampsPage() {
   const { supabase, user } = await getAuthenticatedContext();

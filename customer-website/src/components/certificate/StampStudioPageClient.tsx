@@ -30,6 +30,7 @@ import {
 import { SlideReveal } from "@/components/motion/SlideReveal";
 import { OrganizationStampStudio } from "./OrganizationStampStudio";
 import { SignatureDrawerModal, type CreatedSignaturePayload } from "./SignatureDrawerModal";
+import { WatchTutorialButton } from "@/components/tutorials/WatchTutorialButton";
 
 interface ApplicationItem {
   id: string;
@@ -195,14 +196,17 @@ export function StampStudioPageClient({
             </p>
           </div>
 
-          <SafeNavLink
-            href={`/certificate-builder/new?tab=stamps${
-              selectedIssuerId ? `&issuer=${encodeURIComponent(selectedIssuerId)}` : ""
-            }`}
-            className="inline-flex items-center gap-2 rounded-xl bg-teal-700 px-5 py-2.5 text-sm font-semibold text-white hover:bg-teal-800"
-          >
-            <Award className="h-4 w-4" /> Open Certificate Studio →
-          </SafeNavLink>
+          <div className="flex flex-wrap items-center gap-2.5">
+            <WatchTutorialButton sectionKey="authorized_orgs" label="Watch Tutorial" />
+            <SafeNavLink
+              href={`/certificate-builder/new?tab=stamps${
+                selectedIssuerId ? `&issuer=${encodeURIComponent(selectedIssuerId)}` : ""
+              }`}
+              className="inline-flex items-center gap-2 rounded-xl bg-teal-700 px-5 py-2.5 text-sm font-semibold text-white hover:bg-teal-800"
+            >
+              <Award className="h-4 w-4" /> Open Certificate Studio →
+            </SafeNavLink>
+          </div>
         </div>
       </SlideReveal>
 

@@ -1,0 +1,23 @@
+# Francis Creator Studio
+
+> Free and open-source (MIT) web software for building ATS-ready resumes, designing verifiable certificates for authorized organizations, and managing career preparation with AI assistance.
+
+- Primary Website: https://francis-creator-studio.vercel.app
+- Source Repository: https://github.com/yadlapallif-hub/ai-studio
+
+## Core Platform Capabilities
+
+- **AI Resume Studio (`/resume-builder`)**: 100 structured resume templates, 14 structured resume sections, interactive drag-and-drop section ordering, realistic photo crop & background removal tool, ATS analysis, and free PDF/PNG exports.
+- **Certificate Design Studio (`/certificate-builder`)**: 124 certificate designs across 14 categories, A4 design canvas with logos, custom stamps, gold seals, signatures, 2K/4K PNG & PDF exports, and optional revision history. Official verifiable credential issuance requires Admin-approved Authorized Organization status; unapproved users can still design sample preview drafts.
+- **Public Certificate Verification (`/verify`)**: Database-backed online verification portal supporting unique certificate ID lookup and QR code links, clearly distinguishing Officially Verified certificates, Revoked credentials, and Sample preview drafts, plus a suspicious-certificate reporting workflow.
+- **Stamp & Signature Studio (`/stamps`)**: SVG/PNG official organization stamp and digital signature designer plus the Authorized Organization application form.
+- **Bulk Certificate Generator (`/bulk-generator`)**: CSV/Excel import to batch-generate certificates with QR verification and ZIP downloads for verified issuing organizations.
+- **Creator AI Assistant (`/assistant`)**: Context-aware guidance across platform workflows, Career Roadmap & Interview Prep planning, Workspace AI Recommendations, and topic-separated conversation history.
+- **Document Vault (`/vault`)**: Private, user-scoped storage for saved resumes, exported PDFs, photos, stamps, and attachments protected with Row-Level Security and short-lived signed download URLs.
+- **Live Support & Tickets (`/support`)**: Structured support ticket creation, screenshot attachments, and real-time support agent communication.
+- **Video Tutorials Center (`/tutorials`)**: 12 step-by-step screen-recorded tutorials in English and Telugu with synchronized `.vtt` subtitles and playback speed controls.
+
+## Documentation, Transparency & Privacy
+
+- **About & Documentation (`/about`)**: Detailed platform architecture, workflow steps, and transparent capabilities.
+- **Privacy Policy (`/privacy`)**: Clear policy on personal documents, private Supabase Storage isolation, AI processing opt-in rules, absence of ad tracking, and data deletion rights.

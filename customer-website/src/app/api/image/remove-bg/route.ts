@@ -1,6 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
+
+const ALLOWED_IMAGE_TYPES = new Set(["image/png", "image/jpeg", "image/webp"]);
 
 export async function POST(request: NextRequest) {
+  const ip = getClientIp(request.headers);
+  const rl = checkRateLimit(`remove-bg:${ip}`, 15, 60_000);
+  if (!rl.allowed) {
+    return NextResponse.json({ error: "Rate limit exceeded. Try again shortly." }, { status: 429 });
+  }
+
   const removeBgApiKey = process.env.REMOVE_BG_API_KEY ?? "";
   const customBgEndpoint = process.env.BG_REMOVAL_ENDPOINT ?? "";
 
@@ -18,6 +27,9 @@ export async function POST(request: NextRequest) {
     const file = formData.get("image_file");
     if (!(file instanceof File)) {
       return NextResponse.json({ error: "image_file is required" }, { status: 400 });
+    }
+    if (!ALLOWED_IMAGE_TYPES.has(file.type)) {
+      return NextResponse.json({ error: "Unsupported image format" }, { status: 400 });
     }
     if (file.size > 10 * 1024 * 1024) {
       return NextResponse.json({ error: "File exceeds 10MB limit" }, { status: 413 });

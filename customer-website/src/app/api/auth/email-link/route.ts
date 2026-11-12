@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { dispatchCustomerAuthEmail } from "@/lib/email-delivery";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
 
@@ -12,6 +13,15 @@ const EmailLinkSchema = z.object({
 });
 
 export async function POST(request: NextRequest) {
+  const ip = getClientIp(request.headers);
+  const rl = checkRateLimit(`auth-email-link:${ip}`, 8, 60_000);
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { error: "Too many authentication link requests. Please wait a minute." },
+      { status: 429 }
+    );
+  }
+
   let raw: unknown;
   try {
     raw = await request.json();

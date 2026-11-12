@@ -1,10 +1,20 @@
 import React from "react";
+import type { Metadata } from "next";
 import { ALL_CERTIFICATE_TEMPLATES, type CertificateCanvasElement } from "@francis/shared";
 import { getAccessibleIssuersForUser, getStampsForApprovedIssuers } from "@/lib/issuers";
 import { getAuthenticatedContext } from "@/lib/supabase/server";
+import { buildPageMetadata } from "@/lib/seo";
 import { BulkGeneratorClient } from "@/components/certificate/BulkGeneratorClient";
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = buildPageMetadata({
+  title: "Bulk Certificate Generator",
+  description:
+    "Batch generate certificates via CSV or Excel spreadsheets for Authorized Organizations.",
+  path: "/bulk-generator",
+  noIndex: true,
+});
 
 export default async function BulkGeneratorPage() {
   const { supabase, user } = await getAuthenticatedContext();

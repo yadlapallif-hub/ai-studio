@@ -1,5 +1,8 @@
 import React from "react";
+import type { Metadata } from "next";
 import { SafeNavLink } from "@/components/ui/SafeNavLink";
+import { buildPageMetadata } from "@/lib/seo";
+import { WatchTutorialButton } from "@/components/tutorials/WatchTutorialButton";
 import {
   ArrowRight,
   Award,
@@ -21,6 +24,13 @@ import { getPublicPlatformData } from "@/lib/platform";
 import { SlideReveal } from "@/components/motion/SlideReveal";
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = buildPageMetadata({
+  title: "Home — AI Resume Studio, Certificate Design & QR Verification",
+  description:
+    "Create ATS-ready resumes across 100 templates, design certificates across 124 templates, verify QR credentials online, and learn with 12 bilingual English & Telugu video tutorials.",
+  path: "/",
+});
 
 export default async function HomePage() {
   const platform = await getPublicPlatformData();
@@ -69,6 +79,7 @@ export default async function HomePage() {
                   <QrCode className="h-4 w-4" />
                   Verify a Certificate
                 </SafeNavLink>
+                <WatchTutorialButton sectionKey="home" label="Watch Tour (EN / తెలుగు)" />
               </div>
 
               <div className="mt-8 grid grid-cols-2 gap-4 border-t border-[var(--fcs-border)] pt-6 sm:grid-cols-4">
@@ -189,7 +200,7 @@ export default async function HomePage() {
 
       {/* PLATFORM OVERVIEW */}
       <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6">
-        <SlideReveal direction="clip">
+        <SlideReveal direction="up">
           <div className="max-w-2xl">
             <p className="text-xs font-semibold tracking-widest uppercase text-teal-700 dark:text-teal-400">
               Platform Architecture
@@ -227,8 +238,9 @@ export default async function HomePage() {
             <Award className="h-6 w-6 text-amber-600" />
             <h3 className="mt-4 text-base font-bold">Authorized Certificate Studio</h3>
             <p className="mt-2 text-xs leading-relaxed text-[var(--fcs-ink-muted)]">
-              100 certificate designs across 9 categories, exclusively unlocked for Admin-approved
-              Authorized Organizations with custom stamps, deletion controls, and QR verification.
+              124 certificate designs across 14 categories, with sample drafts open for preview
+              and verified issuance exclusively unlocked for Admin-approved Authorized
+              Organizations.
             </p>
             <SafeNavLink
               href="/certificate-builder"
@@ -374,7 +386,7 @@ export default async function HomePage() {
 
       {/* HOW IT WORKS */}
       <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6">
-        <SlideReveal direction="clip">
+        <SlideReveal direction="up">
           <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">How It Works</h2>
         </SlideReveal>
         <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
@@ -382,7 +394,7 @@ export default async function HomePage() {
             {
               step: "01",
               title: "Choose a Studio & Template",
-              desc: "Explore 100 ATS-ready resume templates immediately, or apply for Authorized Organization access to unlock 100 certificate designs.",
+              desc: "Explore 100 ATS-ready resume templates immediately, or design across 124 certificate layouts (14 categories) and apply for Authorized Organization verification.",
               icon: Wand2,
             },
             {
@@ -446,6 +458,12 @@ export default async function HomePage() {
             >
               <Code2 className="h-4 w-4" />
               View on GitHub
+            </SafeNavLink>
+            <SafeNavLink
+              href="/tutorials"
+              className="fcs-btn-secondary px-4 py-2.5 text-xs"
+            >
+              12 Video Tutorials (EN / తెలుగు)
             </SafeNavLink>
             <SafeNavLink
               href="/auth/signup"

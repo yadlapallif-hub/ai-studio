@@ -234,6 +234,7 @@ export function Navbar({
     { href: "/certificate-builder", label: "Certificate Studio" },
     { href: "/verify", label: "Verify ID" },
     { href: "/assistant", label: "AI Assistant" },
+    { href: "/tutorials", label: "Tutorials" },
     { href: "/support", label: "Support" },
   ];
 
@@ -296,7 +297,7 @@ export function Navbar({
                   key={item.href}
                   href={item.href}
                   aria-current={active ? "page" : undefined}
-                  className={`fcs-btn-ghost px-3 py-1.5 text-sm ${
+                  className={`fcs-btn-ghost whitespace-nowrap px-2.5 py-1.5 text-sm ${
                     active
                       ? "bg-teal-50/90 font-semibold text-teal-800 shadow-[inset_0_0_0_1px_rgba(15,118,110,0.18)] dark:bg-teal-950/60 dark:text-teal-300"
                       : "text-[var(--fcs-ink-muted)] hover:bg-[var(--fcs-surface-muted)] hover:text-[var(--fcs-ink)]"
@@ -310,7 +311,7 @@ export function Navbar({
               <SafeNavLink
                 href="/vault"
                 aria-current={pathname.startsWith("/vault") ? "page" : undefined}
-                className={`fcs-btn-ghost px-3 py-1.5 text-sm ${
+                className={`fcs-btn-ghost whitespace-nowrap px-2.5 py-1.5 text-sm ${
                   pathname.startsWith("/vault")
                     ? "bg-teal-50/90 font-semibold text-teal-800 shadow-[inset_0_0_0_1px_rgba(15,118,110,0.18)] dark:bg-teal-950/60 dark:text-teal-300"
                     : "text-[var(--fcs-ink-muted)] hover:bg-[var(--fcs-surface-muted)] hover:text-[var(--fcs-ink)]"
@@ -506,13 +507,13 @@ export function Navbar({
             <div className="hidden items-center gap-2 sm:flex">
               <SafeNavLink
                 href="/auth/login"
-                className="fcs-btn-secondary px-3.5 py-1.5 text-sm"
+                className="fcs-btn-secondary whitespace-nowrap px-3.5 py-1.5 text-sm"
               >
                 Sign In
               </SafeNavLink>
               <SafeNavLink
                 href="/auth/signup"
-                className="fcs-btn-primary px-4 py-1.5 text-sm"
+                className="fcs-btn-primary whitespace-nowrap px-4 py-1.5 text-sm"
               >
                 Free Account
               </SafeNavLink>

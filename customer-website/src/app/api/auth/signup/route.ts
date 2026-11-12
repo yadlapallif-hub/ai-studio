@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createServiceSupabase } from "@/lib/supabase/server";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
 
@@ -88,6 +89,15 @@ async function findAuthUserByEmail(
 }
 
 export async function POST(request: NextRequest) {
+  const ip = getClientIp(request.headers);
+  const rl = checkRateLimit(`auth-signup:${ip}`, 10, 60_000);
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { error: "Too many signup attempts. Please wait a minute and try again." },
+      { status: 429 }
+    );
+  }
+
   let raw: Record<string, unknown>;
   try {
     raw = (await request.json()) as Record<string, unknown>;

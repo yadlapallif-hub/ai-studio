@@ -16,6 +16,7 @@ import {
   X,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { WatchTutorialButton } from "@/components/tutorials/WatchTutorialButton";
 
 interface AiConversation {
   id: string;
@@ -234,7 +235,8 @@ export default function AssistantAndIntelligencePage() {
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2.5">
+          <WatchTutorialButton sectionKey="assistant" label="Watch AI Tutorial" />
           {userId && (
             <button
               type="button"
@@ -267,15 +269,18 @@ export default function AssistantAndIntelligencePage() {
             <h2 className="text-xs font-bold uppercase tracking-wider text-[var(--fcs-ink-muted)]">
               Conversations
             </h2>
-            {userId && conversations.length > 0 && (
-              <button
-                type="button"
-                onClick={clearHistory}
-                className="inline-flex items-center gap-1 text-[11px] font-medium text-red-600 hover:underline"
-              >
-                <Trash2 className="h-3 w-3" /> Clear
-              </button>
-            )}
+            <div className="flex items-center gap-2">
+              <WatchTutorialButton sectionKey="conversations" label="Guide" variant="compact" />
+              {userId && conversations.length > 0 && (
+                <button
+                  type="button"
+                  onClick={clearHistory}
+                  className="inline-flex items-center gap-1 text-[11px] font-medium text-red-600 hover:underline"
+                >
+                  <Trash2 className="h-3 w-3" /> Clear
+                </button>
+              )}
+            </div>
           </div>
           <button
             type="button"
@@ -401,10 +406,13 @@ export default function AssistantAndIntelligencePage() {
         {/* Career Guidance & Intelligence Feed */}
         <div className="space-y-5 lg:col-span-4">
           <div className="rounded-2xl border border-[var(--fcs-border)] bg-[var(--fcs-surface)] p-4">
-            <h2 className="flex items-center gap-2 text-sm font-bold">
-              <Briefcase className="h-4 w-4 text-teal-600" />
-              Career Roadmap & Interview Prep
-            </h2>
+            <div className="flex items-center justify-between gap-2">
+              <h2 className="flex items-center gap-2 text-sm font-bold">
+                <Briefcase className="h-4 w-4 text-teal-600" />
+                Career Roadmap &amp; Interview Prep
+              </h2>
+              <WatchTutorialButton sectionKey="career_roadmap" label="Tutorial" variant="compact" />
+            </div>
             <p className="mt-1 text-xs text-[var(--fcs-ink-muted)]">
               Get practical skill roadmaps, portfolio ideas, and interview topics without fabricated
               job listings.
@@ -433,10 +441,13 @@ export default function AssistantAndIntelligencePage() {
           </div>
 
           <div className="rounded-2xl border border-[var(--fcs-border)] bg-[var(--fcs-surface)] p-4">
-            <h2 className="flex items-center gap-2 text-sm font-bold">
-              <Sparkles className="h-4 w-4 text-amber-600" />
-              Saved Intelligence Recommendations
-            </h2>
+            <div className="flex items-center justify-between gap-2">
+              <h2 className="flex items-center gap-2 text-sm font-bold">
+                <Sparkles className="h-4 w-4 text-amber-600" />
+                Saved Intelligence Recommendations
+              </h2>
+              <WatchTutorialButton sectionKey="recommendations" label="Tutorial" variant="compact" />
+            </div>
             {recommendations.length === 0 ? (
               <p className="mt-2 text-xs text-[var(--fcs-ink-muted)]">
                 Open your Resume Studio or Dashboard to generate personalized recommendations with

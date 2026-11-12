@@ -14,6 +14,7 @@ import {
   Upload,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { WatchTutorialButton } from "@/components/tutorials/WatchTutorialButton";
 
 interface VaultAsset {
   id: string;
@@ -186,12 +187,15 @@ export default function VaultPage() {
           Sign in to securely store and access your uploaded photos, seals, logos, and exported PDF
           or PNG credentials with private signed URLs.
         </p>
-        <SafeNavLink
-          href="/auth/login?redirect=/vault"
-          className="mt-6 inline-block rounded-xl bg-teal-700 px-6 py-2.5 text-sm font-semibold text-white"
-        >
-          Sign In to Vault
-        </SafeNavLink>
+        <div className="mt-6 flex flex-wrap justify-center gap-3">
+          <SafeNavLink
+            href="/auth/login?redirect=/vault"
+            className="inline-block rounded-xl bg-teal-700 px-6 py-2.5 text-sm font-semibold text-white"
+          >
+            Sign In to Vault
+          </SafeNavLink>
+          <WatchTutorialButton sectionKey="document_vault" label="Watch Vault Tutorial" />
+        </div>
       </div>
     );
   }
@@ -210,7 +214,9 @@ export default function VaultPage() {
           </p>
         </div>
 
-        <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-teal-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-teal-800">
+        <div className="flex flex-wrap items-center gap-2.5">
+          <WatchTutorialButton sectionKey="document_vault" label="Watch Tutorial" />
+          <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-teal-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-teal-800">
           {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
           Upload File
           <input
@@ -223,6 +229,7 @@ export default function VaultPage() {
             }}
           />
         </label>
+        </div>
       </div>
 
       {msg && (

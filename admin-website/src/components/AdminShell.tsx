@@ -14,6 +14,7 @@ import {
   LogOut,
   MessageSquare,
   Moon,
+  PlayCircle,
   ScrollText,
   Shield,
   Sun,
@@ -44,6 +45,7 @@ const NAV_ITEMS = [
     icon: FileCheck2,
   },
   { href: "/templates", routeKey: "templates", label: "Templates", icon: Layers },
+  { href: "/tutorials", routeKey: "tutorials", label: "Tutorials & Videos", icon: PlayCircle },
   { href: "/website", routeKey: "website", label: "Website & Announcements", icon: Globe },
   { href: "/ai", routeKey: "ai", label: "AI Management", icon: Bot },
   { href: "/analytics", routeKey: "analytics", label: "Analytics", icon: BarChart3 },
@@ -156,6 +158,14 @@ export function AdminShell({ adminName, adminEmail, roles, children }: AdminShel
             CREATOR STUDIO Management &amp; Customer Support Console
           </div>
           <div className="flex items-center gap-2.5">
+            <a
+              href={`${customerSiteUrl}/tutorials?watch=12-admin-dashboard`}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-teal-700/30 bg-teal-50/70 px-3 py-1.5 text-xs font-semibold text-teal-800 hover:bg-teal-100 dark:border-teal-500/30 dark:bg-teal-950/60 dark:text-teal-300"
+            >
+              <PlayCircle className="h-3.5 w-3.5" /> Watch Admin Tutorial ↗
+            </a>
             <SafeNavLink
               href={customerSiteUrl}
               external

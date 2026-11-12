@@ -1,29 +1,46 @@
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 import { getAccessibleIssuersForUser } from "@/lib/issuers";
 import { createServerSupabase, createServiceSupabase } from "@/lib/supabase/server";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
+
+const RevokeSchema = z.object({
+  certificateId: z.string().uuid("Valid certificateId UUID is required"),
+  reason: z.string().trim().min(3).max(300).optional(),
+});
 
 export async function POST(request: NextRequest) {
+  const ip = getClientIp(request.headers);
+  const rl = checkRateLimit(`cert-revoke:${ip}`, 15, 60_000);
+  if (!rl.allowed) {
+    return NextResponse.json({ error: "Rate limit exceeded" }, { status: 429 });
+  }
+
   const supabase = await createServerSupabase();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  let body: { certificateId?: string; reason?: string };
+  let raw: unknown;
   try {
-    body = await request.json();
+    raw = await request.json();
   } catch {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  if (!body.certificateId) {
-    return NextResponse.json({ error: "certificateId is required" }, { status: 400 });
+  const parsed = RevokeSchema.safeParse(raw);
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: parsed.error.issues[0]?.message || "Invalid revoke request" },
+      { status: 400 }
+    );
   }
 
   const { data: cert } = await supabase
     .from("fcs_certificates")
     .select("id, certificate_code, issuer_id, user_id")
-    .eq("id", body.certificateId)
+    .eq("id", parsed.data.certificateId)
     .eq("user_id", user.id)
     .maybeSingle();
 
@@ -42,7 +59,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const reason = (body.reason || "Revoked by issuing organization").trim().slice(0, 300);
+  const reason = parsed.data.reason || "Revoked by issuing organization";
   const service = createServiceSupabase();
   const nowIso = new Date().toISOString();
 

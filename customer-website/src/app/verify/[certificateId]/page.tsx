@@ -1,10 +1,27 @@
 import React from "react";
+import type { Metadata } from "next";
 import { SafeNavLink } from "@/components/ui/SafeNavLink";
 import { AlertTriangle, CheckCircle2, Clock, ShieldAlert, XCircle } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { ReportCertificateButton } from "@/components/certificate/ReportCertificateButton";
+import { buildPageMetadata } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ certificateId: string }>;
+}): Promise<Metadata> {
+  const { certificateId } = await params;
+  const code = decodeURIComponent(certificateId).trim().toUpperCase();
+  return buildPageMetadata({
+    title: `Certificate Verification: ${code}`,
+    description: `Live public authenticity verification check for Francis Creator Studio certificate ${code}.`,
+    path: `/verify/${encodeURIComponent(code)}`,
+    noIndex: true,
+  });
+}
 
 export default async function VerifyResultPage({
   params,

@@ -1,12 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase/server";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 
 export async function GET(
-  _request: NextRequest,
+  request: NextRequest,
   context: { params: Promise<{ certificateId: string }> }
 ) {
+  const ip = getClientIp(request.headers);
+  const rl = checkRateLimit(`verify-lookup:${ip}`, 60, 60_000);
+  if (!rl.allowed) {
+    return NextResponse.json({ found: false, error: "Too many verification lookups" }, { status: 429 });
+  }
+
   const { certificateId } = await context.params;
-  const cleanCode = decodeURIComponent(certificateId || "").trim();
+  const cleanCode = decodeURIComponent(certificateId || "").trim().slice(0, 64);
 
   if (!cleanCode) {
     return NextResponse.json({ found: false, error: "Certificate ID required" }, { status: 400 });

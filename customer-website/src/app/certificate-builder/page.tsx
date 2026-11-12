@@ -1,5 +1,8 @@
 import React from "react";
+import type { Metadata } from "next";
 import { SafeNavLink } from "@/components/ui/SafeNavLink";
+import { buildPageMetadata } from "@/lib/seo";
+import { WatchTutorialButton } from "@/components/tutorials/WatchTutorialButton";
 import { ALL_CERTIFICATE_TEMPLATES } from "@francis/shared";
 import {
   Award,
@@ -20,6 +23,13 @@ import {
 } from "@/components/certificate/CertificateTemplateGallery";
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = buildPageMetadata({
+  title: "Certificate Design Studio — 124 Templates across 14 Categories",
+  description:
+    "Design certificates across 124 templates in 14 categories with custom typography, signatures, sample stamps, 2K/4K PNG & PDF exports, and Authorized Organization QR verification.",
+  path: "/certificate-builder",
+});
 
 export default async function CertificateBuilderGalleryPage() {
   const { supabase, user } = await getAuthenticatedContext();
@@ -104,7 +114,8 @@ export default async function CertificateBuilderGalleryPage() {
               CSV/Excel Generation.
             </p>
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <WatchTutorialButton sectionKey="certificate_studio" label="Watch Tutorial" />
             <SafeNavLink
               href="/stamps"
               className="inline-flex items-center gap-2 rounded-xl border border-[var(--fcs-border)] px-3.5 py-2.5 text-sm font-semibold hover:bg-[var(--fcs-surface-muted)]"

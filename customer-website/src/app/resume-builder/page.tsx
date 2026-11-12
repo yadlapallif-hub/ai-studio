@@ -1,5 +1,8 @@
 import React from "react";
+import type { Metadata } from "next";
 import { SafeNavLink } from "@/components/ui/SafeNavLink";
+import { buildPageMetadata } from "@/lib/seo";
+import { WatchTutorialButton } from "@/components/tutorials/WatchTutorialButton";
 import { RESUME_TEMPLATE_CATALOG } from "@francis/shared";
 import { FileText, Plus } from "lucide-react";
 import { getAuthenticatedContext } from "@/lib/supabase/server";
@@ -9,6 +12,13 @@ import {
 } from "@/components/resume/ResumeTemplateGallery";
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = buildPageMetadata({
+  title: "AI Resume Studio — 100 Free ATS Templates",
+  description:
+    "Design ATS-ready resumes across 100 templates and 14 sections with drag-and-drop ordering, photo background removal, and print-ready PDF & PNG export.",
+  path: "/resume-builder",
+});
 
 export default async function ResumeBuilderGalleryPage() {
   const { supabase, user } = await getAuthenticatedContext();
@@ -56,12 +66,15 @@ export default async function ResumeBuilderGalleryPage() {
             and print-ready A4 PDF & PNG export.
           </p>
         </div>
-        <SafeNavLink
-          href="/resume-builder/new"
-          className="inline-flex items-center gap-2 rounded-xl bg-teal-700 px-5 py-2.5 text-sm font-semibold text-white hover:bg-teal-800"
-        >
-          <Plus className="h-4 w-4" /> Create New Resume
-        </SafeNavLink>
+        <div className="flex flex-wrap items-center gap-2.5">
+          <WatchTutorialButton sectionKey="resume_studio" label="Watch Tutorial" />
+          <SafeNavLink
+            href="/resume-builder/new"
+            className="inline-flex items-center gap-2 rounded-xl bg-teal-700 px-5 py-2.5 text-sm font-semibold text-white hover:bg-teal-800"
+          >
+            <Plus className="h-4 w-4" /> Create New Resume
+          </SafeNavLink>
+        </div>
       </div>
 
       {user && resumes && resumes.length > 0 && (

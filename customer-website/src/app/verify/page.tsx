@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { SlideReveal } from "@/components/motion/SlideReveal";
 import { ReportCertificateButton } from "@/components/certificate/ReportCertificateButton";
+import { WatchTutorialButton } from "@/components/tutorials/WatchTutorialButton";
 
 interface ApprovedIssuerRow {
   id: string;
@@ -149,8 +150,11 @@ export default function VerifyLookupPage() {
     <div className="mx-auto max-w-3xl px-4 py-14 sm:px-6">
       <SlideReveal direction="clip">
         <div className="rounded-3xl border border-[var(--fcs-border)] bg-[var(--fcs-surface)] p-8">
-        <div className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-teal-700 text-white">
-          <ShieldCheck className="h-5 w-5" />
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-teal-700 text-white">
+            <ShieldCheck className="h-5 w-5" />
+          </div>
+          <WatchTutorialButton sectionKey="verify" label="Watch Verification Tutorial" />
         </div>
         <h1 className="mt-4 text-3xl font-bold tracking-tight">
           Public Certificate Verification
@@ -219,13 +223,20 @@ export default function VerifyLookupPage() {
               </p>
             </div>
           </div>
-          <button
-            type="button"
-            onClick={() => setShowIssuerForm((s) => !s)}
-            className="rounded-lg border border-[var(--fcs-border)] px-3.5 py-2 text-xs font-semibold hover:bg-[var(--fcs-surface-muted)]"
-          >
-            {showIssuerForm ? "Hide Form" : "Apply as Organization"}
-          </button>
+          <div className="flex flex-wrap items-center gap-2">
+            <WatchTutorialButton
+              sectionKey="authorized_orgs"
+              variant="compact"
+              label="Watch Approval Guide"
+            />
+            <button
+              type="button"
+              onClick={() => setShowIssuerForm((s) => !s)}
+              className="rounded-lg border border-[var(--fcs-border)] px-3.5 py-2 text-xs font-semibold hover:bg-[var(--fcs-surface-muted)]"
+            >
+              {showIssuerForm ? "Hide Form" : "Apply as Organization"}
+            </button>
+          </div>
         </div>
 
         {showIssuerForm && (

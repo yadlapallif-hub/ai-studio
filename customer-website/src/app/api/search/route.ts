@@ -1,14 +1,30 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase/server";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
+
+function sanitizeSearchTerm(raw: string): string {
+  // Strip PostgREST filter delimiters and wildcards so `.or(...)` cannot be manipulated
+  return raw
+    .replace(/[,().%*_\\]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 80);
+}
 
 export async function GET(request: NextRequest) {
-  const q = (request.nextUrl.searchParams.get("q") ?? "").trim();
+  const ip = getClientIp(request.headers);
+  const rl = checkRateLimit(`search:${ip}`, 45, 60_000);
+  if (!rl.allowed) {
+    return NextResponse.json({ error: "Rate limit exceeded" }, { status: 429 });
+  }
+
+  const clean = sanitizeSearchTerm(request.nextUrl.searchParams.get("q") ?? "");
   const supabase = await createServerSupabase();
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const pattern = q ? `%${q}%` : "%";
+  const pattern = clean ? `%${clean}%` : "%";
 
   const [{ data: resumeTemplates }, { data: certTemplates }, { data: faqs }] = await Promise.all([
     supabase

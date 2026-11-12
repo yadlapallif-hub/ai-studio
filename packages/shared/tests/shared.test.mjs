@@ -226,5 +226,18 @@ test("buildDeterministicCertificateDesignPatch parses natural-language certifica
   assert.ok(edit.elementActions.some((a) => a.action === "add_signature_area"));
 });
 
+test("TUTORIAL_CATALOG contains 12 unique bilingual English and Telugu tutorials across all platform sections", () => {
+  assert.equal(shared.TUTORIAL_CATALOG.length, 12);
+  assert.equal(shared.TUTORIAL_CATEGORIES.length, 4);
+  const slugs = new Set(shared.TUTORIAL_CATALOG.map((t) => t.slug));
+  assert.equal(slugs.size, 12);
+  for (const item of shared.TUTORIAL_CATALOG) {
+    assert.ok(item.titleEn.length > 5 && item.titleTe.length > 5);
+    assert.ok(item.narrationEn.length > 80 && item.narrationTe.length > 60);
+    assert.ok(item.durationSeconds >= 60 && item.durationSeconds <= 120);
+    assert.ok(item.cuesEn.length >= 3 && item.cuesTe.length >= 3);
+  }
+});
+
 
 

@@ -100,6 +100,21 @@ export function Footer({
             </p>
             <ul className="mt-3 space-y-2 text-xs">
               <li>
+                <SafeNavLink href="/tutorials" className="hover:text-teal-700 dark:hover:text-teal-400">
+                  Video Tutorials (EN &amp; తెలుగు)
+                </SafeNavLink>
+              </li>
+              <li>
+                <SafeNavLink href="/about" className="hover:text-teal-700 dark:hover:text-teal-400">
+                  About &amp; Documentation
+                </SafeNavLink>
+              </li>
+              <li>
+                <SafeNavLink href="/privacy" className="hover:text-teal-700 dark:hover:text-teal-400">
+                  Privacy Policy
+                </SafeNavLink>
+              </li>
+              <li>
                 <SafeNavLink
                   href={footerContent.githubUrl || githubUrl}
                   target="_blank"

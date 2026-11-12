@@ -1,11 +1,21 @@
 import React from "react";
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { stampSvgToDataUrl } from "@francis/shared";
 import { getAccessibleIssuersForUser, getStampsForApprovedIssuers } from "@/lib/issuers";
 import { getAuthenticatedContext } from "@/lib/supabase/server";
+import { buildPageMetadata } from "@/lib/seo";
 import { DashboardClient } from "@/components/dashboard/DashboardClient";
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = buildPageMetadata({
+  title: "Studio Hub Dashboard",
+  description:
+    "Manage saved resumes, certificates, Document Vault assets, Authorized Organization status, and Workspace AI Recommendations.",
+  path: "/dashboard",
+  noIndex: true,
+});
 
 export default async function DashboardPage() {
   const { supabase, user, profile } = await getAuthenticatedContext();

@@ -51,8 +51,8 @@ export async function GET() {
 
     if (error) {
       return NextResponse.json(
-        { issuers: [], myApplications: [], error: error.message },
-        { status: 500 }
+        { issuers: [], myApplications: [], warning: error.message },
+        { status: 200 }
       );
     }
 
@@ -65,9 +65,9 @@ export async function GET() {
       {
         issuers: [],
         myApplications: [],
-        error: err instanceof Error ? err.message : "Failed loading issuers",
+        warning: err instanceof Error ? err.message : "Failed loading issuers",
       },
-      { status: 500 }
+      { status: 200 }
     );
   }
 }

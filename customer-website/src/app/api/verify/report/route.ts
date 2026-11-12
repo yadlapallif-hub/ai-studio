@@ -1,8 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { certificateReportSchema } from "@francis/shared";
 import { createServerSupabase, createServiceSupabase } from "@/lib/supabase/server";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 
 export async function POST(request: NextRequest) {
+  const ip = getClientIp(request.headers);
+  const rl = checkRateLimit(`verify-report:${ip}`, 8, 60_000);
+  if (!rl.allowed) {
+    return NextResponse.json({ error: "Too many reports submitted. Please wait." }, { status: 429 });
+  }
+
   let raw: unknown;
   try {
     raw = await request.json();
