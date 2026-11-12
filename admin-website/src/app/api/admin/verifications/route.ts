@@ -17,6 +17,13 @@ const VerificationPatchSchema = z.discriminatedUnion("target", [
     verificationStatus: z.enum(["verified", "pending_approval", "unverified_draft", "revoked"]),
     notes: z.string().max(1000).optional(),
   }),
+  z.object({
+    target: z.literal("report"),
+    id: z.string().uuid(),
+    status: z.enum(["open", "reviewing", "resolved", "dismissed"]),
+    adminNotes: z.string().max(1000).optional(),
+    revokeCertificate: z.boolean().optional(),
+  }),
 ]);
 
 export async function PATCH(request: Request) {
@@ -109,6 +116,53 @@ export async function PATCH(request: Request) {
     });
 
     return NextResponse.json({ ok: true, issuer });
+  }
+
+  if (payload.target === "report") {
+    const { data: reportRow } = await service
+      .from("fcs_certificate_reports")
+      .select("id, certificate_code, certificate_id")
+      .eq("id", payload.id)
+      .single();
+
+    if (!reportRow) {
+      return NextResponse.json({ error: "Report not found" }, { status: 404 });
+    }
+
+    await service
+      .from("fcs_certificate_reports")
+      .update({
+        status: payload.status,
+        admin_notes: payload.adminNotes?.trim() || null,
+        reviewed_by: admin.userId,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", payload.id);
+
+    if (payload.revokeCertificate && reportRow.certificate_code) {
+      await service
+        .from("fcs_certificate_verifications")
+        .update({
+          verification_status: "revoked",
+          revocation_reason: payload.adminNotes?.trim() || "Revoked following reported credential review",
+          revoked_by: admin.userId,
+          revoked_at: new Date().toISOString(),
+        })
+        .ilike("certificate_code", reportRow.certificate_code);
+    }
+
+    await recordAdminAudit({
+      actorId: admin.userId,
+      action: `admin.report.${payload.status}`,
+      targetType: "certificate_report",
+      targetId: payload.id,
+      metadata: {
+        certificateCode: reportRow.certificate_code,
+        revokeCertificate: Boolean(payload.revokeCertificate),
+      },
+    });
+
+    return NextResponse.json({ ok: true });
   }
 
   // Certificate verification record update — enforces authorized issuer requirement when verifying

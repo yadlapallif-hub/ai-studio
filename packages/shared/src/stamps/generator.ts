@@ -198,6 +198,37 @@ export function buildOfficialStampSvg(
   width: number;
   height: number;
 } {
+  return buildStampSvgInternal(config, uniqueKey, false);
+}
+
+export function buildSampleStampSvg(
+  config: OfficialStampConfig,
+  uniqueKey?: string
+): {
+  svgMarkup: string;
+  dataUrl: string;
+  stampKind: "stamp" | "seal";
+  shape: "circle" | "rectangle" | "square" | "scalloped";
+  inkStyle: "blue_ink" | "red_ink" | "teal_ink" | "black_ink" | "gold_embossed" | "custom";
+  width: number;
+  height: number;
+} {
+  return buildStampSvgInternal(config, uniqueKey, true);
+}
+
+function buildStampSvgInternal(
+  config: OfficialStampConfig,
+  uniqueKey?: string,
+  isSampleMode = false
+): {
+  svgMarkup: string;
+  dataUrl: string;
+  stampKind: "stamp" | "seal";
+  shape: "circle" | "rectangle" | "square" | "scalloped";
+  inkStyle: "blue_ink" | "red_ink" | "teal_ink" | "black_ink" | "gold_embossed" | "custom";
+  width: number;
+  height: number;
+} {
   const uid = (uniqueKey || `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`).replace(
     /[^a-zA-Z0-9_-]/g,
     ""
@@ -205,11 +236,28 @@ export function buildOfficialStampSvg(
   const colors = getColors(config.colorFinish, config.customHex);
   const fontFamily = getFontFamily(config.fontStyle);
   const strokeMult = config.borderWeight === "thin" ? 0.75 : config.borderWeight === "bold" ? 1.35 : 1;
+  const opacityVal = Math.max(0.15, Math.min(1, Number(config.opacity ?? 1)));
+  const textRot = Math.max(-180, Math.min(180, Number(config.textRotation ?? 0)));
+  const curvature = Math.max(0.75, Math.min(1.2, Number(config.curvature ?? 1)));
 
-  const orgRaw = (config.organizationName || "AUTHORIZED ORGANIZATION").trim().toUpperCase().slice(0, 42);
-  const centerRaw = (config.centerTitle || "VERIFIED").trim().toUpperCase().slice(0, 22);
-  const bottomRaw = (config.bottomText || "AUTHORIZED ISSUER").trim().toUpperCase().slice(0, 34);
-  const subRaw = (config.subCode || "").trim().toUpperCase().slice(0, 28);
+  const orgRaw = (config.organizationName || (isSampleMode ? "SAMPLE ORGANIZATION" : "AUTHORIZED ORGANIZATION"))
+    .trim()
+    .toUpperCase()
+    .slice(0, 42);
+  const centerRaw = (config.centerTitle || (isSampleMode ? "SAMPLE" : "VERIFIED"))
+    .trim()
+    .toUpperCase()
+    .slice(0, 22);
+  const bottomRawBase = (config.bottomText || (isSampleMode ? "SAMPLE DESIGN STAMP" : "AUTHORIZED ISSUER"))
+    .trim()
+    .toUpperCase()
+    .slice(0, 34);
+  const bottomRaw =
+    isSampleMode && !/SAMPLE/i.test(bottomRawBase)
+      ? `SAMPLE • ${bottomRawBase}`.slice(0, 34)
+      : bottomRawBase;
+  const regPart = (config.registrationNumber || "").trim().toUpperCase().slice(0, 18);
+  const subRaw = [config.subCode, regPart].filter(Boolean).join(" • ").trim().toUpperCase().slice(0, 32);
   const dateRaw = (config.dateText || "").trim().slice(0, 20);
 
   const org = escapeXml(orgRaw);
@@ -217,12 +265,22 @@ export function buildOfficialStampSvg(
   const bottom = escapeXml(bottomRaw);
   const sub = escapeXml(subRaw);
   const dateStr = escapeXml(dateRaw);
+  const filterAttr = config.distressedInk ? ` filter="url(#ink-${uid})"` : "";
+  const sampleBadgeTag = (cx: number, y: number) =>
+    isSampleMode
+      ? `<text x="${cx}" y="${y}" text-anchor="middle" font-family="${fontFamily}" font-size="7.2" font-weight="800" fill="${colors.text}" fill-opacity="0.72" letter-spacing="1.2">SAMPLE / NON-VERIFIED</text>`
+      : "";
+  const gAttrs = (cx: number, cy: number) =>
+    ` opacity="${opacityVal.toFixed(2)}"${
+      textRot !== 0 ? ` transform="rotate(${textRot} ${cx} ${cy})"` : ""
+    }${filterAttr}`;
+  void sub;
+  void dateStr;
 
   const orgFontSize = orgRaw.length > 28 ? 11.5 : orgRaw.length > 20 ? 13 : 14.5;
   const centerFontSize = centerRaw.length > 14 ? 14 : centerRaw.length > 9 ? 17 : 21;
   const bottomFontSize = bottomRaw.length > 24 ? 10 : 11.5;
 
-  const filterAttr = config.distressedInk ? ` filter="url(#ink-${uid})"` : "";
   const defsContent = `
     ${
       config.distressedInk
@@ -250,7 +308,7 @@ export function buildOfficialStampSvg(
     const fillBg = colors.isGold ? `url(#gold-${uid})` : "none";
     const svgMarkup = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}">
       <defs>${defsContent}</defs>
-      <g${filterAttr}>
+      <g${gAttrs(140, 64)}>
         <rect x="7" y="7" width="266" height="114" rx="10" fill="${fillBg}" stroke="${colors.stroke}" stroke-width="${(4.5 * strokeMult).toFixed(2)}"/>
         <rect x="14" y="14" width="252" height="100" rx="6" fill="none" stroke="${colors.stroke}" stroke-width="${(1.6 * strokeMult).toFixed(2)}" stroke-dasharray="5 3"/>
         <text x="140" y="34" text-anchor="middle" font-family="${fontFamily}" font-size="${orgRaw.length > 24 ? 10.5 : 12}" font-weight="800" fill="${colors.text}" letter-spacing="1.8">${org}</text>
@@ -262,9 +320,10 @@ export function buildOfficialStampSvg(
         }
         <text x="${config.emblem !== "none" ? 152 : 140}" y="72" text-anchor="middle" font-family="${fontFamily}" font-size="${centerFontSize + 1}" font-weight="900" fill="${colors.text}" letter-spacing="2.8">${center}</text>
         <line x1="28" y1="86" x2="252" y2="86" stroke="${colors.stroke}" stroke-width="1.2" stroke-opacity="0.7"/>
-        <text x="140" y="103" text-anchor="middle" font-family="${fontFamily}" font-size="10" font-weight="700" fill="${colors.text}" letter-spacing="1.4">${escapeXml(
+        <text x="140" y="102" text-anchor="middle" font-family="${fontFamily}" font-size="10" font-weight="700" fill="${colors.text}" letter-spacing="1.4">${escapeXml(
           [bottomRaw, subRaw, config.showDateLine && dateRaw ? dateRaw : ""].filter(Boolean).join(" • ").slice(0, 42)
         )}</text>
+        ${sampleBadgeTag(140, 118)}
       </g>
     </svg>`;
     return {
@@ -284,7 +343,7 @@ export function buildOfficialStampSvg(
     const fillBg = colors.isGold ? `url(#gold-${uid})` : "none";
     const svgMarkup = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}">
       <defs>${defsContent}</defs>
-      <g${filterAttr}>
+      <g${gAttrs(140, 90)}>
         <ellipse cx="140" cy="90" rx="130" ry="80" fill="${fillBg}" stroke="${colors.stroke}" stroke-width="${(4.5 * strokeMult).toFixed(2)}"/>
         <ellipse cx="140" cy="90" rx="121" ry="71" fill="none" stroke="${colors.stroke}" stroke-width="${(1.5 * strokeMult).toFixed(2)}" stroke-dasharray="4 3"/>
         <ellipse cx="140" cy="90" rx="92" ry="44" fill="none" stroke="${colors.stroke}" stroke-width="1.2" stroke-opacity="0.75"/>
@@ -298,7 +357,8 @@ export function buildOfficialStampSvg(
               )}</text>`
             : ""
         }
-        <text x="140" y="152" text-anchor="middle" font-family="${fontFamily}" font-size="10" font-weight="800" fill="${colors.text}" letter-spacing="1.5">${bottom}</text>
+        <text x="140" y="150" text-anchor="middle" font-family="${fontFamily}" font-size="10" font-weight="800" fill="${colors.text}" letter-spacing="1.5">${bottom}</text>
+        ${sampleBadgeTag(140, 165)}
       </g>
     </svg>`;
     return {
@@ -317,7 +377,7 @@ export function buildOfficialStampSvg(
     const fillBg = colors.isGold ? `url(#gold-${uid})` : "none";
     const svgMarkup = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${size} ${size}">
       <defs>${defsContent}</defs>
-      <g${filterAttr}>
+      <g${gAttrs(110, 110)}>
         <rect x="10" y="10" width="200" height="200" rx="14" fill="${fillBg}" stroke="${colors.stroke}" stroke-width="${(4.5 * strokeMult).toFixed(2)}"/>
         <rect x="20" y="20" width="180" height="180" rx="8" fill="none" stroke="${colors.stroke}" stroke-width="${(1.6 * strokeMult).toFixed(2)}"/>
         <rect x="30" y="30" width="160" height="160" rx="4" fill="none" stroke="${colors.stroke}" stroke-width="1" stroke-dasharray="4 3"/>
@@ -334,6 +394,7 @@ export function buildOfficialStampSvg(
         }
         <line x1="42" y1="162" x2="178" y2="162" stroke="${colors.stroke}" stroke-width="1.2"/>
         <text x="110" y="180" text-anchor="middle" font-family="${fontFamily}" font-size="9.5" font-weight="800" fill="${colors.text}" letter-spacing="1.4">${bottom}</text>
+        ${sampleBadgeTag(110, 197)}
       </g>
     </svg>`;
     return {
@@ -350,15 +411,17 @@ export function buildOfficialStampSvg(
   if (config.preset === "circular_seal") {
     const size = 230;
     const c = 115;
+    const topR = Math.round(77 * curvature);
+    const botR = Math.round(80 * curvature);
     const scallop = buildScallopedPath(c, c, 106, 98, 26);
     const fillBg = colors.isGold ? `url(#gold-${uid})` : colors.soft;
     const svgMarkup = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${size} ${size}">
       <defs>
         ${defsContent}
-        <path id="topArc-${uid}" d="M 38,115 A 77,77 0 1,1 192,115"/>
-        <path id="botArc-${uid}" d="M 35,123 A 80,80 0 0,0 195,123"/>
+        <path id="topArc-${uid}" d="M ${c - topR},${c} A ${topR},${topR} 0 1,1 ${c + topR},${c}"/>
+        <path id="botArc-${uid}" d="M ${c - botR},${c + 8} A ${botR},${botR} 0 0,0 ${c + botR},${c + 8}"/>
       </defs>
-      <g${filterAttr}>
+      <g${gAttrs(c, c)}>
         <path d="${scallop}" fill="${fillBg}" stroke="${colors.stroke}" stroke-width="${(2.6 * strokeMult).toFixed(2)}"/>
         <circle cx="${c}" cy="${c}" r="88" fill="none" stroke="${colors.isGold ? "#FEF3C7" : colors.stroke}" stroke-width="1.8" stroke-dasharray="4 3"/>
         <circle cx="${c}" cy="${c}" r="60" fill="none" stroke="${colors.stroke}" stroke-width="1.8"/>
@@ -377,6 +440,7 @@ export function buildOfficialStampSvg(
               )}</text>`
             : ""
         }
+        ${sampleBadgeTag(c, 162)}
       </g>
     </svg>`;
     return {
@@ -393,14 +457,16 @@ export function buildOfficialStampSvg(
   if (config.preset === "ribbon_badge") {
     const w = 220;
     const h = 256;
+    const topR = Math.round(72 * curvature);
+    const botR = Math.round(75 * curvature);
     const fillBg = colors.isGold ? `url(#gold-${uid})` : colors.soft;
     const svgMarkup = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}">
       <defs>
         ${defsContent}
-        <path id="topArc-${uid}" d="M 38,108 A 72,72 0 1,1 182,108"/>
-        <path id="botArc-${uid}" d="M 35,116 A 75,75 0 0,0 185,116"/>
+        <path id="topArc-${uid}" d="M ${110 - topR},108 A ${topR},${topR} 0 1,1 ${110 + topR},108"/>
+        <path id="botArc-${uid}" d="M ${110 - botR},116 A ${botR},${botR} 0 0,0 ${110 + botR},116"/>
       </defs>
-      <g${filterAttr}>
+      <g${gAttrs(110, 120)}>
         <polygon points="68,164 46,246 74,230 98,248 106,172" fill="${fillBg}" stroke="${colors.stroke}" stroke-width="2.5"/>
         <polygon points="152,164 174,246 146,230 122,248 114,172" fill="${fillBg}" stroke="${colors.stroke}" stroke-width="2.5"/>
         <circle cx="110" cy="108" r="94" fill="${fillBg}" stroke="${colors.stroke}" stroke-width="${(4 * strokeMult).toFixed(2)}"/>
@@ -421,6 +487,7 @@ export function buildOfficialStampSvg(
               )}</text>`
             : ""
         }
+        ${sampleBadgeTag(110, 152)}
       </g>
     </svg>`;
     return {
@@ -436,14 +503,16 @@ export function buildOfficialStampSvg(
 
   // Default: circular_double
   const size = 220;
+  const topR = Math.round(75 * curvature);
+  const botR = Math.round(78 * curvature);
   const fillBg = colors.isGold ? `url(#gold-${uid})` : "none";
   const svgMarkup = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${size} ${size}">
     <defs>
       ${defsContent}
-      <path id="topArc-${uid}" d="M 35,110 A 75,75 0 1,1 185,110"/>
-      <path id="botArc-${uid}" d="M 32,118 A 78,78 0 0,0 188,118"/>
+      <path id="topArc-${uid}" d="M ${110 - topR},110 A ${topR},${topR} 0 1,1 ${110 + topR},110"/>
+      <path id="botArc-${uid}" d="M ${110 - botR},118 A ${botR},${botR} 0 0,0 ${110 + botR},118"/>
     </defs>
-    <g${filterAttr}>
+    <g${gAttrs(110, 110)}>
       <circle cx="110" cy="110" r="100" fill="${fillBg}" stroke="${colors.stroke}" stroke-width="${(4.5 * strokeMult).toFixed(2)}"/>
       <circle cx="110" cy="110" r="91" fill="none" stroke="${colors.stroke}" stroke-width="${(1.5 * strokeMult).toFixed(2)}" stroke-dasharray="5 3"/>
       <circle cx="110" cy="110" r="58" fill="none" stroke="${colors.stroke}" stroke-width="${(1.8 * strokeMult).toFixed(2)}"/>
@@ -464,6 +533,7 @@ export function buildOfficialStampSvg(
             )}</text>`
           : ""
       }
+      ${sampleBadgeTag(110, 152)}
     </g>
   </svg>`;
 

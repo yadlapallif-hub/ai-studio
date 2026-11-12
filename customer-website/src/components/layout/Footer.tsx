@@ -56,8 +56,29 @@ export function Footer({
                 </SafeNavLink>
               </li>
               <li>
+                <SafeNavLink
+                  href="/stamps"
+                  className="hover:text-teal-700 dark:hover:text-teal-400"
+                >
+                  Stamp &amp; Signature Studio
+                </SafeNavLink>
+              </li>
+              <li>
+                <SafeNavLink
+                  href="/bulk-generator"
+                  className="hover:text-teal-700 dark:hover:text-teal-400"
+                >
+                  Bulk Certificate Generator
+                </SafeNavLink>
+              </li>
+              <li>
                 <SafeNavLink href="/verify" className="hover:text-teal-700 dark:hover:text-teal-400">
                   Public Certificate Verification
+                </SafeNavLink>
+              </li>
+              <li>
+                <SafeNavLink href="/admin" className="hover:text-teal-700 dark:hover:text-teal-400">
+                  Admin Console
                 </SafeNavLink>
               </li>
               <li>

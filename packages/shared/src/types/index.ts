@@ -233,18 +233,32 @@ export interface CertificateCanvasElement {
   text?: string;
   x: number; // percentage 0-100 on canvas
   y: number; // percentage 0-100 on canvas
-  width: number; // px relative to base 1123x794 (landscape) or 794x1123 (portrait)
+  width: number; // px relative to base canvas
   height: number;
   rotation: number;
   opacity: number;
   zIndex: number;
-  shape?: "circle" | "square" | "rectangle";
-  inkStyle?: "default" | "blue_ink" | "red_ink" | "teal_ink" | "black_ink" | "gold_embossed";
+  locked?: boolean;
+  shape?: "circle" | "square" | "rectangle" | "id_card" | "scalloped";
+  inkStyle?: "default" | "blue_ink" | "red_ink" | "teal_ink" | "black_ink" | "gold_embossed" | "custom";
   isSampleDecorative?: boolean;
+  stampClassification?: "official_verified" | "sample" | "personal_signature";
+  signatoryName?: string;
+  signatoryDesignation?: string;
   fontFamily?: string;
   fontSize?: number;
+  fontWeight?: "normal" | "medium" | "semibold" | "bold";
+  fontStyle?: "normal" | "italic";
+  textDecoration?: "none" | "underline";
+  letterSpacing?: number;
   color?: string;
   align?: "left" | "center" | "right";
+  borderWidth?: number;
+  borderColor?: string;
+  shadow?: "none" | "soft" | "elevated";
+  brightness?: number;
+  contrast?: number;
+  saturation?: number;
 }
 
 export type StampPresetId =
@@ -267,6 +281,14 @@ export type StampEmblem = "shield" | "star" | "check" | "laurel" | "crest" | "no
 
 export type StampFontStyle = "serif" | "sans" | "mono";
 
+export type SampleStampCategory =
+  | "company"
+  | "organization"
+  | "academic_sample"
+  | "digital_seal"
+  | "custom"
+  | "sample";
+
 export interface OfficialStampConfig {
   preset: StampPresetId;
   organizationName: string;
@@ -281,6 +303,12 @@ export interface OfficialStampConfig {
   distressedInk: boolean;
   showDateLine: boolean;
   dateText: string;
+  curvature?: number;
+  textRotation?: number;
+  opacity?: number;
+  scale?: number;
+  registrationNumber?: string;
+  stampCategory?: SampleStampCategory;
 }
 
 export interface OrganizationStampRecord {
@@ -295,7 +323,72 @@ export interface OrganizationStampRecord {
   svg_markup: string | null;
   preview_url: string;
   is_default: boolean;
+  is_official_verified?: boolean;
   created_at: string;
+}
+
+export interface StampLibraryRecord {
+  id: string;
+  user_id: string;
+  issuer_id: string | null;
+  name: string;
+  stamp_category: SampleStampCategory;
+  is_official_verified: boolean;
+  shape: "circle" | "rectangle" | "square" | "scalloped";
+  ink_color: string;
+  opacity: number;
+  rotation: number;
+  curvature: number;
+  scale: number;
+  config: Partial<OfficialStampConfig> | Record<string, unknown>;
+  svg_markup: string | null;
+  preview_url: string;
+  created_at: string;
+}
+
+export interface SignatureLibraryRecord {
+  id: string;
+  user_id: string;
+  issuer_id: string | null;
+  signatory_name: string;
+  signatory_designation: string;
+  style_preset: string;
+  is_authorized_signatory: boolean;
+  data_url: string;
+  created_at: string;
+}
+
+export interface DesignProjectRecord {
+  id: string;
+  user_id: string;
+  certificate_id: string | null;
+  title: string;
+  template_slug: string;
+  orientation: "landscape" | "portrait";
+  canvas_width: number;
+  canvas_height: number;
+  fields_json: Record<string, unknown>;
+  canvas_elements: CertificateCanvasElement[];
+  style_config: CertificateStyleConfig;
+  status: "in_progress" | "ready" | "archived";
+  created_at: string;
+  updated_at: string;
+}
+
+export interface BulkCertificateRow {
+  rowIndex: number;
+  recipientName: string;
+  courseOrAchievement: string;
+  issueDate: string;
+  expiryDate?: string;
+  organizationName?: string;
+  certificateTitle?: string;
+  description?: string;
+  signatoryName?: string;
+  signatoryDesignation?: string;
+  certificateCode: string;
+  errors: string[];
+  isDuplicate: boolean;
 }
 
 export interface CertificateStyleConfig {
@@ -317,6 +410,18 @@ export interface CertificateStyleConfig {
   fontBody: string;
   showQrCode: boolean;
   showBorder: boolean;
+  canvasPreset?: "a4_landscape" | "a4_portrait" | "presentation_16_9" | "square_badge" | "us_letter" | "custom";
+  canvasWidth?: number;
+  canvasHeight?: number;
+  backgroundImageUrl?: string;
+  backgroundOpacity?: number;
+  backgroundFit?: "cover" | "contain";
+  titleFontSize?: number;
+  recipientFontSize?: number;
+  bodyFontSize?: number;
+  titleLetterSpacing?: number;
+  textAlign?: "left" | "center" | "right";
+  borderThickness?: number;
 }
 
 export interface ResumeQualityReport {

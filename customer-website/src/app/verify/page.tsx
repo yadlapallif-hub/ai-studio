@@ -16,6 +16,7 @@ import {
   Stamp,
 } from "lucide-react";
 import { SlideReveal } from "@/components/motion/SlideReveal";
+import { ReportCertificateButton } from "@/components/certificate/ReportCertificateButton";
 
 interface ApprovedIssuerRow {
   id: string;
@@ -179,13 +180,27 @@ export default function VerifyLookupPage() {
           </button>
         </form>
 
-        <div className="mt-8 rounded-2xl border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] p-5 text-xs text-[var(--fcs-ink-muted)]">
-          <p className="font-bold text-[var(--fcs-ink)]">Verification & Issuance Policy</p>
-          <p className="mt-1 leading-relaxed">
-            Certificate creation and official organizational stamps are restricted exclusively to
-            Authorized Organizations approved by an Administrator. Every issued certificate displays{" "}
-            <strong>Officially Verified</strong> only when issued by an approved organization.
-          </p>
+        <div className="mt-8 space-y-3 rounded-2xl border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] p-5 text-xs text-[var(--fcs-ink-muted)]">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="font-bold text-[var(--fcs-ink)]">Verification &amp; Sample Badge Policy</p>
+            <ReportCertificateButton certificateCode={code} />
+          </div>
+          <div className="grid gap-2.5 sm:grid-cols-2">
+            <div className="rounded-xl border border-emerald-500/30 bg-emerald-50/70 p-3 text-emerald-950 dark:bg-emerald-950/30 dark:text-emerald-200">
+              <p className="font-bold">✓ Officially Verified</p>
+              <p className="mt-0.5 text-[11px] opacity-90">
+                Issued &amp; published by an Admin-approved Authorized Organization with active live
+                QR verification.
+              </p>
+            </div>
+            <div className="rounded-xl border border-amber-500/30 bg-amber-50/70 p-3 text-amber-950 dark:bg-amber-950/30 dark:text-amber-200">
+              <p className="font-bold">Sample / Personal Draft</p>
+              <p className="mt-0.5 text-[11px] opacity-90">
+                Created in Sample Design Mode for previews or personal practice — never listed as
+                Officially Verified on this registry.
+              </p>
+            </div>
+          </div>
         </div>
         </div>
       </SlideReveal>

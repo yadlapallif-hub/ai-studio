@@ -59,18 +59,32 @@ interface AdminStampItem {
   preview_url: string;
 }
 
+interface CertReportRow {
+  id: string;
+  certificate_code: string;
+  reporter_email: string | null;
+  reason: string;
+  details: string;
+  status: "open" | "reviewing" | "resolved" | "dismissed";
+  admin_notes: string | null;
+  created_at: string;
+}
+
 export function VerificationsClient({
   initialIssuers,
   initialCerts,
   initialStamps = [],
+  initialReports = [],
 }: {
   initialIssuers: IssuerRow[];
   initialCerts: CertVerRow[];
   initialStamps?: AdminStampItem[];
+  initialReports?: CertReportRow[];
 }) {
   const [issuers, setIssuers] = useState(initialIssuers);
   const [certs, setCerts] = useState(initialCerts);
   const [stamps, setStamps] = useState<AdminStampItem[]>(initialStamps);
+  const [reports, setReports] = useState<CertReportRow[]>(initialReports);
   const [statusFilter, setStatusFilter] = useState<
     "all" | "pending" | "approved" | "blocked"
   >("all");
@@ -282,6 +296,54 @@ export function VerificationsClient({
         prev.map((c) => (c.id === id ? { ...c, verification_status: verificationStatus } : c))
       );
       setFeedback(`Certificate verification updated to ${verificationStatus}.`);
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const updateReport = async (
+    id: string,
+    status: "open" | "reviewing" | "resolved" | "dismissed",
+    revokeCertificate = false
+  ) => {
+    setBusyId(id);
+    setFeedback(null);
+    setErrorMsg(null);
+    try {
+      const res = await fetch("/api/admin/verifications", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          target: "report",
+          id,
+          status,
+          revokeCertificate,
+          adminNotes: reviewNotes[id]?.trim() || undefined,
+        }),
+      });
+      const json = (await res.json()) as { error?: string };
+      if (!res.ok) {
+        setErrorMsg(json.error || "Report update failed");
+        return;
+      }
+      setReports((prev) => prev.map((r) => (r.id === id ? { ...r, status } : r)));
+      if (revokeCertificate) {
+        const targetReport = reports.find((r) => r.id === id);
+        if (targetReport) {
+          setCerts((prev) =>
+            prev.map((c) =>
+              c.certificate_code.toUpperCase() === targetReport.certificate_code.toUpperCase()
+                ? { ...c, verification_status: "revoked" }
+                : c
+            )
+          );
+        }
+      }
+      setFeedback(
+        revokeCertificate
+          ? `Report marked ${status} and certificate revoked.`
+          : `Report status updated to ${status}.`
+      );
     } finally {
       setBusyId(null);
     }
@@ -797,6 +859,91 @@ export function VerificationsClient({
                 <tr>
                   <td colSpan={4} className="py-6 text-center text-[var(--adm-ink-muted)]">
                     No certificate verification records yet.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Reported Certificates Moderation Queue */}
+      <div className="rounded-2xl border border-[var(--adm-border)] bg-[var(--adm-surface)] p-5">
+        <h2 className="flex items-center gap-2 text-sm font-bold">
+          <ShieldAlert className="h-4 w-4 text-red-600" />
+          Reported Certificates Queue ({reports.filter((r) => r.status === "open" || r.status === "reviewing").length} active / {reports.length} total)
+        </h2>
+        <div className="mt-4 overflow-x-auto">
+          <table className="w-full text-left text-xs">
+            <thead>
+              <tr className="border-b border-[var(--adm-border)] text-[var(--adm-ink-muted)]">
+                <th className="py-2 pr-3">Certificate ID</th>
+                <th className="py-2 pr-3">Reason &amp; Details</th>
+                <th className="py-2 pr-3">Status</th>
+                <th className="py-2 text-right">Moderation</th>
+              </tr>
+            </thead>
+            <tbody>
+              {reports.map((rep) => (
+                <tr key={rep.id} className="border-b border-[var(--adm-border)]/50 align-top">
+                  <td className="py-2.5 pr-3">
+                    <p className="font-mono font-bold">{rep.certificate_code}</p>
+                    <p className="text-[10px] text-[var(--adm-ink-muted)]">
+                      {new Date(rep.created_at).toLocaleString()}
+                    </p>
+                  </td>
+                  <td className="py-2.5 pr-3">
+                    <p className="font-semibold capitalize">{rep.reason.replace(/_/g, " ")}</p>
+                    <p className="text-[11px] text-[var(--adm-ink-muted)]">{rep.details}</p>
+                    {rep.reporter_email && (
+                      <p className="mt-0.5 text-[10px] text-[var(--adm-ink-muted)]">
+                        Reporter: {rep.reporter_email}
+                      </p>
+                    )}
+                  </td>
+                  <td className="py-2.5 pr-3">
+                    <span className="rounded bg-[var(--adm-surface-muted)] px-2 py-0.5 text-[10px] font-bold uppercase">
+                      {rep.status}
+                    </span>
+                  </td>
+                  <td className="py-2.5 text-right space-x-1.5 whitespace-nowrap">
+                    {rep.status === "open" && (
+                      <button
+                        type="button"
+                        disabled={busyId === rep.id}
+                        onClick={() => void updateReport(rep.id, "reviewing")}
+                        className="rounded-lg border border-amber-500/40 px-2.5 py-1 font-semibold text-amber-700"
+                      >
+                        Reviewing
+                      </button>
+                    )}
+                    {rep.status !== "resolved" && (
+                      <button
+                        type="button"
+                        disabled={busyId === rep.id}
+                        onClick={() => void updateReport(rep.id, "resolved", true)}
+                        className="rounded-lg bg-red-600 px-2.5 py-1 font-semibold text-white hover:bg-red-700"
+                      >
+                        Resolve &amp; Revoke
+                      </button>
+                    )}
+                    {rep.status !== "dismissed" && (
+                      <button
+                        type="button"
+                        disabled={busyId === rep.id}
+                        onClick={() => void updateReport(rep.id, "dismissed", false)}
+                        className="rounded-lg border border-[var(--adm-border)] px-2.5 py-1 font-semibold"
+                      >
+                        Dismiss
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              ))}
+              {reports.length === 0 && (
+                <tr>
+                  <td colSpan={4} className="py-6 text-center text-[var(--adm-ink-muted)]">
+                    No reported certificates logged.
                   </td>
                 </tr>
               )}

@@ -7,6 +7,7 @@ import {
   Loader2,
   RotateCw,
   Sliders,
+  Sparkles,
   Upload,
   X,
 } from "lucide-react";
@@ -14,17 +15,22 @@ import {
 export interface EditedPhotoResult {
   dataUrl: string;
   blob: Blob;
-  shape: "circle" | "square";
+  shape: "circle" | "square" | "id_card";
   brightness: number;
   contrast: number;
+  saturation: number;
   rotation: number;
   zoom: number;
+  opacity: number;
+  borderWidth: number;
+  borderColor: string;
+  shadow: "none" | "soft" | "elevated";
   bgRemoved: boolean;
 }
 
 interface PhotoEditorModalProps {
   open: boolean;
-  initialShape?: "circle" | "square";
+  initialShape?: "circle" | "square" | "id_card";
   initialImageUrl?: string;
   onClose: () => void;
   onApply: (result: EditedPhotoResult) => Promise<void> | void;
@@ -41,13 +47,19 @@ export function PhotoEditorModal({
 }: PhotoEditorModalProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [sourceUrl, setSourceUrl] = useState<string>(initialImageUrl || "");
-  const [shape, setShape] = useState<"circle" | "square">(initialShape);
+  const [shape, setShape] = useState<"circle" | "square" | "id_card">(initialShape);
   const [brightness, setBrightness] = useState(100);
   const [contrast, setContrast] = useState(100);
+  const [saturation, setSaturation] = useState(100);
   const [rotation, setRotation] = useState(0);
   const [zoom, setZoom] = useState(1);
   const [panX, setPanX] = useState(0);
   const [panY, setPanY] = useState(0);
+  const [opacity, setOpacity] = useState(1);
+  const [borderWidth, setBorderWidth] = useState(2);
+  const [borderColor, setBorderColor] = useState("#0F4C5C");
+  const [shadow, setShadow] = useState<"none" | "soft" | "elevated">("soft");
+  const [dragOver, setDragOver] = useState(false);
   const [bgRemoved, setBgRemoved] = useState(false);
   const [bgLoading, setBgLoading] = useState(false);
   const [bgStatus, setBgStatus] = useState<string | null>(null);
@@ -72,37 +84,43 @@ export function PhotoEditorModal({
     const img = new Image();
     img.crossOrigin = "anonymous";
     img.onload = () => {
-      const size = 400;
-      canvas.width = size;
-      canvas.height = size;
-      ctx.clearRect(0, 0, size, size);
+      const w = shape === "id_card" ? 320 : 400;
+      const h = shape === "id_card" ? 420 : 400;
+      canvas.width = w;
+      canvas.height = h;
+      ctx.clearRect(0, 0, w, h);
 
       ctx.save();
       if (shape === "circle") {
         ctx.beginPath();
-        ctx.arc(size / 2, size / 2, size / 2, 0, Math.PI * 2);
+        ctx.arc(w / 2, h / 2, w / 2, 0, Math.PI * 2);
         ctx.closePath();
+        ctx.clip();
+      } else if (shape === "id_card") {
+        ctx.fillStyle = "#FFFFFF";
+        ctx.fillRect(0, 0, w, h);
+        ctx.beginPath();
+        ctx.rect(14, 14, w - 28, h - 28);
         ctx.clip();
       }
 
-      ctx.filter = `brightness(${brightness}%) contrast(${contrast}%)`;
-      ctx.translate(size / 2 + panX * 1.5, size / 2 + panY * 1.5);
+      ctx.globalAlpha = opacity;
+      ctx.filter = `brightness(${brightness}%) contrast(${contrast}%) saturate(${saturation}%)`;
+      ctx.translate(w / 2 + panX * 1.5, h / 2 + panY * 1.5);
       ctx.rotate((rotation * Math.PI) / 180);
 
-      const scale = Math.max(size / img.width, size / img.height) * zoom;
+      const scale = Math.max(w / img.width, h / img.height) * zoom;
       const drawW = img.width * scale;
       const drawH = img.height * scale;
       ctx.drawImage(img, -drawW / 2, -drawH / 2, drawW, drawH);
       ctx.restore();
     };
     img.src = sourceUrl;
-  }, [open, sourceUrl, shape, brightness, contrast, rotation, zoom, panX, panY]);
+  }, [open, sourceUrl, shape, brightness, contrast, saturation, rotation, zoom, panX, panY, opacity]);
 
   if (!open) return null;
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const loadImageFile = (file: File) => {
     if (!file.type.startsWith("image/")) {
       setError("Please select a valid PNG, JPG, or WEBP image.");
       return;
@@ -123,6 +141,18 @@ export function PhotoEditorModal({
     reader.readAsDataURL(file);
   };
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) loadImageFile(file);
+  };
+
+  const handleAutoEnhance = () => {
+    setBrightness(106);
+    setContrast(110);
+    setSaturation(108);
+    setBgStatus("Applied balanced studio portrait enhancement.");
+  };
+
   const handleRemoveBackground = async () => {
     if (!sourceUrl) return;
     setBgLoading(true);
@@ -133,7 +163,10 @@ export function PhotoEditorModal({
       const resp = await fetch(sourceUrl);
       const blob = await resp.blob();
       const formData = new FormData();
-      formData.append("image_file", new File([blob], "photo.png", { type: blob.type || "image/png" }));
+      formData.append(
+        "image_file",
+        new File([blob], "photo.png", { type: blob.type || "image/png" })
+      );
 
       const apiResp = await fetch("/api/image/remove-bg", {
         method: "POST",
@@ -150,7 +183,6 @@ export function PhotoEditorModal({
         return;
       }
 
-      // Fall back to real open-source on-device ML segmentation
       setBgStatus("Running on-device ML background segmentation (first load downloads model once)...");
       const { removeBackground } = await import("@imgly/background-removal");
       const outBlob = await removeBackground(blob);
@@ -194,8 +226,13 @@ export function PhotoEditorModal({
         shape,
         brightness,
         contrast,
+        saturation,
         rotation,
         zoom,
+        opacity,
+        borderWidth,
+        borderColor,
+        shadow,
         bgRemoved,
       });
       onClose();
@@ -212,14 +249,14 @@ export function PhotoEditorModal({
       onClick={onClose}
     >
       <div
-        className="max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-2xl border border-[var(--fcs-border)] bg-[var(--fcs-surface)] p-6 shadow-2xl"
+        className="max-h-[92vh] w-full max-w-3xl overflow-y-auto rounded-2xl border border-[var(--fcs-border)] bg-[var(--fcs-surface)] p-6 shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between border-b border-[var(--fcs-border)] pb-3">
           <div>
             <h2 className="text-base font-bold">{title}</h2>
             <p className="text-[11px] text-[var(--fcs-ink-muted)]">
-              Crop, rotate, adjust exposure, and remove backgrounds while preserving authentic likeness.
+              Drag & drop JPG/PNG/WebP, crop into Circle, Rectangle, or ID Frame, enhance clarity, and remove backgrounds.
             </p>
           </div>
           <button
@@ -244,18 +281,51 @@ export function PhotoEditorModal({
         )}
 
         <div className="mt-5 grid gap-6 md:grid-cols-2">
-          <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] p-4">
+          <div
+            onDragOver={(e) => {
+              e.preventDefault();
+              setDragOver(true);
+            }}
+            onDragLeave={() => setDragOver(false)}
+            onDrop={(e) => {
+              e.preventDefault();
+              setDragOver(false);
+              const f = e.dataTransfer.files?.[0];
+              if (f) loadImageFile(f);
+            }}
+            className={`flex flex-col items-center justify-center rounded-xl border-2 border-dashed p-4 transition ${
+              dragOver
+                ? "border-teal-600 bg-teal-50/70 dark:bg-teal-950/30"
+                : "border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)]"
+            }`}
+          >
             {sourceUrl ? (
-              <div className="relative flex items-center justify-center bg-[linear-gradient(45deg,#e5e7eb_25%,transparent_25%),linear-gradient(-45deg,#e5e7eb_25%,transparent_25%),linear-gradient(45deg,transparent_75%,#e5e7eb_75%),linear-gradient(-45deg,transparent_75%,#e5e7eb_75%)] bg-[length:16px_16px] bg-[position:0_0,0_8px,8px_-8px,-8px_0] p-2 rounded-xl">
+              <div className="relative flex items-center justify-center rounded-xl bg-[linear-gradient(45deg,#e5e7eb_25%,transparent_25%),linear-gradient(-45deg,#e5e7eb_25%,transparent_25%),linear-gradient(45deg,transparent_75%,#e5e7eb_75%),linear-gradient(-45deg,transparent_75%,#e5e7eb_75%)] bg-[length:16px_16px] bg-[position:0_0,0_8px,8px_-8px,-8px_0] p-2">
                 <canvas
                   ref={canvasRef}
-                  className={`h-56 w-56 object-contain ${shape === "circle" ? "rounded-full" : "rounded-lg"}`}
+                  style={{
+                    border: borderWidth > 0 ? `${borderWidth}px solid ${borderColor}` : "none",
+                    boxShadow:
+                      shadow === "elevated"
+                        ? "0 12px 24px rgba(15,23,42,0.28)"
+                        : shadow === "soft"
+                          ? "0 4px 12px rgba(15,23,42,0.14)"
+                          : "none",
+                  }}
+                  className={`object-contain ${
+                    shape === "circle"
+                      ? "h-56 w-56 rounded-full"
+                      : shape === "id_card"
+                        ? "h-64 w-48 rounded-md"
+                        : "h-56 w-56 rounded-lg"
+                  }`}
                 />
               </div>
             ) : (
-              <p className="py-16 text-center text-xs text-[var(--fcs-ink-muted)]">
-                Upload a portrait photo (PNG, JPG, or WEBP) to preview & edit.
-              </p>
+              <div className="py-16 text-center text-xs text-[var(--fcs-ink-muted)]">
+                <p className="font-semibold">Drag &amp; drop a photo here</p>
+                <p className="mt-1">Supports PNG, JPG, WEBP up to 10 MB</p>
+              </div>
             )}
 
             <label className="mt-4 inline-flex cursor-pointer items-center gap-2 rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface)] px-4 py-2 text-xs font-semibold hover:border-teal-600/50">
@@ -265,53 +335,78 @@ export function PhotoEditorModal({
             </label>
           </div>
 
-          <div className="space-y-3.5 text-xs">
-            <div className="flex items-center gap-2 font-semibold text-[var(--fcs-ink-muted)]">
-              <Sliders className="h-3.5 w-3.5" /> Adjustments
+          <div className="space-y-3 text-xs">
+            <div className="flex items-center justify-between">
+              <span className="flex items-center gap-1.5 font-semibold text-[var(--fcs-ink-muted)]">
+                <Sliders className="h-3.5 w-3.5" /> Adjustments &amp; Frame
+              </span>
+              <button
+                type="button"
+                disabled={!sourceUrl}
+                onClick={handleAutoEnhance}
+                className="inline-flex items-center gap-1 rounded-lg border border-teal-600/30 bg-teal-50 px-2.5 py-1 text-[11px] font-semibold text-teal-800 hover:bg-teal-100 disabled:opacity-50 dark:bg-teal-950/40 dark:text-teal-300"
+              >
+                <Sparkles className="h-3 w-3" /> Auto Enhance
+              </button>
             </div>
 
             <div>
-              <span className="mb-1 block font-medium">Frame Shape</span>
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  onClick={() => setShape("circle")}
-                  className={`rounded-lg border py-1.5 font-semibold ${
-                    shape === "circle"
-                      ? "border-teal-600 bg-teal-50 text-teal-800 dark:bg-teal-950/60 dark:text-teal-300"
-                      : "border-[var(--fcs-border)]"
-                  }`}
-                >
-                  Circular
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShape("square")}
-                  className={`rounded-lg border py-1.5 font-semibold ${
-                    shape === "square"
-                      ? "border-teal-600 bg-teal-50 text-teal-800 dark:bg-teal-950/60 dark:text-teal-300"
-                      : "border-[var(--fcs-border)]"
-                  }`}
-                >
-                  Square
-                </button>
+              <span className="mb-1 block font-medium">Frame Preset</span>
+              <div className="grid grid-cols-3 gap-2">
+                {(
+                  [
+                    { id: "circle", label: "Circular" },
+                    { id: "square", label: "Rectangle" },
+                    { id: "id_card", label: "ID Card (3:4)" },
+                  ] as const
+                ).map((item) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => setShape(item.id)}
+                    className={`rounded-lg border py-1.5 font-semibold ${
+                      shape === item.id
+                        ? "border-teal-600 bg-teal-50 text-teal-800 dark:bg-teal-950/60 dark:text-teal-300"
+                        : "border-[var(--fcs-border)]"
+                    }`}
+                  >
+                    {item.label}
+                  </button>
+                ))}
               </div>
             </div>
 
-            <div>
-              <div className="flex justify-between">
-                <span>Crop Zoom</span>
-                <span className="font-mono">{zoom.toFixed(2)}x</span>
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <div className="flex justify-between">
+                  <span>Crop Zoom</span>
+                  <span className="font-mono">{zoom.toFixed(2)}x</span>
+                </div>
+                <input
+                  type="range"
+                  min={1}
+                  max={2.4}
+                  step={0.05}
+                  value={zoom}
+                  onChange={(e) => setZoom(Number(e.target.value))}
+                  className="w-full accent-teal-700"
+                />
               </div>
-              <input
-                type="range"
-                min={1}
-                max={2.4}
-                step={0.05}
-                value={zoom}
-                onChange={(e) => setZoom(Number(e.target.value))}
-                className="w-full accent-teal-700"
-              />
+              <div>
+                <div className="flex justify-between">
+                  <span>Transparency</span>
+                  <span className="font-mono">{Math.round(opacity * 100)}%</span>
+                </div>
+                <input
+                  type="range"
+                  min={0.3}
+                  max={1}
+                  step={0.05}
+                  value={opacity}
+                  onChange={(e) => setOpacity(Number(e.target.value))}
+                  className="w-full accent-teal-700"
+                />
+              </div>
             </div>
 
             <div className="grid grid-cols-2 gap-2">
@@ -366,10 +461,10 @@ export function PhotoEditorModal({
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-3 gap-2">
               <div>
                 <div className="flex justify-between">
-                  <span>Brightness</span>
+                  <span>Bright</span>
                   <span className="font-mono">{brightness}%</span>
                 </div>
                 <input
@@ -394,6 +489,55 @@ export function PhotoEditorModal({
                   onChange={(e) => setContrast(Number(e.target.value))}
                   className="w-full accent-teal-700"
                 />
+              </div>
+              <div>
+                <div className="flex justify-between">
+                  <span>Saturate</span>
+                  <span className="font-mono">{saturation}%</span>
+                </div>
+                <input
+                  type="range"
+                  min={40}
+                  max={160}
+                  value={saturation}
+                  onChange={(e) => setSaturation(Number(e.target.value))}
+                  className="w-full accent-teal-700"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-3 gap-2">
+              <div>
+                <span className="mb-1 block font-medium">Border ({borderWidth}px)</span>
+                <input
+                  type="range"
+                  min={0}
+                  max={8}
+                  value={borderWidth}
+                  onChange={(e) => setBorderWidth(Number(e.target.value))}
+                  className="w-full accent-teal-700"
+                />
+              </div>
+              <div>
+                <span className="mb-1 block font-medium">Border Color</span>
+                <input
+                  type="color"
+                  value={borderColor}
+                  onChange={(e) => setBorderColor(e.target.value)}
+                  className="h-7 w-full rounded border border-[var(--fcs-border)]"
+                />
+              </div>
+              <div>
+                <span className="mb-1 block font-medium">Shadow</span>
+                <select
+                  value={shadow}
+                  onChange={(e) => setShadow(e.target.value as "none" | "soft" | "elevated")}
+                  className="w-full rounded-lg border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] px-2 py-1"
+                >
+                  <option value="none">None</option>
+                  <option value="soft">Soft</option>
+                  <option value="elevated">Elevated</option>
+                </select>
               </div>
             </div>
 

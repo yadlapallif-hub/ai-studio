@@ -29,12 +29,45 @@ export const certificateSaveSchema = z.object({
   signatory_name: z.string().max(140).nullable().optional(),
   signatory_designation: z.string().max(140).nullable().optional(),
   orientation: z.enum(["landscape", "portrait"]),
+  canvas_width: z.number().int().min(400).max(2400).optional(),
+  canvas_height: z.number().int().min(400).max(2400).optional(),
+  is_sample: z.boolean().optional(),
+  category: z.string().max(80).nullable().optional(),
+  bulk_batch_id: z.string().uuid().nullable().optional(),
+  revision_note: z.string().max(240).optional(),
   canvas_elements: z.array(z.record(z.unknown())),
   style_config: z.record(z.unknown()),
   authorization_type: z
     .enum(["self_issued_draft", "sample_preview", "authorized_issuer"])
     .optional(),
   issuer_id: z.string().uuid().nullable().optional(),
+});
+
+export const designProjectSchema = z.object({
+  id: z.string().uuid().optional(),
+  certificate_id: z.string().uuid().nullable().optional(),
+  title: z.string().min(1, "Project title is required").max(180),
+  template_slug: z.string().min(1).max(80),
+  orientation: z.enum(["landscape", "portrait"]),
+  canvas_width: z.number().int().min(400).max(2400).default(1123),
+  canvas_height: z.number().int().min(400).max(2400).default(794),
+  fields_json: z.record(z.unknown()),
+  canvas_elements: z.array(z.record(z.unknown())),
+  style_config: z.record(z.unknown()),
+  status: z.enum(["in_progress", "ready", "archived"]).optional().default("in_progress"),
+});
+
+export const certificateReportSchema = z.object({
+  certificate_code: z.string().min(4).max(64),
+  reason: z.enum([
+    "counterfeit_claim",
+    "unauthorized_institution",
+    "altered_details",
+    "spam_or_abuse",
+    "other",
+  ]),
+  details: z.string().min(5, "Please include brief details about the report").max(1500),
+  reporter_email: z.string().email().optional().or(z.literal("")),
 });
 
 export const supportTicketCreateSchema = z.object({

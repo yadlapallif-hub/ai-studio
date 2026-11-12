@@ -457,7 +457,15 @@ export function Navbar({
                     className="flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium hover:bg-[var(--fcs-surface-muted)]"
                   >
                     <Stamp className="h-3.5 w-3.5" />
-                    Stamp Studio
+                    Stamp &amp; Signature Studio
+                  </SafeNavLink>
+                  <SafeNavLink
+                    href="/bulk-generator"
+                    onClick={() => setProfileMenuOpen(false)}
+                    className="flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium hover:bg-[var(--fcs-surface-muted)]"
+                  >
+                    <Award className="h-3.5 w-3.5" />
+                    Bulk Certificate Generator
                   </SafeNavLink>
                   <SafeNavLink
                     href="/vault"
@@ -474,6 +482,14 @@ export function Navbar({
                   >
                     <Settings className="h-3.5 w-3.5" />
                     Account Settings
+                  </SafeNavLink>
+                  <SafeNavLink
+                    href="/admin"
+                    onClick={() => setProfileMenuOpen(false)}
+                    className="flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium hover:bg-[var(--fcs-surface-muted)]"
+                  >
+                    <ShieldCheck className="h-3.5 w-3.5 text-teal-600" />
+                    Admin Portal
                   </SafeNavLink>
                   <button
                     type="button"

@@ -332,7 +332,7 @@ export function ResumeStudio(props: ResumeStudioProps) {
         ...prev.profilePhoto,
         url: finalUrl,
         assetPath,
-        shape: result.shape,
+        shape: result.shape === "id_card" ? "square" : result.shape,
         brightness: 100,
         contrast: 100,
         rotation: 0,

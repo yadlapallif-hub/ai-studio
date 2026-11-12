@@ -183,5 +183,48 @@ test("role hierarchy routes lower roles to their workspace and enforces role ass
   assert.equal(shared.canActorAssignRole(["support_agent"], "customer"), false);
 });
 
+test("expanded certificate templates cover all 14 categories with unique slugs", () => {
+  assert.ok(shared.ALL_CERTIFICATE_TEMPLATES.length >= 124);
+  const slugs = new Set(shared.ALL_CERTIFICATE_TEMPLATES.map((t) => t.slug));
+  assert.equal(slugs.size, shared.ALL_CERTIFICATE_TEMPLATES.length);
+  const cats = new Set(shared.ALL_CERTIFICATE_TEMPLATES.map((t) => t.category));
+  for (const required of [
+    "academic",
+    "corporate",
+    "sports",
+    "competition",
+    "volunteer",
+    "professional",
+    "internship",
+    "course_completion",
+  ]) {
+    assert.ok(cats.has(required), `Missing category ${required}`);
+  }
+});
+
+test("buildSampleStampSvg explicitly distinguishes sample stamps from official seals", () => {
+  const cfg = shared.createDefaultOfficialStampConfig("Open Demo Club", "circular_double");
+  const sampleOut = shared.buildSampleStampSvg(cfg, "sample-test");
+  assert.ok(/SAMPLE/i.test(sampleOut.svgMarkup));
+  assert.ok(sampleOut.svgMarkup.includes("<svg"));
+});
+
+test("buildDeterministicCertificateDesignPatch parses natural-language certificate design updates", () => {
+  const gen = shared.buildDeterministicCertificateDesignPatch(
+    "Create a gold-themed internship completion certificate for a software engineering intern at Nexora Tech"
+  );
+  assert.equal(gen.recommendedTemplateSlug, "internship-credential");
+  assert.equal(gen.fields.organizationName, "Nexora Tech");
+  assert.equal(gen.stylePatch.borderStyle, "double-gold");
+
+  const edit = shared.buildDeterministicCertificateDesignPatch(
+    "Make border gold, move photo to the right, add signature area, and increase heading size"
+  );
+  assert.equal(edit.stylePatch.borderStyle, "double-gold");
+  assert.ok(edit.stylePatch.titleFontSize > 42);
+  assert.ok(edit.elementActions.some((a) => a.action === "move_photo" && a.x === 86));
+  assert.ok(edit.elementActions.some((a) => a.action === "add_signature_area"));
+});
+
 
 

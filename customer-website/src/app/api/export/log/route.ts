@@ -1,8 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase, createServiceSupabase } from "@/lib/supabase/server";
 
+const ALLOWED_FORMATS = new Set([
+  "pdf",
+  "png",
+  "png_2k",
+  "png_4k",
+  "jpeg",
+  "bulk_zip",
+  "svg",
+]);
+
 export async function POST(request: NextRequest) {
-  let body: { documentType?: string; documentId?: string; format?: string };
+  let body: {
+    documentType?: string;
+    documentId?: string;
+    format?: string;
+    fileName?: string;
+    resolutionLabel?: string;
+  };
   try {
     body = await request.json();
   } catch {
@@ -11,11 +27,11 @@ export async function POST(request: NextRequest) {
 
   const documentType = body.documentType;
   const documentId = body.documentId;
-  const format = body.format;
+  const format = body.format || "";
 
   if (
     (documentType !== "resume" && documentType !== "certificate") ||
-    (format !== "pdf" && format !== "png") ||
+    !ALLOWED_FORMATS.has(format) ||
     !documentId
   ) {
     return NextResponse.json({ error: "Invalid export log parameters" }, { status: 400 });
@@ -37,6 +53,8 @@ export async function POST(request: NextRequest) {
     document_type: documentType,
     document_id: documentId,
     format,
+    file_name: body.fileName ? String(body.fileName).slice(0, 180) : null,
+    resolution_label: body.resolutionLabel ? String(body.resolutionLabel).slice(0, 80) : null,
   });
 
   if (user) {

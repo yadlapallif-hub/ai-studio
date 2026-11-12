@@ -6,13 +6,15 @@ type ResourceTable =
   | "fcs_announcements"
   | "fcs_faqs"
   | "fcs_resume_templates"
-  | "fcs_certificate_templates";
+  | "fcs_certificate_templates"
+  | "fcs_template_categories";
 
 const ALLOWED_TABLES = new Set<ResourceTable>([
   "fcs_announcements",
   "fcs_faqs",
   "fcs_resume_templates",
   "fcs_certificate_templates",
+  "fcs_template_categories",
 ]);
 
 export async function POST(request: Request) {
@@ -62,7 +64,8 @@ export async function PATCH(request: Request) {
   }
 
   const service = createServiceSupabase();
-  const { error } = await service.from(body.table).update(body.patch).eq("id", body.id);
+  const keyColumn = body.table === "fcs_template_categories" ? "slug" : "id";
+  const { error } = await service.from(body.table).update(body.patch).eq(keyColumn, body.id);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
   await recordAdminAudit({

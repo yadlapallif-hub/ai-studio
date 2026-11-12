@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
-import { Award, FileText, Search } from "lucide-react";
+import { Award, FileText, Layers, Search } from "lucide-react";
 
 interface TemplateRow {
   id: string;
@@ -12,15 +12,25 @@ interface TemplateRow {
   is_active: boolean;
 }
 
+interface CategoryRow {
+  slug: string;
+  label: string;
+  description: string | null;
+  is_active: boolean;
+}
+
 export function TemplatesClient({
   initialResumeTemplates,
   initialCertTemplates,
+  initialCategories = [],
 }: {
   initialResumeTemplates: TemplateRow[];
   initialCertTemplates: TemplateRow[];
+  initialCategories?: CategoryRow[];
 }) {
   const [resumes, setResumes] = useState(initialResumeTemplates);
   const [certs, setCerts] = useState(initialCertTemplates);
+  const [cats, setCats] = useState<CategoryRow[]>(initialCategories);
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
 
@@ -72,16 +82,59 @@ export function TemplatesClient({
     }
   };
 
+  const toggleCategory = async (cat: CategoryRow) => {
+    const next = !cat.is_active;
+    await fetch("/api/admin/content", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        table: "fcs_template_categories",
+        id: cat.slug,
+        patch: { is_active: next },
+      }),
+    });
+    setCats((prev) => prev.map((c) => (c.slug === cat.slug ? { ...c, is_active: next } : c)));
+  };
+
   return (
     <div className="space-y-4">
+      {cats.length > 0 && (
+        <div className="rounded-2xl border border-[var(--adm-border)] bg-[var(--adm-surface)] p-5">
+          <h2 className="flex items-center gap-2 text-sm font-bold">
+            <Layers className="h-4 w-4 text-teal-600" />
+            Certificate Category Governance ({cats.filter((c) => c.is_active).length} / {cats.length} active)
+          </h2>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {cats.map((cat) => (
+              <button
+                key={cat.slug}
+                type="button"
+                onClick={() => void toggleCategory(cat)}
+                title={cat.description || cat.label}
+                className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold transition ${
+                  cat.is_active
+                    ? "border-emerald-500/40 bg-emerald-50 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300"
+                    : "border-[var(--adm-border)] bg-[var(--adm-surface-muted)] text-[var(--adm-ink-muted)] line-through"
+                }`}
+              >
+                <span>{cat.label}</span>
+                <span className="text-[10px] uppercase">
+                  {cat.is_active ? "Active" : "Hidden"}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div className="flex flex-wrap gap-3 rounded-2xl border border-[var(--adm-border)] bg-[var(--adm-surface)] p-4 text-xs">
-        <div className="relative flex-1 min-w-[220px]">
+        <div className="relative min-w-[220px] flex-1">
           <Search className="pointer-events-none absolute top-2.5 left-3 h-4 w-4 text-[var(--adm-ink-muted)]" />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search 100 resume & 100 certificate templates..."
+            placeholder="Search resume & certificate templates..."
             className="w-full rounded-xl border border-[var(--adm-border)] bg-[var(--adm-surface-muted)] py-2 pr-3 pl-9"
           />
         </div>

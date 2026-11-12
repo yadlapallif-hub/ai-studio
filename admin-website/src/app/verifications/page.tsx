@@ -29,24 +29,30 @@ export default async function AdminVerificationsPage() {
   }
 
   const service = createServiceSupabase();
-  const [{ data: issuers }, { data: certs }, { data: rawStamps }] = await Promise.all([
-    service
-      .from("fcs_authorized_issuers")
-      .select("*")
-      .order("created_at", { ascending: false })
-      .limit(100),
-    service
-      .from("fcs_certificate_verifications")
-      .select("*")
-      .order("updated_at", { ascending: false })
-      .limit(100),
-    service
-      .from("fcs_organization_stamps")
-      .select("id, issuer_id, name, stamp_kind, shape, ink_style, svg_markup, is_default, created_at")
-      .order("is_default", { ascending: false })
-      .order("created_at", { ascending: false })
-      .limit(200),
-  ]);
+  const [{ data: issuers }, { data: certs }, { data: rawStamps }, { data: reports }] =
+    await Promise.all([
+      service
+        .from("fcs_authorized_issuers")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(100),
+      service
+        .from("fcs_certificate_verifications")
+        .select("*")
+        .order("updated_at", { ascending: false })
+        .limit(100),
+      service
+        .from("fcs_organization_stamps")
+        .select("id, issuer_id, name, stamp_kind, shape, ink_style, svg_markup, is_default, created_at")
+        .order("is_default", { ascending: false })
+        .order("created_at", { ascending: false })
+        .limit(200),
+      service
+        .from("fcs_certificate_reports")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(100),
+    ]);
 
   const userIds = Array.from(
     new Set(
@@ -99,6 +105,7 @@ export default async function AdminVerificationsPage() {
           initialIssuers={enrichedIssuers}
           initialCerts={certs ?? []}
           initialStamps={stamps}
+          initialReports={reports ?? []}
         />
       </div>
     </AdminShell>

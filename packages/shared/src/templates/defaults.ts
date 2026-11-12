@@ -209,6 +209,17 @@ export function createDefaultCertificateStyle(
     fontBody: "Plus Jakarta Sans",
     showQrCode: true,
     showBorder: true,
+    canvasPreset: "a4_landscape",
+    canvasWidth: 1123,
+    canvasHeight: 794,
+    backgroundOpacity: 0.25,
+    backgroundFit: "cover",
+    titleFontSize: 42,
+    recipientFontSize: 46,
+    bodyFontSize: 15,
+    titleLetterSpacing: 0.02,
+    textAlign: "center",
+    borderThickness: 3,
     ...overrides,
   };
 }

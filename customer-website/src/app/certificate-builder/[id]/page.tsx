@@ -1,12 +1,14 @@
 import React from "react";
 import { notFound } from "next/navigation";
 import {
-  CERTIFICATE_TEMPLATE_CATALOG,
+  ALL_CERTIFICATE_TEMPLATES,
   createDefaultCertificateElements,
   createDefaultCertificateStyle,
   generateCertificateCode,
+  stampSvgToDataUrl,
   type CertificateCanvasElement,
   type CertificateStyleConfig,
+  type StampLibraryRecord,
 } from "@francis/shared";
 import {
   getAccessibleIssuersForUser,
@@ -23,10 +25,10 @@ export default async function CertificateEditorPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ template?: string; tab?: string; issuer?: string }>;
+  searchParams: Promise<{ template?: string; tab?: string; issuer?: string; project?: string }>;
 }) {
   const { id } = await params;
-  const { template, tab, issuer } = await searchParams;
+  const { template, tab, issuer, project } = await searchParams;
   const { supabase, user } = await getAuthenticatedContext();
 
   const accessResult = user
@@ -47,8 +49,9 @@ export default async function CertificateEditorPage({
     organization_name: item.organization_name,
   }));
 
-  // Certificate creation & editing is strictly limited to Admin-approved Authorized Organizations
-  if (!user || approvedIssuers.length === 0) {
+  // Saved official certificates require authenticated approved issuer ownership;
+  // "new" (including ?project=...) is open to all users in Sample / Personal Design Mode + Official Mode if approved!
+  if (id !== "new" && (!user || approvedIssuers.length === 0)) {
     return (
       <CertificateAccessGate
         isAuthenticated={Boolean(user)}
@@ -57,29 +60,35 @@ export default async function CertificateEditorPage({
     );
   }
 
-  const [{ data: templates }, organizationStamps] = await Promise.all([
+  const [{ data: templates }, organizationStamps, { data: sampleStamps }] = await Promise.all([
     supabase
       .from("fcs_certificate_templates")
       .select("id, slug, name, category, orientation, layout_config")
       .eq("is_active", true)
       .order("sort_order", { ascending: true }),
-    getStampsForApprovedIssuers(approvedIssuers),
+    approvedIssuers.length > 0
+      ? getStampsForApprovedIssuers(approvedIssuers)
+      : Promise.resolve([]),
+    user
+      ? supabase
+          .from("fcs_stamp_library")
+          .select("*")
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: false })
+      : Promise.resolve({ data: [] }),
   ]);
 
-  const initialTab = tab === "stamps" ? "stamps" : "details";
+  const mappedSampleStamps: StampLibraryRecord[] = (sampleStamps ?? []).map((s) => ({
+    ...s,
+    preview_url: s.svg_markup
+      ? stampSvgToDataUrl(s.svg_markup)
+      : ((s.config as Record<string, string>)?.dataUrl || ""),
+  })) as StampLibraryRecord[];
 
-  const tplList = (
-    templates && templates.length > 0
-      ? templates
-      : CERTIFICATE_TEMPLATE_CATALOG.map((t) => ({
-          id: t.slug,
-          slug: t.slug,
-          name: t.name,
-          category: t.category,
-          orientation: t.orientation,
-          layout_config: t.layoutConfig as unknown as Record<string, unknown>,
-        }))
-  ) as Array<{
+  const initialTab =
+    tab === "stamps" ? "stamps" : tab === "design" ? "design" : tab === "ai" ? "ai" : "details";
+
+  const dbTplList = (templates ?? []) as Array<{
     id: string;
     slug: string;
     name: string;
@@ -87,20 +96,87 @@ export default async function CertificateEditorPage({
     orientation: "landscape" | "portrait";
     layout_config: Record<string, unknown>;
   }>;
+  const existingSlugs = new Set(dbTplList.map((t) => t.slug));
+  const fallbackTplList = ALL_CERTIFICATE_TEMPLATES.filter((t) => !existingSlugs.has(t.slug)).map(
+    (t) => ({
+      id: t.slug,
+      slug: t.slug,
+      name: t.name,
+      category: t.category,
+      orientation: t.orientation,
+      layout_config: t.layoutConfig as unknown as Record<string, unknown>,
+    })
+  );
+  const tplList = [...dbTplList, ...fallbackTplList];
 
   if (id === "new") {
+    // Load personal design project if ?project=<id> provided
+    if (project && user) {
+      const { data: savedProject } = await supabase
+        .from("fcs_design_projects")
+        .select("*")
+        .eq("id", project)
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (savedProject) {
+        const d = (savedProject.fields_json ?? {}) as Record<string, unknown>;
+        const today = new Date().toISOString().slice(0, 10);
+        return (
+          <CertificateStudio
+            initialCertId={null}
+            initialProjectId={savedProject.id}
+            initialIssuerId={approvedIssuers[0]?.id}
+            initialCertificateCode={String(d.certificateCode || generateCertificateCode())}
+            initialTemplateSlug={savedProject.template_slug || "course-completion"}
+            initialTitle={String(d.title || savedProject.title || "Certificate of Completion")}
+            initialRecipientName={String(d.recipientName || "Jordan Taylor")}
+            initialCourse={String(d.courseOrAchievement || "Program Achievement")}
+            initialOrganization={String(
+              d.organizationName || approvedIssuers[0]?.organization_name || "Sample Studio"
+            )}
+            initialDescription={String(d.description || "")}
+            initialIssueDate={String(d.issueDate || today)}
+            initialExpiryDate={String(d.expiryDate || "")}
+            initialSignatoryName={String(d.signatoryName || "Program Director")}
+            initialSignatoryDesignation={String(d.signatoryDesignation || "Lead Instructor")}
+            initialOrientation={(savedProject.orientation as "landscape" | "portrait") || "landscape"}
+            initialElements={
+              Array.isArray(savedProject.canvas_elements)
+                ? (savedProject.canvas_elements as CertificateCanvasElement[])
+                : []
+            }
+            initialStyle={{
+              ...createDefaultCertificateStyle(),
+              ...((savedProject.style_config as Partial<CertificateStyleConfig>) ?? {}),
+            }}
+            initialVerificationStatus="unverified_draft"
+            initialTab={initialTab}
+            templates={tplList}
+            approvedIssuers={approvedIssuers}
+            organizationApplications={orgApplications}
+            initialOrganizationStamps={organizationStamps}
+            initialSampleStamps={mappedSampleStamps}
+            isAuthenticated={true}
+          />
+        );
+      }
+    }
+
     const matched = tplList.find((t) => t.slug === template) || tplList[0];
     const cfg = (matched?.layout_config ?? {}) as Record<string, string>;
     const today = new Date().toISOString().slice(0, 10);
 
     const defaultIssuer =
       (issuer && approvedIssuers.find((item) => item.id === issuer)) ||
-      approvedIssuers[0];
+      approvedIssuers[0] ||
+      null;
 
-    const defaultStamp =
-      organizationStamps.find(
-        (st) => st.issuer_id === defaultIssuer.id && st.is_default && st.preview_url
-      ) || null;
+    const defaultStamp = defaultIssuer
+      ? organizationStamps.find(
+          (st) => st.issuer_id === defaultIssuer.id && st.is_default && st.preview_url
+        ) || null
+      : null;
 
     const initialElements: CertificateCanvasElement[] = defaultStamp
       ? [
@@ -127,23 +203,24 @@ export default async function CertificateEditorPage({
                 : defaultStamp.shape === "square"
                   ? "square"
                   : defaultStamp.shape,
-            inkStyle:
-              defaultStamp.ink_style === "custom" ? "default" : defaultStamp.ink_style,
+            inkStyle: defaultStamp.ink_style === "custom" ? "default" : defaultStamp.ink_style,
             isSampleDecorative: false,
           },
         ]
-      : createDefaultCertificateElements();
+      : defaultIssuer
+        ? createDefaultCertificateElements()
+        : [];
 
     return (
       <CertificateStudio
         initialCertId={null}
-        initialIssuerId={defaultIssuer.id}
+        initialIssuerId={defaultIssuer?.id}
         initialCertificateCode={generateCertificateCode()}
         initialTemplateSlug={matched?.slug || "course-completion"}
         initialTitle={cfg.titleDefault || "Certificate of Completion"}
         initialRecipientName="Jordan Taylor"
         initialCourse="Full-Stack Web Engineering Cohort"
-        initialOrganization={defaultIssuer.organization_name}
+        initialOrganization={defaultIssuer?.organization_name || "Creator Studio Academy"}
         initialDescription="For demonstrating practical engineering excellence, consistent contribution, and completing all capstone evaluations."
         initialIssueDate={today}
         initialExpiryDate=""
@@ -166,7 +243,8 @@ export default async function CertificateEditorPage({
         approvedIssuers={approvedIssuers}
         organizationApplications={orgApplications}
         initialOrganizationStamps={organizationStamps}
-        isAuthenticated={true}
+        initialSampleStamps={mappedSampleStamps}
+        isAuthenticated={Boolean(user)}
       />
     );
   }
@@ -175,7 +253,7 @@ export default async function CertificateEditorPage({
     .from("fcs_certificates")
     .select("*")
     .eq("id", id)
-    .eq("user_id", user.id)
+    .eq("user_id", user!.id)
     .maybeSingle();
 
   if (!cert) {
@@ -193,7 +271,6 @@ export default async function CertificateEditorPage({
       ? cert.issuer_id
       : approvedIssuers[0].id;
 
-  // Strip any legacy decorative sample stamps automatically so saved certificates stay official
   const cleanedElements = ((cert.canvas_elements as CertificateCanvasElement[]) || []).filter(
     (el) => !el.isSampleDecorative && el.type !== "decorative_badge"
   );
@@ -225,6 +302,7 @@ export default async function CertificateEditorPage({
       approvedIssuers={approvedIssuers}
       organizationApplications={orgApplications}
       initialOrganizationStamps={organizationStamps}
+      initialSampleStamps={mappedSampleStamps}
       isAuthenticated={true}
     />
   );

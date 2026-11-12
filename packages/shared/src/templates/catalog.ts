@@ -40,15 +40,41 @@ export interface ResumeTemplateCatalogItem {
 }
 
 export type CertificateCategoryKey =
+  | "academic"
   | "course_completion"
   | "internship"
   | "achievement"
   | "participation"
   | "excellence"
   | "appreciation"
+  | "corporate"
   | "training"
+  | "sports"
+  | "competition"
+  | "volunteer"
   | "professional"
   | "educational";
+
+export const CERTIFICATE_CATEGORIES: Array<{
+  key: CertificateCategoryKey;
+  label: string;
+  description: string;
+}> = [
+  { key: "course_completion", label: "Course Completion", description: "Bootcamps, cohorts, online academies, and workshops" },
+  { key: "academic", label: "Academic", description: "Universities, honor rolls, and scholarly distinctions" },
+  { key: "internship", label: "Internship", description: "Engineering, research, business, and externship tenures" },
+  { key: "achievement", label: "Achievement", description: "High-impact milestones, winners, and honors" },
+  { key: "participation", label: "Participation", description: "Summits, hackathons, seminars, and conferences" },
+  { key: "excellence", label: "Excellence", description: "Distinction awards, fellowships, and presidential citations" },
+  { key: "appreciation", label: "Appreciation", description: "Mentors, speakers, judges, and community contributors" },
+  { key: "corporate", label: "Corporate", description: "Quarterly awards, onboarding, leadership, and service tenure" },
+  { key: "training", label: "Training", description: "Technical certifications, compliance, and workplace safety" },
+  { key: "sports", label: "Sports", description: "Tournaments, athletics, championship podiums, and clubs" },
+  { key: "competition", label: "Competition", description: "Coding contests, olympiads, robotics, and design challenges" },
+  { key: "volunteer", label: "Volunteer", description: "Civic programs, nonprofit hours, and humanitarian impact" },
+  { key: "professional", label: "Professional Development", description: "Chartered credentials, CEUs, and executive memberships" },
+  { key: "educational", label: "Educational", description: "Diplomas, student clubs, STEM labs, and K-12 honors" },
+];
 
 export type CertificateBorderStyleKey =
   | "double-gold"
@@ -870,6 +896,230 @@ function buildCertificateCatalog(): CertificateTemplateCatalogItem[] {
 export const CERTIFICATE_TEMPLATE_CATALOG: CertificateTemplateCatalogItem[] =
   buildCertificateCatalog();
 
+export const EXTRA_CERTIFICATE_TEMPLATES: CertificateTemplateCatalogItem[] = [
+  {
+    slug: "academic-senate-honors",
+    name: "Academic Senate Dean Citation",
+    description: "University senate academic honor certificate with classical double-gold rule.",
+    category: "academic",
+    orientation: "portrait",
+    sortOrder: 101,
+    layoutConfig: { borderStyle: "academic-crest", background: "#FFFDF7", primaryColor: "#1E293B", accentColor: "#B45309", fontDisplay: "Cormorant Garamond", fontBody: "Source Serif 4", titleDefault: "Academic Honor Citation" },
+  },
+  {
+    slug: "academic-thesis-distinction",
+    name: "Thesis & Dissertation Excellence",
+    description: "Formal academic monograph frame for graduate research defense awards.",
+    category: "academic",
+    orientation: "landscape",
+    sortOrder: 102,
+    layoutConfig: { borderStyle: "double-gold", background: "#FCFBF7", primaryColor: "#0F4C5C", accentColor: "#C59B27", fontDisplay: "Cinzel", fontBody: "Source Serif 4", titleDefault: "Certificate of Research Excellence" },
+  },
+  {
+    slug: "academic-scholarship-award",
+    name: "Merit Scholarship Charter",
+    description: "Prestigious ivory & navy academic scholarship award document.",
+    category: "academic",
+    orientation: "portrait",
+    sortOrder: 103,
+    layoutConfig: { borderStyle: "prestige-navy", background: "#FFFEFA", primaryColor: "#1E3A8A", accentColor: "#D97706", fontDisplay: "Cormorant Garamond", fontBody: "Plus Jakarta Sans", titleDefault: "Merit Scholarship Award" },
+  },
+  {
+    slug: "academic-faculty-symposium",
+    name: "Faculty Colloquium Scholar",
+    description: "Clean scholarly frame recognizing research colloquium presenters.",
+    category: "academic",
+    orientation: "landscape",
+    sortOrder: 104,
+    layoutConfig: { borderStyle: "architectural", background: "#FFFFFF", primaryColor: "#1E293B", accentColor: "#0F766E", fontDisplay: "Playfair Display", fontBody: "Inter", titleDefault: "Academic Certificate" },
+  },
+  {
+    slug: "corporate-leadership-fellow",
+    name: "Corporate Leadership Summit",
+    description: "Executive charcoal & antique brass layout for corporate leadership cohorts.",
+    category: "corporate",
+    orientation: "landscape",
+    sortOrder: 105,
+    layoutConfig: { borderStyle: "architectural", background: "#FFFFFF", primaryColor: "#0F172A", accentColor: "#B45309", fontDisplay: "Playfair Display", fontBody: "Plus Jakarta Sans", titleDefault: "Certificate of Corporate Leadership" },
+  },
+  {
+    slug: "corporate-service-milestone",
+    name: "5-Year Service Tenure Plaque",
+    description: "Distinguished corporate anniversary & employee appreciation credential.",
+    category: "corporate",
+    orientation: "landscape",
+    sortOrder: 106,
+    layoutConfig: { borderStyle: "prestige-navy", background: "#FAF8F3", primaryColor: "#1E3A8A", accentColor: "#C59B27", fontDisplay: "Cinzel", fontBody: "Inter", titleDefault: "Certificate of Dedicated Service" },
+  },
+  {
+    slug: "corporate-innovation-star",
+    name: "Enterprise Innovation Award",
+    description: "Sleek modern corporate border for quarterly engineering & product winners.",
+    category: "corporate",
+    orientation: "landscape",
+    sortOrder: 107,
+    layoutConfig: { borderStyle: "modern-frame", background: "#F8FAFC", primaryColor: "#0F766E", accentColor: "#0369A1", fontDisplay: "Space Grotesk", fontBody: "Inter", titleDefault: "Corporate Innovation Award" },
+  },
+  {
+    slug: "corporate-board-commendation",
+    name: "Executive Board Commendation",
+    description: "Midnight obsidian & gold presentation certificate for top enterprise awards.",
+    category: "corporate",
+    orientation: "landscape",
+    sortOrder: 108,
+    layoutConfig: { borderStyle: "double-gold", background: "#0F172A", primaryColor: "#F8FAFC", accentColor: "#F59E0B", fontDisplay: "Cinzel", fontBody: "Plus Jakarta Sans", titleDefault: "Executive Commendation" },
+  },
+  {
+    slug: "sports-championship-gold",
+    name: "Championship Gold Podium",
+    description: "Bold athletic tournament winner certificate with high-contrast crest zone.",
+    category: "sports",
+    orientation: "landscape",
+    sortOrder: 109,
+    layoutConfig: { borderStyle: "filigree", background: "#FFFDF7", primaryColor: "#111827", accentColor: "#D97706", fontDisplay: "Cinzel", fontBody: "Plus Jakarta Sans", titleDefault: "Championship Sports Certificate" },
+  },
+  {
+    slug: "sports-marathon-finisher",
+    name: "Marathon & Endurance Finisher",
+    description: "Dynamic clean modern finisher certificate highlighting distance & time.",
+    category: "sports",
+    orientation: "landscape",
+    sortOrder: 110,
+    layoutConfig: { borderStyle: "modern-frame", background: "#F8FAFC", primaryColor: "#0369A1", accentColor: "#0F766E", fontDisplay: "Space Grotesk", fontBody: "Inter", titleDefault: "Official Finisher Certificate" },
+  },
+  {
+    slug: "sports-varsity-mvp",
+    name: "Varsity Athletics MVP",
+    description: "Collegiate navy & gold sports excellence frame for team MVPs.",
+    category: "sports",
+    orientation: "portrait",
+    sortOrder: 111,
+    layoutConfig: { borderStyle: "board-crest", background: "#FFFEFA", primaryColor: "#1E3A8A", accentColor: "#B45309", fontDisplay: "Cormorant Garamond", fontBody: "Plus Jakarta Sans", titleDefault: "Athletics Excellence Award" },
+  },
+  {
+    slug: "sports-club-tournament",
+    name: "Inter-Club Tournament Record",
+    description: "Clean crisp grid certificate for regional tournaments & leagues.",
+    category: "sports",
+    orientation: "landscape",
+    sortOrder: 112,
+    layoutConfig: { borderStyle: "clean-grid", background: "#FFFFFF", primaryColor: "#0F766E", accentColor: "#1E293B", fontDisplay: "IBM Plex Sans", fontBody: "IBM Plex Sans", titleDefault: "Sports Tournament Certificate" },
+  },
+  {
+    slug: "competition-coding-olympiad",
+    name: "Algorithmic Coding Olympiad",
+    description: "Precision technical competition certificate for coding & CTF laureates.",
+    category: "competition",
+    orientation: "landscape",
+    sortOrder: 113,
+    layoutConfig: { borderStyle: "clean-grid", background: "#0F172A", primaryColor: "#F8FAFC", accentColor: "#14B8A6", fontDisplay: "Space Grotesk", fontBody: "IBM Plex Sans", titleDefault: "Certificate of Competition Rank" },
+  },
+  {
+    slug: "competition-science-fair",
+    name: "National Science Fair Finalist",
+    description: "Classic scholarly award recognizing STEM fair finalists and medalists.",
+    category: "competition",
+    orientation: "landscape",
+    sortOrder: 114,
+    layoutConfig: { borderStyle: "double-gold", background: "#FFFDF7", primaryColor: "#0F4C5C", accentColor: "#C59B27", fontDisplay: "Cormorant Garamond", fontBody: "Plus Jakarta Sans", titleDefault: "Competition Finalist Award" },
+  },
+  {
+    slug: "competition-debate-rhetoric",
+    name: "Parliamentary Debate Champion",
+    description: "Editorial serif competition trophy certificate for debate & model UN.",
+    category: "competition",
+    orientation: "portrait",
+    sortOrder: 115,
+    layoutConfig: { borderStyle: "editorial-warm", background: "#FFFBF5", primaryColor: "#7C2D12", accentColor: "#C2410C", fontDisplay: "Playfair Display", fontBody: "DM Sans", titleDefault: "Certificate of Championship" },
+  },
+  {
+    slug: "competition-design-award",
+    name: "Global Product Design Finalist",
+    description: "Minimal architectural competition award for design & architecture jurists.",
+    category: "competition",
+    orientation: "landscape",
+    sortOrder: 116,
+    layoutConfig: { borderStyle: "architectural", background: "#FFFFFF", primaryColor: "#111827", accentColor: "#0F766E", fontDisplay: "Playfair Display", fontBody: "Inter", titleDefault: "Design Competition Award" },
+  },
+  {
+    slug: "volunteer-civic-service",
+    name: "Civic Volunteer Service Medal",
+    description: "Warm community service certificate recognizing verified volunteer hours.",
+    category: "volunteer",
+    orientation: "landscape",
+    sortOrder: 117,
+    layoutConfig: { borderStyle: "editorial-warm", background: "#FFFDF8", primaryColor: "#0F766E", accentColor: "#D97706", fontDisplay: "Playfair Display", fontBody: "Plus Jakarta Sans", titleDefault: "Certificate of Volunteer Service" },
+  },
+  {
+    slug: "volunteer-eco-steward",
+    name: "Environmental Stewardship Honor",
+    description: "Emerald & ivory volunteer credential for sustainability initiatives.",
+    category: "volunteer",
+    orientation: "landscape",
+    sortOrder: 118,
+    layoutConfig: { borderStyle: "academic-crest", background: "#F7FBF9", primaryColor: "#065F46", accentColor: "#B45309", fontDisplay: "Cormorant Garamond", fontBody: "Inter", titleDefault: "Volunteer Appreciation Certificate" },
+  },
+  {
+    slug: "volunteer-humanitarian-relief",
+    name: "Community Impact & Relief",
+    description: "Clean formal volunteer certificate for NGOs and campus outreach.",
+    category: "volunteer",
+    orientation: "portrait",
+    sortOrder: 119,
+    layoutConfig: { borderStyle: "modern-frame", background: "#FFFFFF", primaryColor: "#0369A1", accentColor: "#0F766E", fontDisplay: "Cormorant Garamond", fontBody: "Plus Jakarta Sans", titleDefault: "Certificate of Humanitarian Service" },
+  },
+  {
+    slug: "volunteer-open-edu-tutor",
+    name: "Open Education Peer Tutor",
+    description: "Crisp ivory recognition card for community educators and STEM tutors.",
+    category: "volunteer",
+    orientation: "landscape",
+    sortOrder: 120,
+    layoutConfig: { borderStyle: "double-gold", background: "#FFFDF7", primaryColor: "#1E293B", accentColor: "#C59B27", fontDisplay: "Playfair Display", fontBody: "Inter", titleDefault: "Peer Educator Certificate" },
+  },
+  {
+    slug: "professional-executive-ceu",
+    name: "Executive Continuing Credit",
+    description: "Board-grade continuing education unit certificate with dual signature zone.",
+    category: "professional",
+    orientation: "landscape",
+    sortOrder: 121,
+    layoutConfig: { borderStyle: "board-crest", background: "#FAF8F3", primaryColor: "#111827", accentColor: "#B45309", fontDisplay: "Cinzel", fontBody: "Inter", titleDefault: "Professional Development Certificate" },
+  },
+  {
+    slug: "professional-agile-coach",
+    name: "Agile & Delivery Practitioner",
+    description: "Clean enterprise layout for agile leadership & scrum workshops.",
+    category: "professional",
+    orientation: "landscape",
+    sortOrder: 122,
+    layoutConfig: { borderStyle: "clean-grid", background: "#FFFFFF", primaryColor: "#0F4C5C", accentColor: "#0F766E", fontDisplay: "Space Grotesk", fontBody: "IBM Plex Sans", titleDefault: "Professional Training Credential" },
+  },
+  {
+    slug: "professional-ai-practitioner",
+    name: "Certified AI Systems Builder",
+    description: "Modern deep-slate certification template for applied AI engineering tracks.",
+    category: "professional",
+    orientation: "landscape",
+    sortOrder: 123,
+    layoutConfig: { borderStyle: "modern-frame", background: "#0F172A", primaryColor: "#F8FAFC", accentColor: "#F59E0B", fontDisplay: "Space Grotesk", fontBody: "Plus Jakarta Sans", titleDefault: "Professional AI Certification" },
+  },
+  {
+    slug: "professional-ethics-board",
+    name: "Governance & Compliance Charter",
+    description: "Formal portrait board credential for professional regulatory compliance.",
+    category: "professional",
+    orientation: "portrait",
+    sortOrder: 124,
+    layoutConfig: { borderStyle: "prestige-navy", background: "#FFFEFA", primaryColor: "#1E3A8A", accentColor: "#B45309", fontDisplay: "Cormorant Garamond", fontBody: "Inter", titleDefault: "Professional Development Charter" },
+  },
+];
+
+export const ALL_CERTIFICATE_TEMPLATES: CertificateTemplateCatalogItem[] = [
+  ...CERTIFICATE_TEMPLATE_CATALOG,
+  ...EXTRA_CERTIFICATE_TEMPLATES,
+];
+
 export function getResumeTemplateLayout(slug: string): ResumeLayoutConfig {
   const found = RESUME_TEMPLATE_CATALOG.find((t) => t.slug === slug);
   return (
@@ -885,5 +1135,5 @@ export function getResumeTemplateLayout(slug: string): ResumeLayoutConfig {
 }
 
 export function getCertificateTemplateConfig(slug: string): CertificateTemplateCatalogItem | undefined {
-  return CERTIFICATE_TEMPLATE_CATALOG.find((t) => t.slug === slug);
+  return ALL_CERTIFICATE_TEMPLATES.find((t) => t.slug === slug);
 }

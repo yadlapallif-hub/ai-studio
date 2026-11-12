@@ -2,6 +2,7 @@ import React from "react";
 import { SafeNavLink } from "@/components/ui/SafeNavLink";
 import { AlertTriangle, CheckCircle2, Clock, ShieldAlert, XCircle } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+import { ReportCertificateButton } from "@/components/certificate/ReportCertificateButton";
 
 export const dynamic = "force-dynamic";
 
@@ -47,12 +48,15 @@ export default async function VerifyResultPage({
             No certificate with this ID exists in the CREATOR STUDIO verification
             registry. Check the code or contact the issuing organization.
           </p>
-          <SafeNavLink
-            href="/verify"
-            className="mt-6 inline-block rounded-xl bg-teal-700 px-5 py-2.5 text-sm font-semibold text-white hover:bg-teal-800"
-          >
-            Search Another ID
-          </SafeNavLink>
+          <div className="mt-6 flex flex-wrap justify-center gap-3">
+            <SafeNavLink
+              href="/verify"
+              className="rounded-xl bg-teal-700 px-5 py-2.5 text-sm font-semibold text-white hover:bg-teal-800"
+            >
+              Search Another ID
+            </SafeNavLink>
+            <ReportCertificateButton certificateCode={code} />
+          </div>
         </div>
       </div>
     );
@@ -114,12 +118,15 @@ export default async function VerifyResultPage({
               </p>
               <p className="mt-0.5 font-mono text-lg font-bold">{record.certificate_code}</p>
             </div>
-            <SafeNavLink
-              href="/verify"
-              className="rounded-lg border border-[var(--fcs-border)] px-3 py-1.5 text-xs font-semibold hover:bg-[var(--fcs-surface-muted)]"
-            >
-              Verify Another
-            </SafeNavLink>
+            <div className="flex flex-wrap items-center gap-2">
+              <ReportCertificateButton certificateCode={record.certificate_code} />
+              <SafeNavLink
+                href="/verify"
+                className="rounded-xl border border-[var(--fcs-border)] px-3.5 py-2 text-xs font-semibold hover:bg-[var(--fcs-surface-muted)]"
+              >
+                Verify Another
+              </SafeNavLink>
+            </div>
           </div>
 
           <dl className="grid gap-4 text-sm sm:grid-cols-2">

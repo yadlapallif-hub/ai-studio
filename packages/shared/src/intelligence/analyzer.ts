@@ -565,3 +565,179 @@ export function generateSmartDashboardRecommendations(input: {
 
   return recs;
 }
+
+export interface CertificateAiDesignPatch {
+  summary: string;
+  recommendedTemplateSlug?: string;
+  fields?: {
+    title?: string;
+    recipientName?: string;
+    courseOrAchievement?: string;
+    organizationName?: string;
+    description?: string;
+    signatoryName?: string;
+    signatoryDesignation?: string;
+  };
+  stylePatch?: Partial<CertificateStyleConfig>;
+  orientation?: "landscape" | "portrait";
+  elementActions?: Array<
+    | { action: "move_photo"; x: number; y: number }
+    | { action: "add_signature_area"; signatoryName?: string; signatoryDesignation?: string }
+    | { action: "add_text_block"; label: string; text: string; x: number; y: number }
+  >;
+}
+
+export function buildDeterministicCertificateDesignPatch(
+  prompt: string,
+  current?: {
+    title?: string;
+    recipientName?: string;
+    courseOrAchievement?: string;
+    organizationName?: string;
+    titleFontSize?: number;
+  }
+): CertificateAiDesignPatch {
+  const q = prompt.trim();
+  const lower = q.toLowerCase();
+  const patch: CertificateAiDesignPatch = {
+    summary: "",
+    fields: {},
+    stylePatch: {},
+    elementActions: [],
+  };
+  const notes: string[] = [];
+
+  // Detect theme / template generation requests
+  if (lower.includes("internship")) {
+    patch.recommendedTemplateSlug = "internship-credential";
+    patch.fields!.title = "Certificate of Internship";
+    patch.fields!.courseOrAchievement = lower.includes("software")
+      ? "Software Engineering Internship"
+      : lower.includes("design")
+        ? "Product Design Internship"
+        : "Professional Engineering Internship";
+    patch.fields!.description =
+      "Awarded in recognition of dedicated technical contribution, professional collaboration, and successful completion of all internship deliverables.";
+    notes.push("Selected Internship template & formal internship citation");
+  } else if (lower.includes("sports") || lower.includes("marathon") || lower.includes("tournament")) {
+    patch.recommendedTemplateSlug = "sports-championship-gold";
+    patch.fields!.title = "Championship Sports Certificate";
+    patch.fields!.courseOrAchievement = "Athletic Tournament Distinction";
+    notes.push("Applied Sports Championship theme");
+  } else if (lower.includes("volunteer")) {
+    patch.recommendedTemplateSlug = "volunteer-civic-service";
+    patch.fields!.title = "Certificate of Volunteer Service";
+    patch.fields!.courseOrAchievement = "Civic & Community Service Program";
+    notes.push("Applied Volunteer Service template");
+  } else if (lower.includes("hackathon") || lower.includes("competition")) {
+    patch.recommendedTemplateSlug = "competition-coding-olympiad";
+    patch.fields!.title = "Certificate of Competition Excellence";
+    patch.fields!.courseOrAchievement = "Annual Innovation Challenge";
+    notes.push("Applied Competition Honor template");
+  } else if (lower.includes("corporate") || lower.includes("employee")) {
+    patch.recommendedTemplateSlug = "corporate-leadership-fellow";
+    patch.fields!.title = "Certificate of Corporate Recognition";
+    notes.push("Applied Corporate Leadership template");
+  } else if (lower.includes("appreciation") || lower.includes("thank")) {
+    patch.recommendedTemplateSlug = "appreciation-gratitude";
+    patch.fields!.title = "Certificate of Appreciation";
+    notes.push("Applied Appreciation & Recognition template");
+  } else if (lower.includes("create ") || lower.includes("generate ")) {
+    patch.recommendedTemplateSlug = "course-completion";
+    patch.fields!.title = current?.title || "Certificate of Completion";
+    notes.push("Generated formal completion structure");
+  }
+
+  // Extract organization ("at <Org>" or "from <Org>")
+  const orgMatch = q.match(/\b(?:at|from|by)\s+([A-Z][A-Za-z0-9&.,\s-]{2,42})/);
+  if (orgMatch?.[1]) {
+    patch.fields!.organizationName = orgMatch[1].replace(/[.,;]+$/, "").trim();
+    notes.push(`Set organization to "${patch.fields!.organizationName}"`);
+  }
+
+  // Extract recipient ("for <Name>" when capitalized)
+  const forMatch = q.match(/\bfor\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+){1,2})/);
+  if (forMatch?.[1] && !/software|internship|completion|training|excellence/i.test(forMatch[1])) {
+    patch.fields!.recipientName = forMatch[1].trim();
+    notes.push(`Set recipient to "${patch.fields!.recipientName}"`);
+  }
+
+  // Color & border styles
+  if (lower.includes("gold")) {
+    patch.stylePatch!.borderStyle = "double-gold";
+    patch.stylePatch!.accentColor = "#C59B27";
+    patch.stylePatch!.showBorder = true;
+    notes.push("Applied antique gold double border & gold accents");
+  } else if (lower.includes("navy") || lower.includes("blue")) {
+    patch.stylePatch!.borderStyle = "prestige-navy";
+    patch.stylePatch!.primaryColor = "#1E3A8A";
+    patch.stylePatch!.accentColor = "#D97706";
+    notes.push("Applied prestige navy & amber color scheme");
+  } else if (lower.includes("minimal") || lower.includes("modern") || lower.includes("clean")) {
+    patch.stylePatch!.borderStyle = "architectural";
+    patch.stylePatch!.backgroundColor = "#FFFFFF";
+    patch.stylePatch!.primaryColor = "#0F172A";
+    patch.stylePatch!.accentColor = "#0F766E";
+    patch.stylePatch!.fontDisplay = "Space Grotesk";
+    patch.stylePatch!.fontBody = "Inter";
+    notes.push("Switched to clean minimalist studio layout");
+  } else if (lower.includes("dark") || lower.includes("midnight") || lower.includes("obsidian")) {
+    patch.stylePatch!.backgroundColor = "#0F172A";
+    patch.stylePatch!.primaryColor = "#F8FAFC";
+    patch.stylePatch!.accentColor = "#F59E0B";
+    patch.stylePatch!.borderStyle = "double-gold";
+    notes.push("Applied dark midnight prestige palette");
+  }
+
+  if (lower.includes("portrait")) {
+    patch.orientation = "portrait";
+    patch.stylePatch!.canvasPreset = "a4_portrait";
+    patch.stylePatch!.canvasWidth = 794;
+    patch.stylePatch!.canvasHeight = 1123;
+    notes.push("Switched canvas to A4 Portrait (794x1123)");
+  } else if (lower.includes("landscape")) {
+    patch.orientation = "landscape";
+    patch.stylePatch!.canvasPreset = "a4_landscape";
+    patch.stylePatch!.canvasWidth = 1123;
+    patch.stylePatch!.canvasHeight = 794;
+    notes.push("Switched canvas to A4 Landscape (1123x794)");
+  }
+
+  if (
+    lower.includes("increase heading") ||
+    lower.includes("larger heading") ||
+    lower.includes("bigger title") ||
+    lower.includes("enlarge heading")
+  ) {
+    const nextSize = Math.min(64, (current?.titleFontSize || 42) + 8);
+    patch.stylePatch!.titleFontSize = nextSize;
+    notes.push(`Increased heading font size to ${nextSize}px`);
+  } else if (lower.includes("smaller heading") || lower.includes("reduce heading")) {
+    const nextSize = Math.max(26, (current?.titleFontSize || 42) - 6);
+    patch.stylePatch!.titleFontSize = nextSize;
+    notes.push(`Adjusted heading font size to ${nextSize}px`);
+  }
+
+  if (lower.includes("move") && lower.includes("photo")) {
+    const targetX = lower.includes("left") ? 12 : lower.includes("center") ? 50 : 86;
+    const targetY = lower.includes("bottom") ? 72 : 20;
+    patch.elementActions!.push({ action: "move_photo", x: targetX, y: targetY });
+    notes.push(`Moved photo frame to (${targetX}%, ${targetY}%)`);
+  }
+
+  if (lower.includes("signature")) {
+    patch.elementActions!.push({
+      action: "add_signature_area",
+      signatoryName: "Authorized Signatory",
+      signatoryDesignation: "Director / Department Lead",
+    });
+    notes.push("Added signature placeholder area to the certificate");
+  }
+
+  patch.summary =
+    notes.length > 0
+      ? `Applied live design updates: ${notes.join("; ")}.`
+      : "Prepared formal certificate styling and layout guidance.";
+
+  return patch;
+}
