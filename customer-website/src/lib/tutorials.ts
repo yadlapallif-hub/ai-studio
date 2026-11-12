@@ -31,6 +31,10 @@ export const READY_SUPABASE_CDN_FILES = new Set<string>([
   "06-career-roadmap-interview-prep-te.mp4",
   "07-ai-recommendations-te.mp4",
   "08-conversations-chat-sessions-te.mp4",
+  "09-live-support-tickets-te.mp4",
+  "10-authorized-organizations-te.mp4",
+  "11-document-vault-te.mp4",
+  "12-admin-dashboard-te.mp4",
 ]);
 
 export const DRIVE_TUTORIAL_IDS: Record<string, string> = {
@@ -54,6 +58,10 @@ export const DRIVE_TUTORIAL_IDS: Record<string, string> = {
   "06-career-roadmap-interview-prep-te.mp4": "14mobgQOUhg5pEvPApMgE0BxIyoYxQdcR",
   "07-ai-recommendations-te.mp4": "1BwN7lK0Qxaj7Iu7nLjv6hBFzCcYHT13Q",
   "08-conversations-chat-sessions-te.mp4": "11iM8kvAkQwiOAD7LSJkOpar0gLTn0g37",
+  "09-live-support-tickets-te.mp4": "18CWGqDV9gxkKfno_ckJIg4u5KmuHfwFB",
+  "10-authorized-organizations-te.mp4": "1SHr__M_WjevWaVD3Xyjqt4vqFttJixXq",
+  "11-document-vault-te.mp4": "1sVDIVzCvbS3lPeCg0CZuatemOOp4lZ8E",
+  "12-admin-dashboard-te.mp4": "1ehBhpGN1A4jkZ4Z2lsDA_BNhPhZLLYd1",
 };
 
 export function extractStreamFilename(urlOrNull: string | null | undefined, fallbackFilename: string): string {
