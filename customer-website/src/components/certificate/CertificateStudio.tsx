@@ -1091,12 +1091,39 @@ export function CertificateStudio(props: CertificateStudioProps) {
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            <SafeNavLink
-              href="/bulk-generator"
-              className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--fcs-border)] px-2.5 py-1.5 text-xs font-semibold hover:border-teal-600/40"
+            <button
+              type="button"
+              onClick={() => {
+                try {
+                  window.localStorage.setItem(
+                    "fcs-bulk-studio-preset",
+                    JSON.stringify({
+                      certificateCode,
+                      templateSlug,
+                      title,
+                      recipientName,
+                      courseOrAchievement,
+                      organizationName,
+                      description,
+                      issueDate,
+                      expiryDate,
+                      signatoryName,
+                      signatoryDesignation,
+                      orientation,
+                      elements,
+                      style,
+                      savedAt: new Date().toISOString(),
+                    })
+                  );
+                } catch {
+                  // ignore storage quota errors
+                }
+                router.push("/bulk-generator?mode=quantity&from=studio");
+              }}
+              className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-[var(--fcs-border)] px-2.5 py-1.5 text-xs font-semibold hover:border-teal-600/40"
             >
-              <FileSpreadsheet className="h-3.5 w-3.5 text-teal-600" /> Bulk Issue
-            </SafeNavLink>
+              <FileSpreadsheet className="h-3.5 w-3.5 text-teal-600" /> Bulk &times; N
+            </button>
 
             <button
               type="button"

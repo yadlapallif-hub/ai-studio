@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { getPublicPlatformData } from "@/lib/platform";
 import { SlideReveal } from "@/components/motion/SlideReveal";
+import { ReplayIntroButton } from "@/components/brand/ReplayIntroButton";
 
 export const dynamic = "force-dynamic";
 
@@ -39,13 +40,25 @@ export default async function HomePage() {
   return (
     <div className="bg-[var(--fcs-bg)] text-[var(--fcs-ink)]">
       {/* HERO SECTION */}
-      <section className="overflow-hidden border-b border-[var(--fcs-border)] bg-[var(--fcs-surface)]">
-        <div className="mx-auto grid max-w-7xl items-center gap-12 px-4 py-14 sm:px-6 lg:grid-cols-12 lg:py-20">
+      <section className="relative overflow-hidden border-b border-[var(--fcs-border)] bg-[var(--fcs-surface)]">
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 opacity-65 dark:opacity-35"
+          style={{
+            backgroundImage:
+              "radial-gradient(ellipse 68% 55% at 15% 15%, rgba(15, 118, 110, 0.08), transparent 65%), radial-gradient(ellipse 55% 50% at 85% 20%, rgba(180, 130, 50, 0.09), transparent 65%), linear-gradient(to right, rgba(148,163,184,0.06) 1px, transparent 1px), linear-gradient(to bottom, rgba(148,163,184,0.06) 1px, transparent 1px)",
+            backgroundSize: "100% 100%, 100% 100%, 44px 44px, 44px 44px",
+          }}
+        />
+        <div className="relative mx-auto grid max-w-7xl items-center gap-12 px-4 py-14 sm:px-6 lg:grid-cols-12 lg:py-20">
           <div className="lg:col-span-7">
             <SlideReveal direction="right" duration={560}>
-              <div className="inline-flex items-center gap-2 rounded-full border border-teal-700/25 bg-teal-50 px-3 py-1 text-xs font-semibold text-teal-800 dark:bg-teal-950/50 dark:text-teal-300">
-                <Code2 className="h-3.5 w-3.5" />
-                <span>{websiteContent.heroBadge}</span>
+              <div className="flex flex-wrap items-center gap-2.5">
+                <div className="inline-flex items-center gap-2 rounded-full border border-teal-700/25 bg-teal-50 px-3 py-1 text-xs font-semibold text-teal-800 dark:bg-teal-950/50 dark:text-teal-300">
+                  <Code2 className="h-3.5 w-3.5" />
+                  <span>{websiteContent.heroBadge}</span>
+                </div>
+                <ReplayIntroButton variant="gold" label="Cinema Intro" className="rounded-full py-1" />
               </div>
 
               <h1 className="mt-5 text-3xl font-bold tracking-tight text-[var(--fcs-ink)] sm:text-5xl sm:leading-[1.08]">

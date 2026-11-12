@@ -1,9 +1,17 @@
 "use client";
 
 import React from "react";
-import { Play } from "lucide-react";
+import { Play, Sparkles } from "lucide-react";
 
-export function ReplayIntroButton({ className = "" }: { className?: string }) {
+export function ReplayIntroButton({
+  className = "",
+  label = "Replay Studio Intro",
+  variant = "secondary",
+}: {
+  className?: string;
+  label?: string;
+  variant?: "secondary" | "gold";
+}) {
   return (
     <button
       type="button"
@@ -11,10 +19,10 @@ export function ReplayIntroButton({ className = "" }: { className?: string }) {
         window.scrollTo({ top: 0, behavior: "smooth" });
         window.dispatchEvent(new CustomEvent("fcs:replay-intro"));
       }}
-      className={`fcs-btn-secondary cursor-pointer px-3 py-1.5 text-[11px] ${className}`.trim()}
+      className={`${variant === "gold" ? "fcs-btn-gold" : "fcs-btn-secondary"} cursor-pointer px-3 py-1.5 text-[11px] ${className}`.trim()}
     >
-      <Play className="h-3 w-3" />
-      <span>Replay Studio Intro</span>
+      {variant === "gold" ? <Sparkles className="h-3 w-3 text-[#E6D4AD]" /> : <Play className="h-3 w-3" />}
+      <span>{label}</span>
     </button>
   );
 }

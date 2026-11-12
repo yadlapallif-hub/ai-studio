@@ -19,6 +19,7 @@ const BulkRowSchema = z.object({
 
 const BulkRequestSchema = z.object({
   batchName: z.string().trim().min(1).max(160),
+  batchMode: z.enum(["quantity", "spreadsheet"]).optional().default("spreadsheet"),
   sourceFilename: z.string().max(160).optional(),
   templateSlug: z.string().min(1).max(80),
   orientation: z.enum(["landscape", "portrait"]).default("landscape"),
@@ -29,8 +30,16 @@ const BulkRequestSchema = z.object({
   columnMapping: z.record(z.string()).optional().default({}),
   canvasElements: z.array(z.record(z.unknown())).optional().default([]),
   styleConfig: z.record(z.unknown()).optional().default({}),
-  rows: z.array(BulkRowSchema).min(1).max(250),
+  rows: z.array(BulkRowSchema).min(1).max(500),
 });
+
+function chunkArray<T>(arr: T[], size: number): T[][] {
+  const chunks: T[][] = [];
+  for (let i = 0; i < arr.length; i += size) {
+    chunks.push(arr.slice(i, i + size));
+  }
+  return chunks;
+}
 
 export async function POST(request: NextRequest) {
   const supabase = await createServerSupabase();
@@ -77,6 +86,7 @@ export async function POST(request: NextRequest) {
       column_mapping: p.columnMapping,
       summary: {
         official: isOfficial,
+        batchMode: p.batchMode,
         organizationName: approvedIssuer?.organization_name || "Sample / Draft Batch",
       },
     })
@@ -94,40 +104,67 @@ export async function POST(request: NextRequest) {
         isSampleDecorative: el.type === "stamp" || el.type === "seal" ? true : el.isSampleDecorative,
       }));
 
-  const certRows = p.rows.map((r) => ({
-    user_id: user.id,
-    issuer_id: approvedIssuer?.id ?? null,
-    template_slug: p.templateSlug,
-    certificate_code: r.certificateCode || generateCertificateCode(),
-    title: r.certificateTitle,
-    recipient_name: r.recipientName,
-    course_or_achievement: r.courseOrAchievement,
-    organization_name: approvedIssuer?.organization_name || r.organizationName,
-    description: r.description || null,
-    issue_date: r.issueDate,
-    expiry_date: r.expiryDate || null,
-    signatory_name: r.signatoryName || null,
-    signatory_designation: r.signatoryDesignation || null,
-    orientation: p.orientation,
-    canvas_width: p.canvasWidth,
-    canvas_height: p.canvasHeight,
-    is_sample: !isOfficial,
-    bulk_batch_id: batch.id,
-    canvas_elements: safeElements,
-    style_config: p.styleConfig,
-    authorization_type: isOfficial ? "authorized_issuer" : "sample_preview",
-  }));
+  const seenCodes = new Set<string>();
+  const certRows = p.rows.map((r) => {
+    let code = (r.certificateCode || "").trim().toUpperCase();
+    if (!code || seenCodes.has(code)) {
+      do {
+        code = generateCertificateCode();
+      } while (seenCodes.has(code));
+    }
+    seenCodes.add(code);
 
-  const { data: createdCerts, error: certsErr } = await service
-    .from("fcs_certificates")
-    .insert(certRows)
-    .select("id, certificate_code, recipient_name, title, course_or_achievement, organization_name, issue_date, expiry_date");
+    return {
+      user_id: user.id,
+      issuer_id: approvedIssuer?.id ?? null,
+      template_slug: p.templateSlug,
+      certificate_code: code,
+      title: r.certificateTitle,
+      recipient_name: r.recipientName,
+      course_or_achievement: r.courseOrAchievement,
+      organization_name: approvedIssuer?.organization_name || r.organizationName,
+      description: r.description || null,
+      issue_date: r.issueDate,
+      expiry_date: r.expiryDate || null,
+      signatory_name: r.signatoryName || null,
+      signatory_designation: r.signatoryDesignation || null,
+      orientation: p.orientation,
+      canvas_width: p.canvasWidth,
+      canvas_height: p.canvasHeight,
+      is_sample: !isOfficial,
+      bulk_batch_id: batch.id,
+      canvas_elements: safeElements,
+      style_config: p.styleConfig,
+      authorization_type: isOfficial ? "authorized_issuer" : "sample_preview",
+    };
+  });
 
-  if (certsErr || !createdCerts) {
-    return NextResponse.json(
-      { error: certsErr?.message || "Failed saving bulk certificates" },
-      { status: 500 }
-    );
+  const createdCerts: Array<{
+    id: string;
+    certificate_code: string;
+    recipient_name: string;
+    title: string;
+    course_or_achievement: string;
+    organization_name: string;
+    issue_date: string;
+    expiry_date: string | null;
+  }> = [];
+
+  for (const chunk of chunkArray(certRows, 100)) {
+    const { data: chunkCerts, error: certsErr } = await service
+      .from("fcs_certificates")
+      .insert(chunk)
+      .select(
+        "id, certificate_code, recipient_name, title, course_or_achievement, organization_name, issue_date, expiry_date"
+      );
+
+    if (certsErr || !chunkCerts) {
+      return NextResponse.json(
+        { error: certsErr?.message || "Failed saving bulk certificates" },
+        { status: 500 }
+      );
+    }
+    createdCerts.push(...chunkCerts);
   }
 
   if (isOfficial && approvedIssuer) {
@@ -146,7 +183,15 @@ export async function POST(request: NextRequest) {
       approved_by: user.id,
       approved_at: nowIso,
     }));
-    await service.from("fcs_certificate_verifications").insert(verRows);
+    for (const chunk of chunkArray(verRows, 100)) {
+      const { error: verErr } = await service.from("fcs_certificate_verifications").insert(chunk);
+      if (verErr) {
+        return NextResponse.json(
+          { error: verErr.message || "Certificates created, but verification registration failed." },
+          { status: 500 }
+        );
+      }
+    }
   }
 
   await service.from("fcs_activity_logs").insert({
@@ -157,6 +202,7 @@ export async function POST(request: NextRequest) {
     entity_id: batch.id,
     details: {
       count: createdCerts.length,
+      batchMode: p.batchMode,
       official: isOfficial,
       template_slug: p.templateSlug,
     },

@@ -9,9 +9,9 @@ import { BulkGeneratorClient } from "@/components/certificate/BulkGeneratorClien
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = buildPageMetadata({
-  title: "Bulk Certificate Generator",
+  title: "Bulk Certificate Generator — By Quantity or CSV / Excel",
   description:
-    "Batch generate certificates via CSV or Excel spreadsheets for Authorized Organizations.",
+    "Generate any exact quantity of identical or serialized certificates in one click, or batch generate cohorts via CSV or Excel spreadsheets.",
   path: "/bulk-generator",
   noIndex: true,
 });
