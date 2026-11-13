@@ -5,7 +5,7 @@ import { Play, Sparkles } from "lucide-react";
 
 export function ReplayIntroButton({
   className = "",
-  label = "Replay Studio Intro",
+  label = "Replay Cinema Intro",
   variant = "secondary",
 }: {
   className?: string;

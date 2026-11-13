@@ -366,6 +366,135 @@ body {
 }
 
 /* ==========================================================================
+   Cinematic Premiere & Premium Atelier Intro Keyframes
+   ========================================================================== */
+@keyframes fcsCinemaFocusPull {
+  0% {
+    opacity: 0;
+    filter: blur(14px);
+    transform: scale(1.07) translate3d(0, 8px, 0);
+  }
+  100% {
+    opacity: 1;
+    filter: blur(0px);
+    transform: scale(1) translate3d(0, 0, 0);
+  }
+}
+
+@keyframes fcsCinemaTitleTrack {
+  0% {
+    opacity: 0;
+    letter-spacing: 0.42em;
+    filter: blur(10px);
+    transform: translate3d(0, 10px, 0) scale(1.05);
+  }
+  55% {
+    opacity: 1;
+    filter: blur(0px);
+  }
+  100% {
+    opacity: 1;
+    letter-spacing: var(--fcs-cinema-track, 0.14em);
+    filter: blur(0px);
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes fcsCinemaFlareExpand {
+  0% {
+    opacity: 0;
+    transform: scaleX(0.12);
+  }
+  45% {
+    opacity: 0.95;
+    transform: scaleX(1.04);
+  }
+  100% {
+    opacity: 0.72;
+    transform: scaleX(1);
+  }
+}
+
+@keyframes fcsCinemaCreditRise {
+  0% {
+    opacity: 0;
+    filter: blur(5px);
+    transform: translate3d(0, 12px, 0);
+  }
+  100% {
+    opacity: 1;
+    filter: blur(0px);
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes fcsCinemaHorizon {
+  0% {
+    transform: scaleX(0);
+    opacity: 0.4;
+  }
+  100% {
+    transform: scaleX(1);
+    opacity: 1;
+  }
+}
+
+@keyframes fcsCinemaLetterboxIn {
+  0% {
+    opacity: 0;
+    transform: scaleX(0.65);
+  }
+  100% {
+    opacity: 1;
+    transform: scaleX(1);
+  }
+}
+
+.fcs-cinema-title {
+  --fcs-cinema-track: 0.14em;
+  animation: fcsCinemaTitleTrack 1150ms cubic-bezier(0.16, 1, 0.3, 1) 420ms both;
+}
+
+@media (min-width: 640px) {
+  .fcs-cinema-title {
+    --fcs-cinema-track: 0.24em;
+  }
+}
+
+.fcs-cinema-focus {
+  animation: fcsCinemaFocusPull 980ms cubic-bezier(0.16, 1, 0.3, 1) 120ms both;
+}
+
+.fcs-cinema-kicker {
+  animation: fcsCinemaCreditRise 760ms cubic-bezier(0.22, 1, 0.36, 1) 240ms both;
+}
+
+.fcs-cinema-flare {
+  animation: fcsCinemaFlareExpand 1300ms cubic-bezier(0.16, 1, 0.3, 1) 540ms both;
+}
+
+.fcs-cinema-logline {
+  animation: fcsCinemaCreditRise 820ms cubic-bezier(0.22, 1, 0.36, 1) 860ms both;
+}
+
+.fcs-cinema-credits {
+  animation: fcsCinemaCreditRise 820ms cubic-bezier(0.22, 1, 0.36, 1) 1140ms both;
+}
+
+.fcs-cinema-signature {
+  animation: fcsCinemaCreditRise 820ms cubic-bezier(0.22, 1, 0.36, 1) 1420ms both;
+}
+
+.fcs-cinema-horizon {
+  transform-origin: left center;
+  animation: fcsCinemaHorizon 3050ms cubic-bezier(0.22, 1, 0.36, 1) 180ms both;
+}
+
+.fcs-cinema-matte-rule {
+  animation: fcsCinemaLetterboxIn 880ms cubic-bezier(0.22, 1, 0.36, 1) 100ms both;
+}
+
+/* ==========================================================================
    Premium UI Button System
    ========================================================================== */
 .fcs-btn-primary {
@@ -608,10 +737,20 @@ body {
   .fcs-intro-diamond,
   .fcs-intro-pillar-1,
   .fcs-intro-pillar-2,
-  .fcs-intro-pillar-3 {
+  .fcs-intro-pillar-3,
+  .fcs-cinema-title,
+  .fcs-cinema-focus,
+  .fcs-cinema-kicker,
+  .fcs-cinema-flare,
+  .fcs-cinema-logline,
+  .fcs-cinema-credits,
+  .fcs-cinema-signature,
+  .fcs-cinema-horizon,
+  .fcs-cinema-matte-rule {
     animation: none !important;
     transition: none !important;
     opacity: 1 !important;
+    filter: none !important;
     clip-path: none !important;
     transform: none !important;
   }
