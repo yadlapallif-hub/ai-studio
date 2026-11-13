@@ -847,7 +847,7 @@ export function ResumeStudio(props: ResumeStudioProps) {
                     />
                   </div>
                   <div>
-                    <label className="mb-1 block font-semibold">Website / Portfolio</label>
+                    <label className="mb-1 block font-semibold">Personal Website</label>
                     <input
                       type="text"
                       value={data.personalInfo.website || ""}

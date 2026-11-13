@@ -302,7 +302,7 @@ export default function SettingsPage() {
             </select>
           </div>
           <div>
-            <label className="mb-1 block text-xs font-semibold">Portfolio / Website</label>
+            <label className="mb-1 block text-xs font-semibold">Personal Website</label>
             <input
               type="text"
               value={website}

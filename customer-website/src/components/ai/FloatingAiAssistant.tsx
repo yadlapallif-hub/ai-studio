@@ -48,7 +48,7 @@ export function FloatingAiAssistant() {
     {
       role: "assistant",
       content:
-        "Hello! I am CREATOR AI. Ask me about resumes, certificates, portfolio websites, cover letters, Document Vault, or upload a screenshot/file for instant analysis.",
+        "Hello! I am CREATOR AI. Ask me about resumes, certificates, Document Vault, QR verification, or upload a screenshot/file for instant analysis.",
     },
   ]);
 
@@ -56,17 +56,13 @@ export function FloatingAiAssistant() {
     ? "Resume Builder"
     : pathname.startsWith("/certificate-builder")
       ? "Certificate Builder"
-      : pathname.startsWith("/portfolio-builder")
-        ? "Portfolio Builder"
-        : pathname.startsWith("/cover-letter")
-          ? "Cover Letter Studio"
-          : pathname.startsWith("/support")
-            ? "Customer Support"
-            : pathname.startsWith("/verify")
-              ? "Certificate Verification"
-              : pathname.startsWith("/vault")
-                ? "Document Vault"
-                : "Creator Studio";
+      : pathname.startsWith("/support")
+        ? "Customer Support"
+        : pathname.startsWith("/verify")
+          ? "Certificate Verification"
+          : pathname.startsWith("/vault")
+            ? "Document Vault"
+            : "Creator Studio";
 
   const quickPrompts = pathname.startsWith("/resume-builder")
     ? [
@@ -82,8 +78,8 @@ export function FloatingAiAssistant() {
         ]
       : [
           "Tell me about Creator Studio Version 2.0",
-          "How do I create a portfolio website?",
-          "How do I generate a tailored cover letter?",
+          "How does the 8-axis AI Resume Health Check work?",
+          "How do I organize files in Document Vault?",
         ];
 
   const toggleVoice = () => {

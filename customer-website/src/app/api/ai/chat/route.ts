@@ -138,7 +138,5 @@ export async function POST(request: NextRequest) {
     conversationId: result.conversationId,
     proposedPatch: result.proposedPatch,
     healthReport: result.healthReport,
-    generatedPortfolio: result.generatedPortfolio,
-    generatedCoverLetter: result.generatedCoverLetter,
   });
 }

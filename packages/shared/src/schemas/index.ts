@@ -105,8 +105,6 @@ export const aiChatRequestSchema = z.object({
       "resume_jd_match",
       "resume_health_check",
       "resume_action_patch",
-      "portfolio_generate",
-      "cover_letter_generate",
       "certificate_assist",
       "recommendations",
       "support_triage",
@@ -152,42 +150,6 @@ export const profileUpdateSchema = z.object({
   theme_preference: z.enum(["light", "dark", "system"]).optional(),
   ai_recommendations_enabled: z.boolean().optional(),
   email_notifications_enabled: z.boolean().optional(),
-});
-
-export const portfolioSaveSchema = z.object({
-  id: z.string().uuid().optional(),
-  slug: z
-    .string()
-    .min(2)
-    .max(80)
-    .regex(/^[a-z0-9-]+$/, "Slug must contain lowercase letters, numbers, or hyphens"),
-  title: z.string().min(1).max(160),
-  template_id: z.enum([
-    "linear-atelier",
-    "notion-editorial",
-    "stripe-mesh",
-    "apple-minimal",
-    "framer-obsidian",
-    "academic-folio",
-  ]),
-  theme_mode: z.enum(["light", "dark", "auto"]).default("dark"),
-  accent_color: z.string().regex(/^#[0-9a-fA-F]{6}$/).default("#0F766E"),
-  font_family: z.string().min(1).max(80).default("Plus Jakarta Sans"),
-  is_published: z.boolean().default(false),
-  data: z.record(z.unknown()),
-});
-
-export const coverLetterSaveSchema = z.object({
-  id: z.string().uuid().optional(),
-  resume_id: z.string().uuid().nullable().optional(),
-  title: z.string().min(1).max(180),
-  company_name: z.string().max(160).default(""),
-  target_role: z.string().max(160).default(""),
-  hiring_manager: z.string().max(120).nullable().optional(),
-  writing_style: z.enum(["executive", "modern_tech", "warm_story", "academic", "internship"]),
-  job_description: z.string().max(10000).nullable().optional(),
-  content: z.string().min(1).max(20000),
-  recommendations: z.array(z.string()).optional().default([]),
 });
 
 export const vaultFolderSchema = z.object({

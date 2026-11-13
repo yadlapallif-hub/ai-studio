@@ -28,7 +28,7 @@ export const metadata: Metadata = {
     template: `%s`,
   },
   description:
-    "Create. Design. Innovate. Free, open-source AI Resume Studio (100 templates), Certificate Design Studio (124 templates), AI Portfolio Builder, Cover Letter Studio, QR Verification, Creator AI, and Document Vault.",
+    "Create. Design. Innovate. Free, open-source AI Resume Studio (100 templates), Certificate Design Studio (124 templates), QR Verification, Creator AI, and Document Vault.",
   openGraph: {
     type: "website",
     locale: "en_US",

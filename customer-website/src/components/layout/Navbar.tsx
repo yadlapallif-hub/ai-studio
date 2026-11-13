@@ -11,13 +11,11 @@ import {
   CheckCheck,
   FileText,
   FolderLock,
-  Globe,
   LayoutDashboard,
   LifeBuoy,
   LogOut,
   Menu,
   Moon,
-  PenLine,
   Search,
   Settings,
   ShieldCheck,
@@ -63,8 +61,6 @@ interface SearchResults {
   resumes: Array<{ id: string; title: string; template_slug: string }>;
   certificates: Array<{ id: string; title: string; recipient_name: string; certificate_code: string }>;
   projects?: Array<{ id: string; title: string; template_slug: string; status: string }>;
-  portfolios?: Array<{ id: string; title: string; slug: string; is_published: boolean }>;
-  coverLetters?: Array<{ id: string; title: string; company_name: string; target_role: string }>;
   assets: Array<{ id: string; file_name: string; asset_type: string }>;
   conversations?: Array<{ id: string; title: string; context_page: string }>;
   activities?: Array<{ id: string; action: string; entity_type: string; created_at: string }>;
@@ -249,8 +245,6 @@ export function Navbar({
       { id: "cmd-resume", group: "Quick Actions", label: "New ATS Resume", meta: "Resume Studio", href: "/resume-builder/new" },
       { id: "cmd-cert", group: "Quick Actions", label: "Certificate Designer", meta: "124 Templates", href: "/certificate-builder" },
       { id: "cmd-bulk", group: "Quick Actions", label: "Bulk Certificate Generator (1–500)", meta: "Quantity / CSV", href: "/bulk-generator" },
-      { id: "cmd-port", group: "Quick Actions", label: "AI Portfolio Website Builder", meta: "Export HTML/Next.js", href: "/portfolio-builder" },
-      { id: "cmd-cl", group: "Quick Actions", label: "AI Cover Letter Generator", meta: "PDF & DOCX", href: "/cover-letter" },
       { id: "cmd-vault", group: "Quick Actions", label: "Private Document Vault", meta: "Folders & Versions", href: "/vault" },
       { id: "cmd-ai", group: "Quick Actions", label: "Creator AI Assistant", meta: "Voice & Analysis", href: "/assistant" },
       { id: "cmd-verify", group: "Quick Actions", label: "Verify Certificate QR / ID", meta: "Public Trust", href: "/verify" },
@@ -276,24 +270,6 @@ export function Navbar({
           label: `${c.title} — ${c.recipient_name}`,
           meta: c.certificate_code,
           href: `/certificate-builder/${c.id}`,
-        });
-      }
-      for (const pf of searchResults.portfolios ?? []) {
-        list.push({
-          id: `pf-${pf.id}`,
-          group: "Portfolios",
-          label: pf.title,
-          meta: pf.is_published ? `/p/${pf.slug}` : "Draft",
-          href: `/portfolio-builder?id=${pf.id}`,
-        });
-      }
-      for (const cl of searchResults.coverLetters ?? []) {
-        list.push({
-          id: `cl-${cl.id}`,
-          group: "Cover Letters",
-          label: cl.title,
-          meta: `${cl.company_name} • ${cl.target_role}`,
-          href: `/cover-letter?id=${cl.id}`,
         });
       }
       for (const p of searchResults.projects ?? []) {
@@ -427,8 +403,6 @@ export function Navbar({
     { href: "/", label: "Home" },
     { href: "/resume-builder", label: "Resumes" },
     { href: "/certificate-builder", label: "Certificates" },
-    { href: "/portfolio-builder", label: "Portfolio" },
-    { href: "/cover-letter", label: "Cover Letter" },
     { href: "/verify", label: "Verify" },
     { href: "/assistant", label: "Creator AI" },
     { href: "/tutorials", label: "Tutorials" },
@@ -727,22 +701,6 @@ export function Navbar({
                     Unified Dashboard
                   </SafeNavLink>
                   <SafeNavLink
-                    href="/portfolio-builder"
-                    onClick={() => setProfileMenuOpen(false)}
-                    className="flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium hover:bg-[var(--fcs-surface-muted)]"
-                  >
-                    <Globe className="h-3.5 w-3.5" />
-                    AI Portfolio Builder
-                  </SafeNavLink>
-                  <SafeNavLink
-                    href="/cover-letter"
-                    onClick={() => setProfileMenuOpen(false)}
-                    className="flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium hover:bg-[var(--fcs-surface-muted)]"
-                  >
-                    <PenLine className="h-3.5 w-3.5" />
-                    Cover Letter Studio
-                  </SafeNavLink>
-                  <SafeNavLink
                     href="/stamps"
                     onClick={() => setProfileMenuOpen(false)}
                     className="flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium hover:bg-[var(--fcs-surface-muted)]"
@@ -904,7 +862,7 @@ export function Navbar({
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyDown={handleSearchKeyDown}
-                placeholder="Search resumes, certificates, portfolios, cover letters, vault, AI chats..."
+                placeholder="Search resumes, certificates, templates, vault, AI chats..."
                 className="w-full bg-transparent text-sm outline-none placeholder:text-[var(--fcs-ink-muted)]"
               />
               <span className="hidden text-[10px] text-[var(--fcs-ink-muted)] sm:inline">
@@ -961,8 +919,6 @@ export function Navbar({
                                   <FileText className="h-3.5 w-3.5 shrink-0 text-teal-600" />
                                 ) : groupName.includes("Certificate") ? (
                                   <Award className="h-3.5 w-3.5 shrink-0 text-amber-600" />
-                                ) : groupName.includes("Portfolio") ? (
-                                  <Globe className="h-3.5 w-3.5 shrink-0 text-teal-600" />
                                 ) : groupName.includes("Vault") ? (
                                   <FolderLock className="h-3.5 w-3.5 shrink-0 text-teal-600" />
                                 ) : groupName.includes("AI") ? (

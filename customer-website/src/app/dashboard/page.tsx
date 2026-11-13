@@ -38,8 +38,6 @@ export default async function DashboardPage() {
     { data: certTemplates },
     { data: aiConversations },
     { data: tickets },
-    { data: portfolios },
-    { data: coverLetters },
     { data: vaultAssets },
     { data: activityLogs },
     { data: userNotifications },
@@ -123,18 +121,6 @@ export default async function DashboardPage() {
       .order("updated_at", { ascending: false })
       .limit(8),
     supabase
-      .from("fcs_portfolios")
-      .select("id, title, slug, template_slug, is_published, updated_at")
-      .eq("user_id", user.id)
-      .order("updated_at", { ascending: false })
-      .limit(20),
-    supabase
-      .from("fcs_cover_letters")
-      .select("id, title, company_name, target_role, writing_style, updated_at")
-      .eq("user_id", user.id)
-      .order("updated_at", { ascending: false })
-      .limit(20),
-    supabase
       .from("fcs_uploaded_assets")
       .select("id, file_name, asset_type, mime_type, file_size, created_at")
       .eq("user_id", user.id)
@@ -215,8 +201,6 @@ export default async function DashboardPage() {
       certTemplates={certTemplates ?? []}
       aiConversations={aiConversations ?? []}
       tickets={tickets ?? []}
-      initialPortfolios={(portfolios ?? []) as never[]}
-      initialCoverLetters={(coverLetters ?? []) as never[]}
       initialVaultAssets={(vaultAssets ?? []) as never[]}
       initialActivityLogs={(activityLogs ?? []) as never[]}
       initialNotifications={(userNotifications ?? []) as never[]}

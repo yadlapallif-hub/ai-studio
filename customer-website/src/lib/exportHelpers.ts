@@ -21,8 +21,7 @@ export type ExportFormatType =
   | "jpeg"
   | "bulk_zip"
   | "svg"
-  | "docx"
-  | "html";
+  | "docx";
 
 function shouldIncludeExportNode(node: HTMLElement): boolean {
   if (!node || typeof node.getAttribute !== "function") return true;
@@ -57,7 +56,7 @@ async function waitForFontsAndImages(element: HTMLElement): Promise<void> {
   );
 }
 
-export type ExportDocumentType = "resume" | "certificate" | "cover_letter" | "portfolio";
+export type ExportDocumentType = "resume" | "certificate";
 
 export async function logExportEvent(
   documentType: ExportDocumentType,
@@ -622,131 +621,5 @@ export async function exportResumeToDocx(
   setTimeout(() => URL.revokeObjectURL(url), 4000);
 
   await logExportEvent("resume", options?.documentId, "docx", cleanName, "Word DOCX (ATS Ready)");
-}
-
-export async function exportCoverLetterToDocx(opts: {
-  candidateName?: string;
-  candidateContact?: string;
-  companyName?: string;
-  targetRole?: string;
-  content: string;
-  filename: string;
-}): Promise<void> {
-  const paragraphs: Paragraph[] = [];
-  if (opts.candidateName?.trim()) {
-    paragraphs.push(
-      new Paragraph({
-        spacing: { after: 40 },
-        children: [new TextRun({ text: opts.candidateName.trim(), bold: true, size: 30 })],
-      })
-    );
-  }
-  if (opts.candidateContact?.trim()) {
-    paragraphs.push(
-      new Paragraph({
-        spacing: { after: 180 },
-        children: [new TextRun({ text: opts.candidateContact.trim(), size: 20, color: "6B7280" })],
-      })
-    );
-  }
-  if (opts.targetRole || opts.companyName) {
-    paragraphs.push(
-      new Paragraph({
-        spacing: { after: 180 },
-        children: [
-          new TextRun({
-            text: `Application: ${opts.targetRole || "Position"}${opts.companyName ? ` — ${opts.companyName}` : ""}`,
-            bold: true,
-            size: 22,
-            color: "0F766E",
-          }),
-        ],
-      })
-    );
-  }
-  for (const block of opts.content.split(/\n{2,}/)) {
-    paragraphs.push(
-      new Paragraph({
-        spacing: { after: 140 },
-        children: [new TextRun({ text: block.trim(), size: 22 })],
-      })
-    );
-  }
-
-  const doc = new Document({
-    creator: "Francis Creator Studio",
-    title: opts.filename,
-    sections: [{ children: paragraphs }],
-  });
-  const blob = await Packer.toBlob(doc);
-  const cleanName = opts.filename.endsWith(".docx") ? opts.filename : `${opts.filename}.docx`;
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.download = cleanName;
-  link.href = url;
-  link.click();
-  setTimeout(() => URL.revokeObjectURL(url), 4000);
-}
-
-export function exportCoverLetterToPdf(opts: {
-  candidateName?: string;
-  candidateContact?: string;
-  companyName?: string;
-  targetRole?: string;
-  content: string;
-  filename: string;
-}): void {
-  const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4", compress: true });
-  const marginX = 22;
-  let cursorY = 24;
-  const maxWidth = 166;
-
-  if (opts.candidateName?.trim()) {
-    pdf.setFont("helvetica", "bold");
-    pdf.setFontSize(17);
-    pdf.setTextColor(17, 24, 39);
-    pdf.text(opts.candidateName.trim(), marginX, cursorY);
-    cursorY += 6;
-  }
-  if (opts.candidateContact?.trim()) {
-    pdf.setFont("helvetica", "normal");
-    pdf.setFontSize(9.5);
-    pdf.setTextColor(82, 88, 102);
-    pdf.text(opts.candidateContact.trim(), marginX, cursorY);
-    cursorY += 8;
-  }
-  pdf.setDrawColor(15, 118, 110);
-  pdf.setLineWidth(0.5);
-  pdf.line(marginX, cursorY, marginX + maxWidth, cursorY);
-  cursorY += 10;
-
-  if (opts.targetRole || opts.companyName) {
-    pdf.setFont("helvetica", "bold");
-    pdf.setFontSize(10.5);
-    pdf.setTextColor(15, 118, 110);
-    pdf.text(
-      `RE: ${opts.targetRole || "Role"}${opts.companyName ? ` at ${opts.companyName}` : ""}`,
-      marginX,
-      cursorY
-    );
-    cursorY += 9;
-  }
-
-  pdf.setFont("helvetica", "normal");
-  pdf.setFontSize(11);
-  pdf.setTextColor(31, 41, 55);
-
-  const lines = pdf.splitTextToSize(opts.content, maxWidth) as string[];
-  for (const line of lines) {
-    if (cursorY > 274) {
-      pdf.addPage();
-      cursorY = 22;
-    }
-    pdf.text(line, marginX, cursorY);
-    cursorY += 5.8;
-  }
-
-  const cleanName = opts.filename.endsWith(".pdf") ? opts.filename : `${opts.filename}.pdf`;
-  pdf.save(cleanName);
 }
 

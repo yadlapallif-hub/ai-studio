@@ -14,7 +14,6 @@ import {
   FileSpreadsheet,
   FileText,
   FolderLock,
-  Globe,
   Layers,
   LifeBuoy,
   Mic,
@@ -23,7 +22,6 @@ import {
   ShieldCheck,
   Sparkles,
   Stamp,
-  Wand2,
 } from "lucide-react";
 import { getPublicPlatformData } from "@/lib/platform";
 import { SlideReveal } from "@/components/motion/SlideReveal";
@@ -36,7 +34,7 @@ export const dynamic = "force-dynamic";
 export const metadata: Metadata = buildPageMetadata({
   title: "Home — Your Ideas. Your Creativity. One Intelligent Studio.",
   description:
-    "Create professional resumes, design certificates, build portfolios, write cover letters, manage documents in a private vault, and unlock Creator AI — all in one open-source workspace.",
+    "Create professional resumes, design certificates, manage documents in a private vault, and unlock Creator AI — all in one open-source workspace.",
   path: "/",
 });
 
@@ -66,26 +64,6 @@ export default async function HomePage() {
       color: "text-amber-700 dark:text-amber-400",
     },
     {
-      icon: Globe,
-      title: "AI Portfolio Builder",
-      badge: "6 Themes + Export",
-      description:
-        "Generate personal portfolio sites from your resume, toggle dark/light previews, publish at a shareable URL, or export clean static source code.",
-      href: "/portfolio-builder",
-      cta: "Build Portfolio",
-      color: "text-teal-700 dark:text-teal-400",
-    },
-    {
-      icon: Wand2,
-      title: "AI Cover Letter Studio",
-      badge: "PDF & DOCX",
-      description:
-        "Import your resume or upload PDF/DOCX/TXT, paste a job description, select tone, refine with AI suggestions, and export cleanly.",
-      href: "/cover-letter",
-      cta: "Write Cover Letter",
-      color: "text-teal-700 dark:text-teal-400",
-    },
-    {
       icon: Bot,
       title: "Creator AI Assistant",
       badge: "Voice + Vision",
@@ -110,7 +88,7 @@ export default async function HomePage() {
       title: "Universal Command Search",
       badge: "Ctrl + K",
       description:
-        "Jump instantly across resumes, certificates, portfolios, cover letters, templates, vault assets, AI chats, and recent activity using your keyboard.",
+        "Jump instantly across resumes, certificates, templates, vault assets, AI chats, and recent activity using your keyboard.",
       href: "/dashboard",
       cta: "Open Workspace",
       color: "text-teal-700 dark:text-teal-400",
@@ -251,7 +229,7 @@ export default async function HomePage() {
               Intelligent Creative Ecosystem
             </p>
             <h2 className="mt-2 text-2xl font-bold tracking-tight sm:text-3xl">
-              Eight integrated studios, zero paywalls
+              Six integrated studios, zero paywalls
             </h2>
             <p className="mt-2 text-sm leading-relaxed text-[var(--fcs-ink-muted)]">
               {branding.tagline} Designed with calm minimalism, honest AI assistance, and real
@@ -260,7 +238,7 @@ export default async function HomePage() {
           </div>
         </SlideReveal>
 
-        <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {featureCards.map((card, idx) => (
             <SlideReveal key={card.href + card.title} delay={idx * 40}>
               <div className="fcs-card-interactive flex h-full flex-col justify-between rounded-2xl border border-[var(--fcs-border)] bg-[var(--fcs-surface)] p-5">
@@ -331,10 +309,10 @@ export default async function HomePage() {
                 Explore 100 Templates
               </SafeNavLink>
               <SafeNavLink
-                href="/cover-letter"
+                href="/assistant"
                 className="fcs-btn-secondary px-4 py-2 text-xs font-semibold"
               >
-                Open Cover Letter Studio
+                Launch AI Health Check
               </SafeNavLink>
             </div>
           </div>

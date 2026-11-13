@@ -28,21 +28,11 @@ export default async function AdminDocumentsPage() {
   }
 
   const service = createServiceSupabase();
-  const [{ data: resumes }, { data: portfolios }, { data: coverLetters }, { data: assets }, { data: testimonials }] =
+  const [{ data: resumes }, { data: assets }, { data: testimonials }] =
     await Promise.all([
       service
         .from("fcs_resumes")
         .select("id, title, template_slug, target_role, ats_score, download_count, updated_at")
-        .order("updated_at", { ascending: false })
-        .limit(50),
-      service
-        .from("fcs_portfolios")
-        .select("id, title, slug, template_slug, is_published, updated_at")
-        .order("updated_at", { ascending: false })
-        .limit(50),
-      service
-        .from("fcs_cover_letters")
-        .select("id, title, company_name, target_role, writing_style, updated_at")
         .order("updated_at", { ascending: false })
         .limit(50),
       service
@@ -57,26 +47,19 @@ export default async function AdminDocumentsPage() {
         .limit(50),
     ]);
 
-  const customerSiteUrl =
-    process.env.NEXT_PUBLIC_CUSTOMER_SITE_URL || "https://francis-creator-studio.vercel.app";
-
   return (
     <AdminShell adminName={admin.fullName} adminEmail={admin.email} roles={admin.roles}>
       <div className="mx-auto max-w-7xl space-y-5">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Document &amp; Community Moderation</h1>
           <p className="mt-1 text-xs text-[var(--adm-ink-muted)]">
-            Manage resumes, published portfolios, cover letters, Document Vault uploads, and approve
-            authentic customer testimonials.
+            Manage resumes, Document Vault uploads, and approve authentic customer testimonials.
           </p>
         </div>
         <DocumentsAdminClient
           initialResumes={(resumes ?? []) as never[]}
-          initialPortfolios={(portfolios ?? []) as never[]}
-          initialCoverLetters={(coverLetters ?? []) as never[]}
           initialAssets={(assets ?? []) as never[]}
           initialTestimonials={(testimonials ?? []) as never[]}
-          customerSiteUrl={customerSiteUrl}
         />
       </div>
     </AdminShell>

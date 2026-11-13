@@ -54,16 +54,13 @@ export async function GET(request: NextRequest) {
     certificate_code: string;
   }> = [];
   let projects: Array<{ id: string; title: string; template_slug: string; status: string }> = [];
-  let portfolios: Array<{ id: string; title: string; slug: string; is_published: boolean }> = [];
-  let coverLetters: Array<{ id: string; title: string; company_name: string; target_role: string }> =
-    [];
   let assets: Array<{ id: string; file_name: string; asset_type: string }> = [];
   let conversations: Array<{ id: string; title: string; context_page: string }> = [];
   let activities: Array<{ id: string; action: string; entity_type: string; created_at: string }> =
     [];
 
   if (user) {
-    const [rRes, cRes, pRes, pfRes, clRes, aRes, convRes, actRes] = await Promise.all([
+    const [rRes, cRes, pRes, aRes, convRes, actRes] = await Promise.all([
       supabase
         .from("fcs_resumes")
         .select("id, title, template_slug")
@@ -83,20 +80,6 @@ export async function GET(request: NextRequest) {
         .select("id, title, template_slug, status")
         .eq("user_id", user.id)
         .ilike("title", pattern)
-        .order("updated_at", { ascending: false })
-        .limit(4),
-      supabase
-        .from("fcs_portfolios")
-        .select("id, title, slug, is_published")
-        .eq("user_id", user.id)
-        .or(`title.ilike.${pattern},slug.ilike.${pattern}`)
-        .order("updated_at", { ascending: false })
-        .limit(4),
-      supabase
-        .from("fcs_cover_letters")
-        .select("id, title, company_name, target_role")
-        .eq("user_id", user.id)
-        .or(`title.ilike.${pattern},company_name.ilike.${pattern},target_role.ilike.${pattern}`)
         .order("updated_at", { ascending: false })
         .limit(4),
       supabase
@@ -125,8 +108,6 @@ export async function GET(request: NextRequest) {
     resumes = rRes.data ?? [];
     certificates = cRes.data ?? [];
     projects = pRes.data ?? [];
-    portfolios = pfRes.data ?? [];
-    coverLetters = clRes.data ?? [];
     assets = aRes.data ?? [];
     conversations = convRes.data ?? [];
     activities = actRes.data ?? [];
@@ -136,8 +117,6 @@ export async function GET(request: NextRequest) {
     resumes,
     certificates,
     projects,
-    portfolios,
-    coverLetters,
     assets,
     conversations,
     activities,

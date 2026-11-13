@@ -2,7 +2,6 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import { SafeNavLink } from "@/components/ui/SafeNavLink";
-import { useRouter } from "next/navigation";
 import {
   AlertTriangle,
   Bot,
@@ -50,8 +49,6 @@ interface AiMessage {
     targetRole?: string;
     rationale?: string;
   };
-  generatedPortfolio?: Record<string, unknown>;
-  generatedCoverLetter?: { bodyText?: string; subjectLine?: string };
 }
 
 interface SavedRecommendation {
@@ -72,7 +69,6 @@ interface UserResumeRef {
 }
 
 export default function AssistantAndIntelligencePage() {
-  const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const stopVoiceRef = useRef<(() => void) | null>(null);
 
@@ -90,8 +86,6 @@ export default function AssistantAndIntelligencePage() {
     | "resume_health"
     | "resume_improve"
     | "resume_summary"
-    | "portfolio_generate"
-    | "cover_letter_generate"
     | "certificate_assist"
   >("chat");
   const [sending, setSending] = useState(false);
@@ -222,8 +216,6 @@ export default function AssistantAndIntelligencePage() {
         reply?: string;
         conversationId?: string;
         proposedPatch?: AiMessage["proposedPatch"];
-        generatedPortfolio?: AiMessage["generatedPortfolio"];
-        generatedCoverLetter?: AiMessage["generatedCoverLetter"];
         error?: string;
         message?: string;
       };
@@ -242,8 +234,6 @@ export default function AssistantAndIntelligencePage() {
           role: "assistant",
           content: json.reply || "",
           proposedPatch: json.proposedPatch,
-          generatedPortfolio: json.generatedPortfolio,
-          generatedCoverLetter: json.generatedCoverLetter,
         },
       ]);
     } finally {
@@ -285,42 +275,6 @@ export default function AssistantAndIntelligencePage() {
     }
     setActionBanner(`Approved AI patch applied cleanly to "${activeResume.title}".`);
     void loadWorkspace();
-  };
-
-  const savePortfolioWithConsent = async (portfolioData: Record<string, unknown>) => {
-    const res = await fetch("/api/portfolios", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        title: String(portfolioData.fullName || "AI Portfolio"),
-        template_slug: "linear-atelier",
-        data: portfolioData,
-      }),
-    });
-    const json = (await res.json()) as { portfolio?: { id: string }; error?: string };
-    if (!res.ok || !json.portfolio) {
-      setErrorMsg(json.error || "Sign in to save generated portfolio.");
-      return;
-    }
-    router.push(`/portfolio-builder?id=${json.portfolio.id}`);
-  };
-
-  const saveCoverLetterWithConsent = async (cl: { bodyText?: string; subjectLine?: string }) => {
-    const res = await fetch("/api/cover-letters", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        title: cl.subjectLine || "AI Generated Cover Letter",
-        body_text: cl.bodyText || "",
-        writing_style: "modern",
-      }),
-    });
-    const json = (await res.json()) as { coverLetter?: { id: string }; error?: string };
-    if (!res.ok || !json.coverLetter) {
-      setErrorMsg(json.error || "Sign in to save generated cover letter.");
-      return;
-    }
-    router.push(`/cover-letter?id=${json.coverLetter.id}`);
   };
 
   const handleSend = async (e: React.FormEvent) => {
@@ -537,8 +491,6 @@ export default function AssistantAndIntelligencePage() {
               <option value="resume_health">AI Resume Health Check (Diff)</option>
               <option value="resume_improve">Resume &amp; Bullet Upgrade (Diff)</option>
               <option value="resume_summary">Career Summary Writer</option>
-              <option value="portfolio_generate">Generate Portfolio Website</option>
-              <option value="cover_letter_generate">Generate Cover Letter</option>
               <option value="certificate_assist">Certificate Wording Assist</option>
             </select>
           </div>
@@ -555,8 +507,8 @@ export default function AssistantAndIntelligencePage() {
                 <div className="flex flex-wrap gap-1.5">
                   {[
                     "Improve my resume for a software developer internship",
-                    "Generate a portfolio website from my resume",
-                    "Draft a cover letter for Frontend Engineer",
+                    "Run an 8-axis AI Health Check on my resume",
+                    "How do I bulk issue verified certificates?",
                     "How do I publish a verified certificate?",
                   ].map((prompt) => (
                     <button
@@ -633,36 +585,6 @@ export default function AssistantAndIntelligencePage() {
                       className="mt-2 inline-flex items-center gap-1 rounded-lg bg-teal-700 px-3 py-1.5 text-[11px] font-semibold text-white hover:bg-teal-800"
                     >
                       <Check className="h-3 w-3" /> Approve &amp; Update Saved Resume
-                    </button>
-                  </div>
-                )}
-
-                {m.generatedPortfolio && (
-                  <div className="mr-6 rounded-xl border border-teal-600/30 bg-teal-50/70 p-3 dark:bg-teal-950/30">
-                    <p className="font-bold text-teal-800 dark:text-teal-300">
-                      Portfolio Draft Ready
-                    </p>
-                    <button
-                      type="button"
-                      onClick={() => void savePortfolioWithConsent(m.generatedPortfolio!)}
-                      className="mt-2 inline-flex items-center gap-1 rounded-lg bg-teal-700 px-3 py-1.5 text-[11px] font-semibold text-white hover:bg-teal-800"
-                    >
-                      Approve &amp; Open in Portfolio Builder →
-                    </button>
-                  </div>
-                )}
-
-                {m.generatedCoverLetter && (
-                  <div className="mr-6 rounded-xl border border-teal-600/30 bg-teal-50/70 p-3 dark:bg-teal-950/30">
-                    <p className="font-bold text-teal-800 dark:text-teal-300">
-                      Cover Letter Draft Ready
-                    </p>
-                    <button
-                      type="button"
-                      onClick={() => void saveCoverLetterWithConsent(m.generatedCoverLetter!)}
-                      className="mt-2 inline-flex items-center gap-1 rounded-lg bg-teal-700 px-3 py-1.5 text-[11px] font-semibold text-white hover:bg-teal-800"
-                    >
-                      Approve &amp; Open in Cover Letter Studio →
                     </button>
                   </div>
                 )}

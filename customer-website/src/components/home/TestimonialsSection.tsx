@@ -128,7 +128,7 @@ export function TestimonialsSection({
               minLength={15}
               value={quote}
               onChange={(e) => setQuote(e.target.value)}
-              placeholder="Share how Resume Studio, Certificate Studio, Portfolio Builder, or Creator AI helped your workflow..."
+              placeholder="Share how Resume Studio, Certificate Studio, Document Vault, or Creator AI helped your workflow..."
               className="w-full rounded-lg border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] p-3 outline-none focus:border-teal-600"
             />
           </div>
@@ -199,8 +199,8 @@ export function TestimonialsSection({
               Students &amp; Graduates
             </p>
             <p className="mt-1.5 text-xs leading-relaxed text-[var(--fcs-ink-muted)]">
-              Craft ATS-ready resumes across 100 templates, run the 8-axis AI Health Check, generate
-              tailored cover letters, and launch a live portfolio site in minutes.
+              Craft ATS-ready resumes across 100 templates, run the 8-axis AI Health Check, export
+              print-ready PDF and Word DOCX files, and manage multiple saved versions in minutes.
             </p>
           </div>
           <div>

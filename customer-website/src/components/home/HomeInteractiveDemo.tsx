@@ -7,18 +7,16 @@ import {
   Award,
   Check,
   FileText,
-  Globe,
   QrCode,
   Sparkles,
 } from "lucide-react";
 
-type DemoTab = "resume" | "certificate" | "portfolio" | "ai";
+type DemoTab = "resume" | "certificate" | "ai";
 
 export function HomeInteractiveDemo() {
   const [tab, setTab] = useState<DemoTab>("resume");
   const [resumeAccent, setResumeAccent] = useState("#0F766E");
   const [certTone, setCertTone] = useState<"gold" | "navy" | "teal">("gold");
-  const [portfolioDark, setPortfolioDark] = useState(true);
   const [aiApplied, setAiApplied] = useState(false);
 
   const tabs: Array<{
@@ -28,7 +26,6 @@ export function HomeInteractiveDemo() {
   }> = [
     { id: "resume", label: "Resume Studio", icon: FileText },
     { id: "certificate", label: "Certificate Designer", icon: Award },
-    { id: "portfolio", label: "Portfolio Builder", icon: Globe },
     { id: "ai", label: "Creator AI", icon: Sparkles },
   ];
 
@@ -244,81 +241,7 @@ export function HomeInteractiveDemo() {
         </div>
       )}
 
-      {/* Tab 3: Portfolio */}
-      {tab === "portfolio" && (
-        <div className="grid gap-4 lg:grid-cols-12">
-          <div className="space-y-3 lg:col-span-5">
-            <p className="text-xs font-bold tracking-wider uppercase text-teal-700 dark:text-teal-400">
-              6 Templates • Live URL • Download Source Code
-            </p>
-            <h3 className="text-lg font-bold tracking-tight">
-              AI Personal Portfolio Generator
-            </h3>
-            <p className="text-xs leading-relaxed text-[var(--fcs-ink-muted)]">
-              Import directly from your saved resume or generate with Creator AI. Customize dark
-              and light modes, publish live at <code className="font-mono">/p/your-name</code>, or
-              export full static HTML/Next.js code.
-            </p>
-            <button
-              type="button"
-              onClick={() => setPortfolioDark((p) => !p)}
-              className="cursor-pointer rounded-lg border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] px-3 py-1.5 text-[11px] font-semibold"
-            >
-              Toggle {portfolioDark ? "Light" : "Dark"} Preview
-            </button>
-            <div>
-              <SafeNavLink
-                href="/portfolio-builder"
-                className="fcs-btn-primary inline-flex px-4 py-2 text-xs"
-              >
-                Open Portfolio Builder <ArrowRight className="h-3.5 w-3.5" />
-              </SafeNavLink>
-            </div>
-          </div>
-
-          <div className="lg:col-span-7">
-            <div
-              className={`rounded-xl border p-5 transition-colors ${
-                portfolioDark
-                  ? "border-slate-800 bg-[#0B0F14] text-slate-100"
-                  : "border-slate-200 bg-[#F8F7F4] text-slate-900"
-              }`}
-            >
-              <div className="flex items-center justify-between text-[10px] opacity-70">
-                <span className="font-semibold">francis.dev</span>
-                <span>Projects • Experience • Contact</span>
-              </div>
-              <p className="mt-3 text-base font-bold tracking-tight">
-                Designing resilient products &amp; developer systems.
-              </p>
-              <div className="mt-3 grid grid-cols-2 gap-2.5">
-                <div
-                  className={`rounded-lg border p-3 ${
-                    portfolioDark
-                      ? "border-slate-800 bg-slate-900/80"
-                      : "border-slate-200 bg-white"
-                  }`}
-                >
-                  <p className="text-[11px] font-bold">Creator Studio SaaS</p>
-                  <p className="mt-0.5 text-[10px] opacity-70">Next.js • TypeScript • Supabase</p>
-                </div>
-                <div
-                  className={`rounded-lg border p-3 ${
-                    portfolioDark
-                      ? "border-slate-800 bg-slate-900/80"
-                      : "border-slate-200 bg-white"
-                  }`}
-                >
-                  <p className="text-[11px] font-bold">Trust Verify Registry</p>
-                  <p className="mt-0.5 text-[10px] opacity-70">PostgreSQL • RLS • QR</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Tab 4: Creator AI */}
+      {/* Tab 3: Creator AI */}
       {tab === "ai" && (
         <div className="grid gap-4 lg:grid-cols-12">
           <div className="space-y-3 lg:col-span-5">

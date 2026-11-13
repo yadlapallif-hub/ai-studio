@@ -111,7 +111,7 @@ export default async function AdminAnalyticsPage() {
             <div className="mt-4 space-y-3">
               {[
                 { label: "Resume A4 PDF", count: exportCounts.resumePdf },
-                { label: "Word DOCX (Resumes & Cover Letters)", count: exportCounts.resumeDocx },
+                { label: "Word DOCX (Resumes)", count: exportCounts.resumeDocx },
                 { label: "Resume PNG", count: exportCounts.resumePng },
                 { label: "Certificate A4 PDF", count: exportCounts.certPdf },
                 { label: "Certificate PNG", count: exportCounts.certPng },

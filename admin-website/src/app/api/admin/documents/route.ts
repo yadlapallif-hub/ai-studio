@@ -7,10 +7,9 @@ export async function PATCH(request: Request) {
   if (!admin) return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
 
   const body = (await request.json().catch(() => null)) as {
-    kind?: "testimonial" | "portfolio";
+    kind?: "testimonial";
     id?: string;
     is_approved?: boolean;
-    is_published?: boolean;
   } | null;
 
   if (!body?.kind || !body.id) {
@@ -35,23 +34,6 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ record: data });
   }
 
-  if (body.kind === "portfolio") {
-    const { data, error } = await service
-      .from("fcs_portfolios")
-      .update({ is_published: Boolean(body.is_published) })
-      .eq("id", body.id)
-      .select("*")
-      .single();
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-    await recordAdminAudit({
-      actorId: admin.userId,
-      action: body.is_published ? "admin.portfolio.published" : "admin.portfolio.unpublished",
-      targetType: "fcs_portfolios",
-      targetId: body.id,
-    });
-    return NextResponse.json({ record: data });
-  }
-
   return NextResponse.json({ error: "Unsupported kind" }, { status: 400 });
 }
 
@@ -65,8 +47,6 @@ export async function DELETE(request: Request) {
 
   const allowedTables = new Set([
     "fcs_resumes",
-    "fcs_portfolios",
-    "fcs_cover_letters",
     "fcs_uploaded_assets",
     "fcs_testimonials",
   ]);

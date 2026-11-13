@@ -30,8 +30,8 @@ export function Footer({
             </p>
             <p className="mt-3 max-w-md text-xs leading-relaxed text-[var(--fcs-ink-muted)]">
               Free, open-source AI Resume Studio, Certificate &amp; Bulk Atelier with QR
-              verification, AI Portfolio Generator, Cover Letter Studio, and encrypted Document
-              Vault. Zero paywalls, zero paid exports.
+              verification, Creator AI Assistant, and private Document Vault. Zero paywalls, zero
+              paid exports.
             </p>
             <p className="mt-3 text-[11px] text-[var(--fcs-ink-muted)]">
               {footerContent.disclaimer}
@@ -59,22 +59,6 @@ export function Footer({
                   className="hover:text-teal-700 dark:hover:text-teal-400"
                 >
                   Certificate Design Studio
-                </SafeNavLink>
-              </li>
-              <li>
-                <SafeNavLink
-                  href="/portfolio-builder"
-                  className="hover:text-teal-700 dark:hover:text-teal-400"
-                >
-                  AI Portfolio Generator
-                </SafeNavLink>
-              </li>
-              <li>
-                <SafeNavLink
-                  href="/cover-letter"
-                  className="hover:text-teal-700 dark:hover:text-teal-400"
-                >
-                  AI Cover Letter Generator
                 </SafeNavLink>
               </li>
               <li>

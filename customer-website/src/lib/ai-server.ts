@@ -1,10 +1,6 @@
 import {
   analyzeResumeHealthCheck,
-  buildDeterministicCoverLetter,
   buildDeterministicResumePatch,
-  buildPortfolioFromResume,
-  type CoverLetterTone,
-  type PortfolioData,
   type ResumeAiPatchProposal,
   type ResumeData,
   type ResumeHealthCheckReport,
@@ -43,8 +39,6 @@ export interface AiInvocationResult {
   conversationId?: string;
   proposedPatch?: ResumeAiPatchProposal;
   healthReport?: ResumeHealthCheckReport;
-  generatedPortfolio?: PortfolioData;
-  generatedCoverLetter?: { content: string; recommendations: string[] };
   error?: string;
   message?: string;
 }
@@ -137,8 +131,6 @@ function buildStructuredContextExtras(input: AiInvocationInput) {
 
   let proposedPatch: ResumeAiPatchProposal | undefined;
   let healthReport: ResumeHealthCheckReport | undefined;
-  let generatedPortfolio: PortfolioData | undefined;
-  let generatedCoverLetter: { content: string; recommendations: string[] } | undefined;
 
   if (ctxResume && (input.mode === "resume_health_check" || input.mode === "resume_action_patch")) {
     healthReport = analyzeResumeHealthCheck(ctxResume, undefined, input.jobDescription);
@@ -153,33 +145,7 @@ function buildStructuredContextExtras(input: AiInvocationInput) {
     proposedPatch = buildDeterministicResumePatch(ctxResume, lastPrompt);
   }
 
-  if (input.mode === "portfolio_generate") {
-    if (ctxResume) {
-      generatedPortfolio = buildPortfolioFromResume(ctxResume, "Creator");
-    }
-  }
-
-  if (input.mode === "cover_letter_generate") {
-    const meta = (input.contextData ?? {}) as {
-      candidateName?: string;
-      companyName?: string;
-      targetRole?: string;
-      hiringManager?: string;
-      writingStyle?: CoverLetterTone;
-      resume?: ResumeData;
-    };
-    generatedCoverLetter = buildDeterministicCoverLetter({
-      candidateName: meta.candidateName || meta.resume?.personalInfo?.fullName || "Applicant",
-      companyName: meta.companyName || "Target Company",
-      targetRole: meta.targetRole || "Role",
-      hiringManager: meta.hiringManager,
-      writingStyle: meta.writingStyle || "modern_tech",
-      resume: meta.resume ?? null,
-      jobDescription: input.jobDescription,
-    });
-  }
-
-  return { proposedPatch, healthReport, generatedPortfolio, generatedCoverLetter };
+  return { proposedPatch, healthReport };
 }
 
 export async function invokeCreatorAi(input: AiInvocationInput): Promise<AiInvocationResult> {
@@ -281,7 +247,7 @@ export async function invokeCreatorAi(input: AiInvocationInput): Promise<AiInvoc
     const systemPrompt = [
       aiConfig.system_instructions ||
         "You are Creator AI inside FRANCIS CREATOR STUDIO (Created & Developed by FRANCIS). Be factual, practical, and helpful.",
-      "Platform Modules: AI Resume Studio (/resume-builder, 100 templates, 14 sections, DOCX + PDF + PNG exports, AI Resume Health Check), Certificate Studio & Bulk Generator (/certificate-builder, /bulk-generator, 124 templates, Stamp/Signature studio, QR Verification /verify), AI Portfolio Generator (/portfolio-builder), AI Cover Letter Studio (/cover-letter), Document Vault (/vault), Global Search (Ctrl+K), Tutorials (/tutorials), Support (/support).",
+      "Platform Modules: AI Resume Studio (/resume-builder, 100 templates, 14 sections, DOCX + PDF + PNG exports, AI Resume Health Check), Certificate Studio & Bulk Generator (/certificate-builder, /bulk-generator, 124 templates, Stamp/Signature studio, QR Verification /verify), Document Vault (/vault), Global Search (Ctrl+K), Tutorials (/tutorials), Support (/support).",
       `Active route context: ${input.contextPage}. Task mode: ${input.mode}.`,
       faqKnowledge ? `Platform FAQ Knowledge:\n${faqKnowledge}` : "",
       docAttachmentsText ? `Uploaded Document Attachments:\n${docAttachmentsText}` : "",
@@ -417,11 +383,7 @@ export async function invokeCreatorAi(input: AiInvocationInput): Promise<AiInvoc
 
   // Deterministic smart synthesis fallback if external LLM keys are unconfigured/unreachable
   if (!reply) {
-    if (extras.generatedCoverLetter) {
-      reply = extras.generatedCoverLetter.content;
-      usedProvider = "creator-ai-engine";
-      usedModel = "deterministic-cover-letter";
-    } else if (extras.healthReport) {
+    if (extras.healthReport) {
       const r = extras.healthReport;
       reply = [
         `AI Resume Health Check — Overall Score: ${r.overallScore}/100 (${r.readinessLabel})`,
@@ -531,8 +493,6 @@ export async function invokeCreatorAi(input: AiInvocationInput): Promise<AiInvoc
     conversationId,
     proposedPatch: extras.proposedPatch,
     healthReport: extras.healthReport,
-    generatedPortfolio: extras.generatedPortfolio,
-    generatedCoverLetter: extras.generatedCoverLetter,
   };
 }
 

@@ -31,7 +31,7 @@ export function IntroSplash() {
     }, 760);
   }, []);
 
-  // Auto-play on fresh homepage load (never block deep-links like /verify or /p/[slug], and never re-trigger on client nav back to "/")
+  // Auto-play on fresh homepage load (never block deep-links like /verify, and never re-trigger on client nav back to "/")
   useEffect(() => {
     if (typeof window === "undefined") return;
 

@@ -19,12 +19,10 @@ import {
   FileText,
   FolderLock,
   FolderOpen,
-  Globe,
   Heart,
   HelpCircle,
   LayoutDashboard,
   LifeBuoy,
-  PenLine,
   PenTool,
   Plus,
   RefreshCw,
@@ -151,24 +149,6 @@ interface OrgAppRow {
   approved_at: string | null;
 }
 
-interface PortfolioRow {
-  id: string;
-  title: string;
-  slug: string;
-  template_slug: string;
-  is_published: boolean;
-  updated_at: string;
-}
-
-interface CoverLetterRow {
-  id: string;
-  title: string;
-  company_name: string;
-  target_role: string;
-  writing_style: string;
-  updated_at: string;
-}
-
 interface VaultAssetRow {
   id: string;
   file_name: string;
@@ -200,8 +180,6 @@ type DashboardTabId =
   | "projects"
   | "certificates"
   | "resumes"
-  | "portfolios"
-  | "cover_letters"
   | "vault"
   | "templates"
   | "stamps"
@@ -225,8 +203,6 @@ interface Props {
   initialExportEvents?: ExportEventRow[];
   initialFavorites?: FavoriteTemplateRow[];
   initialRecommendations: RecRow[];
-  initialPortfolios?: PortfolioRow[];
-  initialCoverLetters?: CoverLetterRow[];
   initialVaultAssets?: VaultAssetRow[];
   initialActivityLogs?: ActivityLogRow[];
   initialNotifications?: DashboardNotifRow[];
@@ -251,10 +227,6 @@ export function DashboardClient(props: Props) {
   const [resumes, setResumes] = useState(props.initialResumes);
   const [certificates, setCertificates] = useState(props.initialCertificates);
   const [projects, setProjects] = useState<ProjectRow[]>(props.initialProjects ?? []);
-  const [portfolios, setPortfolios] = useState<PortfolioRow[]>(props.initialPortfolios ?? []);
-  const [coverLetters, setCoverLetters] = useState<CoverLetterRow[]>(
-    props.initialCoverLetters ?? []
-  );
   const [notifs, setNotifs] = useState<DashboardNotifRow[]>(props.initialNotifications ?? []);
   const [sampleStamps, setSampleStamps] = useState<SampleStampRow[]>(
     props.initialSampleStamps ?? []
@@ -272,8 +244,7 @@ export function DashboardClient(props: Props) {
   const favorites = props.initialFavorites ?? [];
   const vaultAssets = props.initialVaultAssets ?? [];
   const activityLogs = props.initialActivityLogs ?? [];
-  const totalDocuments =
-    resumes.length + certificates.length + projects.length + portfolios.length + coverLetters.length;
+  const totalDocuments = resumes.length + certificates.length + projects.length;
   const unreadNotifsCount = notifs.filter((n) => !n.is_read).length;
   const openTicketsCount = props.tickets.filter(
     (t) => t.status !== "resolved" && t.status !== "closed"
@@ -301,19 +272,6 @@ export function DashboardClient(props: Props) {
           c.certificate_code.toLowerCase().includes(qLower)
       )
     : certificates;
-  const filteredPortfolios = qLower
-    ? portfolios.filter(
-        (p) => p.title.toLowerCase().includes(qLower) || p.slug.toLowerCase().includes(qLower)
-      )
-    : portfolios;
-  const filteredCoverLetters = qLower
-    ? coverLetters.filter(
-        (c) =>
-          c.title.toLowerCase().includes(qLower) ||
-          c.company_name.toLowerCase().includes(qLower) ||
-          c.target_role.toLowerCase().includes(qLower)
-      )
-    : coverLetters;
 
   const tabs: Array<{
     id: DashboardTabId;
@@ -325,8 +283,6 @@ export function DashboardClient(props: Props) {
     { id: "resumes", label: "Resumes & CVs", count: resumes.length, icon: FileText },
     { id: "certificates", label: "Issued Certificates", count: certificates.length, icon: Award },
     { id: "projects", label: "Design Projects", count: projects.length, icon: FolderOpen },
-    { id: "portfolios", label: "Portfolios", count: portfolios.length, icon: Globe },
-    { id: "cover_letters", label: "Cover Letters", count: coverLetters.length, icon: PenLine },
     { id: "vault", label: "Vault & Assets", count: vaultAssets.length, icon: FolderLock },
     { id: "templates", label: "Saved Templates", count: favorites.length, icon: Heart },
     {
@@ -507,18 +463,6 @@ export function DashboardClient(props: Props) {
               <Plus className="h-3.5 w-3.5 text-teal-600" /> Certificate Studio
             </SafeNavLink>
             <SafeNavLink
-              href="/portfolio-builder"
-              className="inline-flex items-center gap-1.5 rounded-xl border border-[var(--fcs-border)] px-3 py-2 text-xs font-semibold hover:bg-[var(--fcs-surface-muted)]"
-            >
-              <Globe className="h-3.5 w-3.5 text-teal-600" /> New Portfolio
-            </SafeNavLink>
-            <SafeNavLink
-              href="/cover-letter"
-              className="inline-flex items-center gap-1.5 rounded-xl border border-[var(--fcs-border)] px-3 py-2 text-xs font-semibold hover:bg-[var(--fcs-surface-muted)]"
-            >
-              <PenLine className="h-3.5 w-3.5 text-teal-600" /> Cover Letter
-            </SafeNavLink>
-            <SafeNavLink
               href="/bulk-generator"
               className="inline-flex items-center gap-1.5 rounded-xl border border-[var(--fcs-border)] px-3 py-2 text-xs font-semibold hover:bg-[var(--fcs-surface-muted)]"
             >
@@ -534,7 +478,7 @@ export function DashboardClient(props: Props) {
         </div>
       </SlideReveal>
 
-      {/* Dashboard Inline Filter + 15-Tab Navigation Ribbon */}
+      {/* Dashboard Inline Filter + 13-Tab Navigation Ribbon */}
       <div className="space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[var(--fcs-border)] bg-[var(--fcs-surface)] px-4 py-2.5">
           <div className="flex min-w-0 flex-1 items-center gap-2">
@@ -543,7 +487,7 @@ export function DashboardClient(props: Props) {
               type="text"
               value={dashSearch}
               onChange={(e) => setDashSearch(e.target.value)}
-              placeholder="Filter your resumes, certificates, projects, portfolios, or cover letters..."
+              placeholder="Filter your resumes, certificates, or design projects..."
               className="w-full bg-transparent text-xs outline-none placeholder:text-[var(--fcs-ink-muted)]"
             />
             {dashSearch && (
@@ -782,7 +726,7 @@ export function DashboardClient(props: Props) {
                 </SafeNavLink>
               </div>
               <div className="mt-3 space-y-2 text-xs">
-                {filteredResumes.slice(0, 3).map((r) => (
+                {filteredResumes.slice(0, 4).map((r) => (
                   <div
                     key={r.id}
                     className="flex items-center justify-between rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] px-3 py-2"
@@ -801,7 +745,7 @@ export function DashboardClient(props: Props) {
                     </SafeNavLink>
                   </div>
                 ))}
-                {filteredPortfolios.slice(0, 2).map((p) => (
+                {filteredProjects.slice(0, 2).map((p) => (
                   <div
                     key={p.id}
                     className="flex items-center justify-between rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] px-3 py-2"
@@ -809,43 +753,22 @@ export function DashboardClient(props: Props) {
                     <div className="min-w-0">
                       <p className="truncate font-semibold">{p.title}</p>
                       <p className="text-[10px] text-[var(--fcs-ink-muted)]">
-                        Portfolio • {p.is_published ? `/p/${p.slug}` : "Draft"}
+                        Certificate Project • {p.status}
                       </p>
                     </div>
                     <SafeNavLink
-                      href={`/portfolio-builder?id=${p.id}`}
+                      href={`/certificate-builder/new?project=${p.id}`}
                       className="shrink-0 font-semibold text-teal-700 hover:underline dark:text-teal-400"
                     >
-                      Edit Portfolio →
+                      Open in Studio →
                     </SafeNavLink>
                   </div>
                 ))}
-                {filteredCoverLetters.slice(0, 2).map((c) => (
-                  <div
-                    key={c.id}
-                    className="flex items-center justify-between rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] px-3 py-2"
-                  >
-                    <div className="min-w-0">
-                      <p className="truncate font-semibold">{c.title}</p>
-                      <p className="text-[10px] text-[var(--fcs-ink-muted)]">
-                        Cover Letter • {c.company_name}
-                      </p>
-                    </div>
-                    <SafeNavLink
-                      href={`/cover-letter?id=${c.id}`}
-                      className="shrink-0 font-semibold text-teal-700 hover:underline dark:text-teal-400"
-                    >
-                      Open →
-                    </SafeNavLink>
-                  </div>
-                ))}
-                {filteredResumes.length === 0 &&
-                  filteredPortfolios.length === 0 &&
-                  filteredCoverLetters.length === 0 && (
-                    <p className="py-6 text-center text-[var(--fcs-ink-muted)]">
-                      No matching documents yet. Start creating in any studio above.
-                    </p>
-                  )}
+                {filteredResumes.length === 0 && filteredProjects.length === 0 && (
+                  <p className="py-6 text-center text-[var(--fcs-ink-muted)]">
+                    No matching documents yet. Start creating in any studio above.
+                  </p>
+                )}
               </div>
             </section>
 
@@ -864,7 +787,7 @@ export function DashboardClient(props: Props) {
               </div>
               {activityLogs.length === 0 ? (
                 <p className="py-8 text-center text-xs text-[var(--fcs-ink-muted)]">
-                  Your project saves, exports, AI actions, and portfolio updates will appear here.
+                  Your project saves, exports, AI actions, and document updates will appear here.
                 </p>
               ) : (
                 <ul className="mt-3 space-y-2 text-xs">
@@ -1368,151 +1291,7 @@ export function DashboardClient(props: Props) {
         </section>
       )}
 
-      {/* TAB 12: PORTFOLIOS */}
-      {activeTab === "portfolios" && (
-        <section className="rounded-2xl border border-[var(--fcs-border)] bg-[var(--fcs-surface)] p-6">
-          <div className="flex items-center justify-between">
-            <h2 className="flex items-center gap-2 text-base font-bold">
-              <Globe className="h-4 w-4 text-teal-600" /> AI Portfolio Websites
-            </h2>
-            <SafeNavLink
-              href="/portfolio-builder"
-              className="rounded-xl bg-teal-700 px-3.5 py-1.5 text-xs font-semibold text-white"
-            >
-              + Create Portfolio
-            </SafeNavLink>
-          </div>
-          {filteredPortfolios.length === 0 ? (
-            <p className="py-10 text-center text-xs text-[var(--fcs-ink-muted)]">
-              No saved portfolios yet. Launch Portfolio Builder to generate one from your resume or
-              with Creator AI.
-            </p>
-          ) : (
-            <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {filteredPortfolios.map((pf) => (
-                <div
-                  key={pf.id}
-                  className="flex flex-col justify-between rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] p-4 text-xs"
-                >
-                  <div>
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="rounded bg-[var(--fcs-surface)] px-2 py-0.5 text-[10px] font-semibold uppercase">
-                        {pf.template_slug}
-                      </span>
-                      <span
-                        className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
-                          pf.is_published
-                            ? "bg-emerald-100 text-emerald-800"
-                            : "bg-slate-200 text-slate-700"
-                        }`}
-                      >
-                        {pf.is_published ? "Published" : "Draft"}
-                      </span>
-                    </div>
-                    <h3 className="mt-2 font-bold">{pf.title}</h3>
-                    <p className="mt-0.5 font-mono text-[11px] text-[var(--fcs-ink-muted)]">
-                      /p/{pf.slug}
-                    </p>
-                  </div>
-                  <div className="mt-4 flex items-center justify-between border-t border-[var(--fcs-border)] pt-3">
-                    <SafeNavLink
-                      href={`/portfolio-builder?id=${pf.id}`}
-                      className="font-semibold text-teal-700 hover:underline dark:text-teal-400"
-                    >
-                      Edit Portfolio →
-                    </SafeNavLink>
-                    <div className="flex items-center gap-2">
-                      {pf.is_published && (
-                        <SafeNavLink
-                          href={`/p/${pf.slug}`}
-                          className="font-semibold hover:underline"
-                        >
-                          Live View
-                        </SafeNavLink>
-                      )}
-                      <button
-                        type="button"
-                        onClick={async () => {
-                          const res = await fetch(`/api/portfolios?id=${pf.id}`, {
-                            method: "DELETE",
-                          });
-                          if (res.ok) setPortfolios((prev) => prev.filter((x) => x.id !== pf.id));
-                        }}
-                        className="rounded p-1 text-red-600 hover:bg-red-50"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </section>
-      )}
-
-      {/* TAB 13: COVER LETTERS */}
-      {activeTab === "cover_letters" && (
-        <section className="rounded-2xl border border-[var(--fcs-border)] bg-[var(--fcs-surface)] p-6">
-          <div className="flex items-center justify-between">
-            <h2 className="flex items-center gap-2 text-base font-bold">
-              <PenLine className="h-4 w-4 text-teal-600" /> AI Cover Letters
-            </h2>
-            <SafeNavLink
-              href="/cover-letter"
-              className="rounded-xl bg-teal-700 px-3.5 py-1.5 text-xs font-semibold text-white"
-            >
-              + New Cover Letter
-            </SafeNavLink>
-          </div>
-          {filteredCoverLetters.length === 0 ? (
-            <p className="py-10 text-center text-xs text-[var(--fcs-ink-muted)]">
-              No saved cover letters yet. Tailor a professional letter against any job description.
-            </p>
-          ) : (
-            <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {filteredCoverLetters.map((cl) => (
-                <div
-                  key={cl.id}
-                  className="flex flex-col justify-between rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] p-4 text-xs"
-                >
-                  <div>
-                    <span className="rounded bg-[var(--fcs-surface)] px-2 py-0.5 text-[10px] font-semibold uppercase">
-                      {cl.writing_style}
-                    </span>
-                    <h3 className="mt-2 font-bold">{cl.title}</h3>
-                    <p className="mt-0.5 text-[var(--fcs-ink-muted)]">
-                      {cl.company_name || "Target Company"} • {cl.target_role || "Role"}
-                    </p>
-                  </div>
-                  <div className="mt-4 flex items-center justify-between border-t border-[var(--fcs-border)] pt-3">
-                    <SafeNavLink
-                      href={`/cover-letter?id=${cl.id}`}
-                      className="font-semibold text-teal-700 hover:underline dark:text-teal-400"
-                    >
-                      Open in Studio →
-                    </SafeNavLink>
-                    <button
-                      type="button"
-                      onClick={async () => {
-                        const res = await fetch(`/api/cover-letters?id=${cl.id}`, {
-                          method: "DELETE",
-                        });
-                        if (res.ok) setCoverLetters((prev) => prev.filter((x) => x.id !== cl.id));
-                      }}
-                      className="rounded p-1 text-red-600 hover:bg-red-50"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </section>
-      )}
-
-      {/* TAB 14: DOCUMENT VAULT & ASSETS */}
+      {/* TAB 12: DOCUMENT VAULT & ASSETS */}
       {activeTab === "vault" && (
         <section className="rounded-2xl border border-[var(--fcs-border)] bg-[var(--fcs-surface)] p-6">
           <div className="flex items-center justify-between">

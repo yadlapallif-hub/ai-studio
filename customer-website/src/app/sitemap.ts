@@ -8,8 +8,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { path: "/tutorials", priority: 0.9, changeFrequency: "weekly" },
     { path: "/resume-builder", priority: 0.9, changeFrequency: "weekly" },
     { path: "/certificate-builder", priority: 0.85, changeFrequency: "weekly" },
-    { path: "/portfolio-builder", priority: 0.85, changeFrequency: "weekly" },
-    { path: "/cover-letter", priority: 0.85, changeFrequency: "weekly" },
     { path: "/verify", priority: 0.85, changeFrequency: "weekly" },
     { path: "/assistant", priority: 0.8, changeFrequency: "weekly" },
     { path: "/stamps", priority: 0.75, changeFrequency: "monthly" },

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Check, EyeOff, FileText, FolderLock, Globe, MessageSquareQuote, PenLine, Trash2 } from "lucide-react";
+import { Check, EyeOff, FileText, FolderLock, MessageSquareQuote, Trash2 } from "lucide-react";
 
 interface ResumeItem {
   id: string;
@@ -10,24 +10,6 @@ interface ResumeItem {
   target_role: string | null;
   ats_score: number | null;
   download_count: number;
-  updated_at: string;
-}
-
-interface PortfolioItem {
-  id: string;
-  title: string;
-  slug: string;
-  template_slug: string;
-  is_published: boolean;
-  updated_at: string;
-}
-
-interface CoverLetterItem {
-  id: string;
-  title: string;
-  company_name: string;
-  target_role: string;
-  writing_style: string;
   updated_at: string;
 }
 
@@ -52,23 +34,15 @@ interface TestimonialItem {
 
 export function DocumentsAdminClient({
   initialResumes,
-  initialPortfolios,
-  initialCoverLetters,
   initialAssets,
   initialTestimonials,
-  customerSiteUrl,
 }: {
   initialResumes: ResumeItem[];
-  initialPortfolios: PortfolioItem[];
-  initialCoverLetters: CoverLetterItem[];
   initialAssets: AssetItem[];
   initialTestimonials: TestimonialItem[];
-  customerSiteUrl: string;
 }) {
-  const [tab, setTab] = useState<"resumes" | "portfolios" | "cover_letters" | "assets" | "testimonials">("resumes");
+  const [tab, setTab] = useState<"resumes" | "assets" | "testimonials">("resumes");
   const [resumes, setResumes] = useState(initialResumes);
-  const [portfolios, setPortfolios] = useState(initialPortfolios);
-  const [coverLetters, setCoverLetters] = useState(initialCoverLetters);
   const [assets, setAssets] = useState(initialAssets);
   const [testimonials, setTestimonials] = useState(initialTestimonials);
   const [search, setSearch] = useState("");
@@ -82,8 +56,6 @@ export function DocumentsAdminClient({
     });
     if (!res.ok) return;
     if (table === "fcs_resumes") setResumes((p) => p.filter((x) => x.id !== id));
-    if (table === "fcs_portfolios") setPortfolios((p) => p.filter((x) => x.id !== id));
-    if (table === "fcs_cover_letters") setCoverLetters((p) => p.filter((x) => x.id !== id));
     if (table === "fcs_uploaded_assets") setAssets((p) => p.filter((x) => x.id !== id));
     if (table === "fcs_testimonials") setTestimonials((p) => p.filter((x) => x.id !== id));
     setMsg("Record deleted and audited.");
@@ -103,20 +75,6 @@ export function DocumentsAdminClient({
     }
   };
 
-  const togglePortfolioPublish = async (item: PortfolioItem) => {
-    const res = await fetch("/api/admin/documents", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ kind: "portfolio", id: item.id, is_published: !item.is_published }),
-    });
-    if (res.ok) {
-      setPortfolios((p) =>
-        p.map((x) => (x.id === item.id ? { ...x, is_published: !item.is_published } : x))
-      );
-      setMsg(item.is_published ? "Portfolio unpublished." : "Portfolio published.");
-    }
-  };
-
   return (
     <div className="space-y-5 text-xs">
       {msg && (
@@ -129,8 +87,6 @@ export function DocumentsAdminClient({
         <div className="flex flex-wrap gap-1.5 rounded-xl border border-[var(--adm-border)] bg-[var(--adm-surface)] p-1.5 font-semibold">
           {[
             { id: "resumes", label: `Resumes (${resumes.length})`, icon: FileText },
-            { id: "portfolios", label: `Portfolios (${portfolios.length})`, icon: Globe },
-            { id: "cover_letters", label: `Cover Letters (${coverLetters.length})`, icon: PenLine },
             { id: "assets", label: `Vault Assets (${assets.length})`, icon: FolderLock },
             { id: "testimonials", label: `Testimonials (${testimonials.length})`, icon: MessageSquareQuote },
           ].map((t) => (
@@ -184,100 +140,6 @@ export function DocumentsAdminClient({
                       <button
                         type="button"
                         onClick={() => void deleteRecord("fcs_resumes", r.id)}
-                        className="rounded p-1 text-red-600 hover:bg-red-50"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      {tab === "portfolios" && (
-        <div className="overflow-x-auto rounded-2xl border border-[var(--adm-border)] bg-[var(--adm-surface)]">
-          <table className="w-full text-left">
-            <thead className="border-b border-[var(--adm-border)] bg-[var(--adm-surface-muted)] text-[11px] uppercase">
-              <tr>
-                <th className="px-4 py-3">Title</th>
-                <th className="px-4 py-3">Slug</th>
-                <th className="px-4 py-3">Template</th>
-                <th className="px-4 py-3">Status</th>
-                <th className="px-4 py-3 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[var(--adm-border)]">
-              {portfolios
-                .filter((p) => !q || p.title.toLowerCase().includes(q) || p.slug.toLowerCase().includes(q))
-                .map((p) => (
-                  <tr key={p.id}>
-                    <td className="px-4 py-3 font-semibold">{p.title}</td>
-                    <td className="px-4 py-3 font-mono">
-                      {p.is_published ? (
-                        <a
-                          href={`${customerSiteUrl}/p/${p.slug}`}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="text-teal-700 underline"
-                        >
-                          /p/{p.slug}
-                        </a>
-                      ) : (
-                        `/p/${p.slug}`
-                      )}
-                    </td>
-                    <td className="px-4 py-3">{p.template_slug}</td>
-                    <td className="px-4 py-3">{p.is_published ? "Published" : "Draft"}</td>
-                    <td className="flex justify-end gap-2 px-4 py-3">
-                      <button
-                        type="button"
-                        onClick={() => void togglePortfolioPublish(p)}
-                        className="rounded border border-[var(--adm-border)] px-2.5 py-1 font-semibold"
-                      >
-                        {p.is_published ? "Unpublish" : "Publish"}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => void deleteRecord("fcs_portfolios", p.id)}
-                        className="rounded p-1 text-red-600 hover:bg-red-50"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      {tab === "cover_letters" && (
-        <div className="overflow-x-auto rounded-2xl border border-[var(--adm-border)] bg-[var(--adm-surface)]">
-          <table className="w-full text-left">
-            <thead className="border-b border-[var(--adm-border)] bg-[var(--adm-surface-muted)] text-[11px] uppercase">
-              <tr>
-                <th className="px-4 py-3">Title</th>
-                <th className="px-4 py-3">Company</th>
-                <th className="px-4 py-3">Role</th>
-                <th className="px-4 py-3">Style</th>
-                <th className="px-4 py-3 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[var(--adm-border)]">
-              {coverLetters
-                .filter((c) => !q || c.title.toLowerCase().includes(q) || c.company_name.toLowerCase().includes(q))
-                .map((c) => (
-                  <tr key={c.id}>
-                    <td className="px-4 py-3 font-semibold">{c.title}</td>
-                    <td className="px-4 py-3">{c.company_name}</td>
-                    <td className="px-4 py-3">{c.target_role}</td>
-                    <td className="px-4 py-3">{c.writing_style}</td>
-                    <td className="px-4 py-3 text-right">
-                      <button
-                        type="button"
-                        onClick={() => void deleteRecord("fcs_cover_letters", c.id)}
                         className="rounded p-1 text-red-600 hover:bg-red-50"
                       >
                         <Trash2 className="h-3.5 w-3.5" />

@@ -5,9 +5,9 @@ import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 import { createWorkspaceNotification, logWorkspaceActivity } from "@/lib/notifications";
 
 const ExportLogSchema = z.object({
-  documentType: z.enum(["resume", "certificate", "cover_letter", "portfolio"]),
+  documentType: z.enum(["resume", "certificate"]),
   documentId: z.string().trim().min(1).max(80),
-  format: z.enum(["pdf", "png", "png_2k", "png_4k", "jpeg", "bulk_zip", "svg", "docx", "html"]),
+  format: z.enum(["pdf", "png", "png_2k", "png_4k", "jpeg", "bulk_zip", "svg", "docx"]),
   fileName: z.string().trim().max(180).optional(),
   resolutionLabel: z.string().trim().max(80).optional(),
 });
@@ -47,14 +47,7 @@ export async function POST(request: NextRequest) {
   }
 
   const adminDb = createServiceSupabase();
-  const table =
-    documentType === "resume"
-      ? "fcs_resumes"
-      : documentType === "certificate"
-        ? "fcs_certificates"
-        : documentType === "cover_letter"
-          ? "fcs_cover_letters"
-          : "fcs_portfolios";
+  const table = documentType === "resume" ? "fcs_resumes" : "fcs_certificates";
 
   const { data: existing } = await adminDb
     .from(table)
@@ -92,22 +85,11 @@ export async function POST(request: NextRequest) {
       .eq("user_id", user.id);
   }
 
-  const labelTitle =
-    documentType === "resume"
-      ? "Resume"
-      : documentType === "certificate"
-        ? "Certificate"
-        : documentType === "cover_letter"
-          ? "Cover Letter"
-          : "Portfolio";
+  const labelTitle = documentType === "resume" ? "Resume" : "Certificate";
   const link =
     documentType === "resume"
       ? `/resume-builder/${documentId}`
-      : documentType === "certificate"
-        ? `/certificate-builder/${documentId}`
-        : documentType === "cover_letter"
-          ? `/cover-letter?id=${documentId}`
-          : `/portfolio-builder?id=${documentId}`;
+      : `/certificate-builder/${documentId}`;
 
   await Promise.all([
     createWorkspaceNotification({

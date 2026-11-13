@@ -755,8 +755,7 @@ export default function VaultPage() {
               <div className="rounded-xl border border-[var(--fcs-border)] bg-[var(--fcs-surface-muted)] p-8 text-center text-xs">
                 <p className="font-semibold">Microsoft Word Document (.DOCX)</p>
                 <p className="mt-1 text-[var(--fcs-ink-muted)]">
-                  Download this file to inspect or edit in Word / LibreOffice, or import it into
-                  Cover Letter Studio.
+                  Download this file to inspect or edit in Word / LibreOffice.
                 </p>
                 <a
                   href={previewState.url}

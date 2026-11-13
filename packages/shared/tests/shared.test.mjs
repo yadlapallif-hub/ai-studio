@@ -264,59 +264,6 @@ test("analyzeResumeHealthCheck evaluates all 8 required axes and generates safe 
   assert.ok(report.proposedPatch && typeof report.proposedPatch.rationale === "string");
 });
 
-test("v2 Portfolio & Cover Letter helpers + Zod schemas work deterministically", () => {
-  const starter = shared.createSampleStarterResumeData();
-  const portfolioData = shared.buildPortfolioFromResume(starter, "Francis Developer");
-  assert.ok(portfolioData.fullName.length > 0);
-  assert.ok(portfolioData.projects.length >= 1);
-
-  const html = shared.buildPortfolioStaticHtml({
-    title: "Developer Portfolio",
-    templateId: "linear-atelier",
-    themeMode: "dark",
-    accentColor: "#14B8A6",
-    data: portfolioData,
-  });
-  assert.ok(html.includes("<!doctype html>"));
-  assert.ok(html.includes("Francis Creator Studio"));
-
-  const coverLetter = shared.buildDeterministicCoverLetter({
-    candidateName: "Francis Developer",
-    companyName: "Acme Labs",
-    targetRole: "Software Engineer Intern",
-    writingStyle: "internship",
-    resume: starter,
-    jobDescription: "Looking for TypeScript React PostgreSQL engineer",
-  });
-  assert.ok(coverLetter.content.includes("Acme Labs"));
-  assert.ok(coverLetter.recommendations.length >= 2);
-
-  assert.equal(
-    shared.portfolioSaveSchema.safeParse({
-      slug: "francis-dev",
-      title: "My Portfolio",
-      template_id: "linear-atelier",
-      theme_mode: "dark",
-      accent_color: "#0F766E",
-      font_family: "Plus Jakarta Sans",
-      is_published: true,
-      data: portfolioData,
-    }).success,
-    true
-  );
-
-  assert.equal(
-    shared.coverLetterSaveSchema.safeParse({
-      title: "Acme SWE Intern",
-      company_name: "Acme Labs",
-      target_role: "Software Engineer Intern",
-      writing_style: "internship",
-      content: coverLetter.content,
-    }).success,
-    true
-  );
-});
-
 
 
 

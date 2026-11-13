@@ -8,7 +8,6 @@ export interface PublicPlatformStats {
   tutorials: number;
   totalResumesCreated: number;
   totalCertificatesIssued: number;
-  totalPortfoliosCreated: number;
   verifiedIssuersCount: number;
 }
 
@@ -87,7 +86,6 @@ const DEFAULT_STATS: PublicPlatformStats = {
   tutorials: 12,
   totalResumesCreated: 0,
   totalCertificatesIssued: 0,
-  totalPortfoliosCreated: 0,
   verifiedIssuersCount: 0,
 };
 
@@ -130,7 +128,6 @@ export async function getPublicPlatformData(): Promise<PublicPlatformData> {
       supabase.from("fcs_tutorials").select("id", { count: "exact", head: true }).eq("is_published", true),
       supabase.from("fcs_resumes").select("id", { count: "exact", head: true }),
       supabase.from("fcs_certificate_verifications").select("id", { count: "exact", head: true }).eq("verification_status", "verified"),
-      supabase.from("fcs_portfolios").select("id", { count: "exact", head: true }),
       supabase.from("fcs_authorized_issuers").select("id", { count: "exact", head: true }).eq("verification_status", "approved"),
       supabase
         .from("fcs_testimonials")
@@ -154,7 +151,6 @@ export async function getPublicPlatformData(): Promise<PublicPlatformData> {
       tutCount,
       resumesCount,
       certsCount,
-      portfoliosCount,
       issuersCount,
       testimonialsRes,
     ] = await Promise.race([queryPromise, timeoutPromise]);
@@ -183,7 +179,6 @@ export async function getPublicPlatformData(): Promise<PublicPlatformData> {
         tutorials: tutCount.count ?? 12,
         totalResumesCreated: resumesCount.count ?? 0,
         totalCertificatesIssued: certsCount.count ?? 0,
-        totalPortfoliosCreated: portfoliosCount.count ?? 0,
         verifiedIssuersCount: issuersCount.count ?? 0,
       },
       testimonials: (testimonialsRes.data ?? []) as PublicTestimonialItem[],

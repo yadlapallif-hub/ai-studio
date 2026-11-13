@@ -498,68 +498,6 @@ export interface WebsiteContent {
   openSourceNote: string;
 }
 
-export type PortfolioTemplateId =
-  | "linear-atelier"
-  | "notion-editorial"
-  | "stripe-mesh"
-  | "apple-minimal"
-  | "framer-obsidian"
-  | "academic-folio";
-
-export interface PortfolioProjectItem {
-  id: string;
-  title: string;
-  tagline: string;
-  description: string;
-  techStack: string[];
-  liveUrl?: string;
-  githubUrl?: string;
-  imageUrl?: string;
-  featured: boolean;
-}
-
-export interface PortfolioExperienceItem {
-  id: string;
-  role: string;
-  organization: string;
-  period: string;
-  highlights: string;
-}
-
-export interface PortfolioSkillGroup {
-  id: string;
-  category: string;
-  items: string[];
-}
-
-export interface PortfolioData {
-  fullName: string;
-  headline: string;
-  bio: string;
-  location: string;
-  email: string;
-  availability: string;
-  avatarUrl?: string;
-  ctaLabel: string;
-  ctaHref?: string;
-  projects: PortfolioProjectItem[];
-  experience: PortfolioExperienceItem[];
-  skillGroups: PortfolioSkillGroup[];
-  socialLinks: {
-    github?: string;
-    linkedin?: string;
-    twitter?: string;
-    website?: string;
-  };
-}
-
-export type CoverLetterTone =
-  | "executive"
-  | "modern_tech"
-  | "warm_story"
-  | "academic"
-  | "internship";
-
 export interface ResumeHealthAxisScore {
   key:
     | "structure"
