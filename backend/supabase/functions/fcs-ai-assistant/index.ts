@@ -1,5 +1,3 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
-
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -23,6 +21,17 @@ interface AiRequestBody {
   contextData?: Record<string, unknown>;
   conversationId?: string;
   jobDescription?: string;
+}
+
+function serviceHeaders(key: string): Record<string, string> {
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    "apikey": key,
+  };
+  if (key.startsWith("eyJ")) {
+    headers["Authorization"] = `Bearer ${key}`;
+  }
+  return headers;
 }
 
 Deno.serve(async (req: Request) => {
@@ -50,34 +59,40 @@ Deno.serve(async (req: Request) => {
     return Response.json({ error: "UNAUTHORIZED", message: "Sign in required to use Creator AI." }, { status: 401, headers: corsHeaders });
   }
 
-  const userClient = createClient(supabaseUrl, supabaseAnonKey, {
-    global: { headers: { Authorization: authHeader } },
+  const userResp = await fetch(`${supabaseUrl}/auth/v1/user`, {
+    method: "GET",
+    headers: {
+      "apikey": supabaseAnonKey,
+      "Authorization": authHeader,
+    },
   });
-  const adminClient = createClient(supabaseUrl, supabaseServiceKey);
-
-  const { data: authData, error: authError } = await userClient.auth.getUser();
-  if (authError || !authData?.user) {
+  if (!userResp.ok) {
     return Response.json({ error: "UNAUTHORIZED", message: "Invalid or expired session." }, { status: 401, headers: corsHeaders });
   }
-  const userId = authData.user.id;
+  const authUser = (await userResp.json().catch(() => null)) as { id?: string } | null;
+  const userId = authUser?.id;
+  if (!userId) {
+    return Response.json({ error: "UNAUTHORIZED", message: "Invalid or expired session." }, { status: 401, headers: corsHeaders });
+  }
 
-  const { data: profile } = await adminClient
-    .from("fcs_profiles")
-    .select("status")
-    .eq("id", userId)
-    .maybeSingle();
+  const adminHdrs = serviceHeaders(supabaseServiceKey);
 
-  if (profile?.status === "suspended") {
+  const profileResp = await fetch(
+    `${supabaseUrl}/rest/v1/fcs_profiles?select=status&id=eq.${encodeURIComponent(userId)}&limit=1`,
+    { headers: adminHdrs }
+  );
+  const profiles = (profileResp.ok ? await profileResp.json().catch(() => []) : []) as Array<{ status?: string }>;
+  if (profiles[0]?.status === "suspended") {
     return Response.json({ error: "ACCOUNT_SUSPENDED", message: "Your account is currently suspended." }, { status: 403, headers: corsHeaders });
   }
 
-  const { data: settingsRow } = await adminClient
-    .from("fcs_platform_settings")
-    .select("value")
-    .eq("key", "ai_config")
-    .maybeSingle();
+  const settingsResp = await fetch(
+    `${supabaseUrl}/rest/v1/fcs_platform_settings?select=value&key=eq.ai_config&limit=1`,
+    { headers: adminHdrs }
+  );
+  const settingsRows = (settingsResp.ok ? await settingsResp.json().catch(() => []) : []) as Array<{ value?: unknown }>;
 
-  const aiConfig = (settingsRow?.value ?? {}) as {
+  const aiConfig = (settingsRows[0]?.value ?? {}) as {
     enabled?: boolean;
     provider?: string;
     model?: string;
@@ -93,10 +108,19 @@ Deno.serve(async (req: Request) => {
   }
 
   const hourlyLimit = Number(aiConfig.hourly_limit_per_user ?? 40);
-  const { data: allowed } = await userClient.rpc("fcs_consume_rate_limit", {
-    p_endpoint: "fcs_ai",
-    p_limit: hourlyLimit,
+  const rateResp = await fetch(`${supabaseUrl}/rest/v1/rpc/fcs_consume_rate_limit`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "apikey": supabaseAnonKey,
+      "Authorization": authHeader,
+    },
+    body: JSON.stringify({
+      p_endpoint: "fcs_ai",
+      p_limit: hourlyLimit,
+    }),
   });
+  const allowed = rateResp.ok ? await rateResp.json().catch(() => true) : true;
 
   if (allowed === false) {
     return Response.json(
@@ -112,22 +136,20 @@ Deno.serve(async (req: Request) => {
     return Response.json({ error: "INVALID_JSON", message: "Invalid JSON request payload." }, { status: 400, headers: corsHeaders });
   }
 
-  const { data: faqs } = await adminClient
-    .from("fcs_faqs")
-    .select("question, answer, category")
-    .eq("is_published", true)
-    .eq("include_in_ai_knowledge", true)
-    .order("sort_order", { ascending: true })
-    .limit(15);
+  const faqsResp = await fetch(
+    `${supabaseUrl}/rest/v1/fcs_faqs?select=question,answer,category&is_published=eq.true&include_in_ai_knowledge=eq.true&order=sort_order.asc&limit=15`,
+    { headers: adminHdrs }
+  );
+  const faqs = (faqsResp.ok ? await faqsResp.json().catch(() => []) : []) as Array<{ question: string; answer: string }>;
 
-  const faqKnowledge = (faqs ?? [])
-    .map((f: { question: string; answer: string }) => `Q: ${f.question}\nA: ${f.answer}`)
+  const faqKnowledge = faqs
+    .map((f) => `Q: ${f.question}\nA: ${f.answer}`)
     .join("\n\n");
 
   const systemPrompt = [
     aiConfig.system_instructions ||
       "You are Creator AI inside CREATOR STUDIO (Built by Francis). Be truthful, practical, and concise.",
-    "Website Information: Creator Studio is a 100% free, open-source (MIT) document engineering platform Built by Francis with AI Resume Studio (/resume-builder, 100 templates, 14 sections, ATS score, free A4 PDF/PNG export), Authorized Certificate Studio (/certificate-builder, 100 templates exclusively for Admin-approved Authorized Organizations, Stamp Studio /stamps, and one-click Publish Verified Certificate), Public Verification (/verify), Document Vault (/vault), and Just Email login (/auth/login). Also explain clearly how to build a website or build and verify a certificate when asked.",
+    "Website Information: Creator Studio is a 100% free, open-source (MIT) document engineering platform Built by Francis with AI Resume Studio (/resume-builder, 100 templates, 14 sections, ATS score, free A4 PDF/PNG export), Authorized Certificate Studio (/certificate-builder, 124 templates exclusively for Admin-approved Authorized Organizations, Stamp Studio /stamps, and one-click Publish Verified Certificate), Public Verification (/verify), Document Vault (/vault), and Just Email login (/auth/login). Also explain clearly how to build a website or build and verify a certificate when asked.",
     `Current surface/context page: ${body.contextPage ?? "general"}.`,
     `Mode: ${body.mode ?? "chat"}.`,
     faqKnowledge ? `Platform FAQ Knowledge:\n${faqKnowledge}` : "",

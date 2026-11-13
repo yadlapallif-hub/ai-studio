@@ -1,10 +1,19 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
-
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
 };
+
+function supabaseHeaders(key: string): Record<string, string> {
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    "apikey": key,
+  };
+  if (key.startsWith("eyJ")) {
+    headers["Authorization"] = `Bearer ${key}`;
+  }
+  return headers;
+}
 
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
@@ -37,12 +46,16 @@ Deno.serve(async (req: Request) => {
     return Response.json({ error: "Certificate code is required" }, { status: 400, headers: corsHeaders });
   }
 
-  const client = createClient(supabaseUrl, supabaseAnonKey);
-  const { data, error } = await client.rpc("fcs_lookup_certificate_verification", { p_code: cleanCode });
+  const rpcResp = await fetch(`${supabaseUrl}/rest/v1/rpc/fcs_lookup_certificate_verification`, {
+    method: "POST",
+    headers: supabaseHeaders(supabaseAnonKey),
+    body: JSON.stringify({ p_code: cleanCode }),
+  });
 
-  if (error) {
+  if (!rpcResp.ok) {
     return Response.json({ error: "Verification lookup failed" }, { status: 500, headers: corsHeaders });
   }
 
+  const data = await rpcResp.json().catch(() => null);
   return Response.json(data ?? { found: false }, { status: 200, headers: corsHeaders });
 });

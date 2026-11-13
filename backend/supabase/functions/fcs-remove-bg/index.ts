@@ -1,5 +1,3 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
-
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -20,11 +18,14 @@ Deno.serve(async (req: Request) => {
   const authHeader = req.headers.get("Authorization");
 
   if (authHeader?.startsWith("Bearer ") && supabaseUrl && supabaseAnonKey) {
-    const userClient = createClient(supabaseUrl, supabaseAnonKey, {
-      global: { headers: { Authorization: authHeader } },
+    const userResp = await fetch(`${supabaseUrl}/auth/v1/user`, {
+      method: "GET",
+      headers: {
+        "apikey": supabaseAnonKey,
+        "Authorization": authHeader,
+      },
     });
-    const { error } = await userClient.auth.getUser();
-    if (error) {
+    if (!userResp.ok) {
       return Response.json({ error: "Invalid session" }, { status: 401, headers: corsHeaders });
     }
   }

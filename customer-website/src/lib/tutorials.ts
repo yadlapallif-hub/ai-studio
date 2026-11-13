@@ -1,6 +1,6 @@
 export const SUPABASE_TUTORIALS_CDN_BASE = (() => {
   const base = (
-    process.env.NEXT_PUBLIC_SUPABASE_URL || "https://ojzcgeckdrvxvkfphtma.supabase.co"
+    process.env.NEXT_PUBLIC_SUPABASE_URL || "https://ookwaaqlzhoxsyidhnct.supabase.co"
   ).replace(/\/$/, "");
   return `${base}/storage/v1/object/public/fcs-tutorials`;
 })();

@@ -80,6 +80,10 @@ export default function AdminLoginPage() {
         }
       }
 
+      try {
+        await supabase.rpc("fcs_ensure_profile");
+      } catch {}
+
       const targetRoute = await verifyAdminRoleAccess();
       if (!targetRoute) return;
 
